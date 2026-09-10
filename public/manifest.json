@@ -1,0 +1,19 @@
+{
+  "name": "Bokharest Black | بوخارست بلاك",
+  "short_name": "Bokharest Black",
+  "description": "Bokharest Black Restaurant & Cafe Official Mobile Application",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "lifestyle", "shopping"]
+}

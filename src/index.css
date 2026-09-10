@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --font-arabic: 'Cairo', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    background-color: #000000;
+    color: #ffffff;
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  [dir="rtl"] {
+    font-family: var(--font-arabic);
+  }
+
+  [dir="ltr"] {
+    font-family: var(--font-sans);
+  }
+
+  .font-serif-luxury {
+    font-family: var(--font-serif);
+  }
+
+  .font-arabic-luxury {
+    font-family: var(--font-arabic);
+  }
+}
+
+/* Hide scrollbars for slick mobile horizontal category tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Luxury hairline subtle borders */
+.border-subtle {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.border-subtle-hover:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.bg-luxury-card {
+  background-color: #0d0d0d;
+}
+
+.bg-luxury-surface {
+  background-color: #141414;
+}
+

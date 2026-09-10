@@ -1,0 +1,8 @@
+{
+  "name": "Remix Bokharest Black | بوخارست بلاك",
+  "description": "The official luxury restaurant and café mobile app for Bokharest Black. Browse the exclusive fine-dining menu, Chef's Selection, book luxury VIP tables, and order directly via WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
