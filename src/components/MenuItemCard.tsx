@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { MenuItem } from '../types';
 import { useApp } from '../context/AppContext';
+import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { Heart, Plus, Minus, Check } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -18,6 +20,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptic.add();
     addToCart(item, 1);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
@@ -25,25 +28,28 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
 
   const handleIncrement = (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptic.stepper();
     updateQuantity(item.id, quantityInCart + 1);
   };
 
   const handleDecrement = (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptic.stepper();
     updateQuantity(item.id, quantityInCart - 1);
   };
 
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
+    haptic.favorite();
     toggleFavorite(item.id);
   };
 
   const isFav = isFavorite(item.id);
 
-  // Default elegant fallback image if unavail
+  // Default unified menu image fallback if unavail
   const imageSrc = !imgError && item.image
     ? item.image
-    : 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
+    : UNIFIED_MENU_ITEM_IMAGE;
 
   const primaryName = language === 'ar' ? item.name_ar : item.name_en;
   const secondaryName = language === 'ar' ? item.name_en : item.name_ar;
@@ -83,12 +89,19 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           />
         </button>
 
-        {/* Badge (Chef's choice, Signature, etc.) */}
-        {badge && (
-          <div className="absolute top-2.5 left-2.5 rtl:left-auto rtl:right-2.5 px-2.5 py-0.5 rounded-full bg-white text-black text-[10px] font-bold tracking-wider uppercase shadow-md">
-            {badge}
-          </div>
-        )}
+        {/* Badges (Chef's choice, Signature, Hot/Cold) */}
+        <div className="absolute top-2.5 left-2.5 rtl:left-auto rtl:right-2.5 flex items-center gap-1.5">
+          {badge && (
+            <div className="px-2.5 py-0.5 rounded-full bg-white text-black text-[10px] font-bold tracking-wider uppercase shadow-md">
+              {badge}
+            </div>
+          )}
+          {item.type && (
+            <div className="px-2 py-0.5 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-neutral-200 text-[10px] font-medium tracking-wide shadow-md">
+              {item.type === 'hot' ? (language === 'ar' ? '🔥 ساخن' : '🔥 Hot') : (language === 'ar' ? '❄️ بارد' : '❄️ Cold')}
+            </div>
+          )}
+        </div>
 
         {/* Price Tag Floating over image base */}
         <div className="absolute bottom-2.5 left-3 rtl:left-auto rtl:right-3 flex items-baseline gap-1 bg-black/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/15">

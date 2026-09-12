@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { X, Check, RotateCcw, DollarSign, ToggleLeft, ToggleRight, Sparkles } from 'lucide-react';
+import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { X, Check, RotateCcw, DollarSign, ToggleLeft, ToggleRight, Sparkles, UploadCloud, Camera } from 'lucide-react';
 
 interface AdminMenuModalProps {
   onClose: () => void;
@@ -13,6 +14,7 @@ export const AdminMenuModal: React.FC<AdminMenuModalProps> = ({ onClose }) => {
     toggleItemAvailability,
     toggleItemFeatured,
     resetMenuToDefaults,
+    openImageUploadCenter,
     language,
     t,
   } = useApp();
@@ -63,22 +65,35 @@ export const AdminMenuModal: React.FC<AdminMenuModalProps> = ({ onClose }) => {
         </div>
 
         {/* Action bar */}
-        <div className="p-4 bg-neutral-950 border-b border-white/5 flex items-center justify-between gap-3">
-          <span className="text-xs text-neutral-400">
-            {menuItems.length} {language === 'ar' ? 'أصناف في قاعدة البيانات' : 'items in database'}
-          </span>
+        <div className="p-4 bg-neutral-950 border-b border-white/5 flex flex-wrap items-center justify-between gap-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-neutral-400">
+              {menuItems.length} {language === 'ar' ? 'صنف متزامن مع السحابة' : 'items synced with cloud'}
+            </span>
+          </div>
 
-          <button
-            onClick={() => {
-              if (confirm(language === 'ar' ? 'هل تريد استعادة الأسعار والبيانات الأصلية المعتمدة؟' : 'Reset to verified official menu data?')) {
-                resetMenuToDefaults();
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 text-xs font-semibold text-neutral-300 hover:text-white hover:border-white/40 transition-colors focus:outline-none"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>{language === 'ar' ? 'استعادة الافتراضي' : 'Reset to Official'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openImageUploadCenter}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-semibold transition-all shadow-sm"
+              title="مركز رفع وتخزين الصور على Firebase"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>{language === 'ar' ? 'مركز رفع الصور (Firebase)' : 'Image Center'}</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (confirm(language === 'ar' ? 'هل تريد استعادة الأسعار والبيانات الأصلية المعتمدة؟' : 'Reset to verified official menu data?')) {
+                  resetMenuToDefaults();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 text-xs font-semibold text-neutral-300 hover:text-white hover:border-white/40 transition-colors focus:outline-none"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>{language === 'ar' ? 'استعادة' : 'Reset'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Items List */}
@@ -90,8 +105,9 @@ export const AdminMenuModal: React.FC<AdminMenuModalProps> = ({ onClose }) => {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <img
-                  src={item.image}
+                  src={item.image || UNIFIED_MENU_ITEM_IMAGE}
                   alt={item.name_en}
+                  referrerPolicy="no-referrer"
                   className="w-12 h-12 rounded-xl object-cover bg-neutral-900 shrink-0"
                 />
                 <div className="min-w-0">

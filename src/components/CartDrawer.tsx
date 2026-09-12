@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { X, Trash2, Plus, Minus, Send, Copy, Check, MessageSquare, ExternalLink, ArrowRight, ArrowLeft } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -10,7 +12,11 @@ export const CartDrawer: React.FC = () => {
     updateQuantity,
     removeFromCart,
     clearCart,
+    cartSubtotal,
+    cartServiceCharge,
+    cartVat,
     cartTotal,
+    pricingPolicy,
     customerInfo,
     setCustomerInfo,
     sendWhatsAppOrder,
@@ -36,6 +42,9 @@ export const CartDrawer: React.FC = () => {
   const handleCheckout = () => {
     if (cart.length === 0) return;
 
+    // Trigger high-quality celebratory haptic feedback
+    haptic.order();
+
     // Trigger WhatsApp order
     const result = sendWhatsAppOrder();
     if (result.success) {
@@ -56,6 +65,7 @@ export const CartDrawer: React.FC = () => {
 
   const handleCopy = () => {
     if (orderMessage) {
+      haptic.toggle();
       navigator.clipboard.writeText(orderMessage);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -89,8 +99,11 @@ export const CartDrawer: React.FC = () => {
           <div className="flex items-center gap-3">
             {cart.length > 0 && (
               <button
-                onClick={clearCart}
-                className="text-xs text-neutral-400 hover:text-red-400 transition-colors flex items-center gap-1 focus:outline-none"
+                onClick={() => {
+                  haptic.stepper();
+                  clearCart();
+                }}
+                className="text-xs text-neutral-400 hover:text-red-400 transition-colors flex items-center gap-1 focus:outline-none cursor-pointer"
                 title={t('clear_order')}
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -99,9 +112,12 @@ export const CartDrawer: React.FC = () => {
             )}
 
             <button
-              onClick={handleClose}
+              onClick={() => {
+                haptic.tab();
+                handleClose();
+              }}
               aria-label="Close cart"
-              className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors focus:outline-none"
+              className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors focus:outline-none cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -221,7 +237,7 @@ export const CartDrawer: React.FC = () => {
                   >
                     {/* Thumbnail */}
                     <img
-                      src={item.image}
+                      src={item.image || UNIFIED_MENU_ITEM_IMAGE}
                       alt={name}
                       referrerPolicy="no-referrer"
                       className="w-16 h-16 rounded-xl object-cover bg-neutral-900 shrink-0"
@@ -253,8 +269,11 @@ export const CartDrawer: React.FC = () => {
                     {/* Quantity Selector */}
                     <div className="flex items-center gap-2 bg-black border border-white/20 rounded-full px-2 py-1 shrink-0">
                       <button
-                        onClick={() => updateQuantity(item.id, quantity - 1)}
-                        className="w-5 h-5 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none"
+                        onClick={() => {
+                          haptic.stepper();
+                          updateQuantity(item.id, quantity - 1);
+                        }}
+                        className="w-5 h-5 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
                       >
                         <Minus className="w-3 h-3" />
                       </button>
@@ -262,8 +281,11 @@ export const CartDrawer: React.FC = () => {
                         {quantity}
                       </span>
                       <button
-                        onClick={() => updateQuantity(item.id, quantity + 1)}
-                        className="w-5 h-5 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none"
+                        onClick={() => {
+                          haptic.stepper();
+                          updateQuantity(item.id, quantity + 1);
+                        }}
+                        className="w-5 h-5 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                       </button>
@@ -333,32 +355,72 @@ export const CartDrawer: React.FC = () => {
 
         {/* Footer Checkout Bar */}
         {cart.length > 0 && (
-          <div className="p-4 sm:p-5 bg-black border-t border-white/15 space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">{t('subtotal')}</span>
+          <div className="p-4 sm:p-5 bg-black border-t border-white/15 space-y-2.5">
+            {/* Subtotal */}
+            <div className="flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-neutral-400">
+                {language === 'ar' ? 'المجموع الفرعي للأصناف' : 'Items Subtotal'}
+              </span>
               <div className="flex items-baseline gap-1">
-                <span className="font-serif-luxury text-base font-semibold text-white">
-                  {cartTotal}
+                <span className="font-serif-luxury text-sm sm:text-base font-medium text-white">
+                  {cartSubtotal.toFixed(2)}
                 </span>
-                <span className="text-xs text-neutral-400">{t('egp')}</span>
+                <span className="text-[10px] text-neutral-400">{t('egp')}</span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-base font-bold pb-1">
-              <span className="text-white">{t('total')}</span>
+            {/* Service Charge 12% */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-400">
+                {language === 'ar' ? 'رسوم الخدمة (12%)' : 'Service Charge (12%)'}
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-mono text-xs sm:text-sm text-neutral-300">
+                  +{cartServiceCharge.toFixed(2)}
+                </span>
+                <span className="text-[10px] text-neutral-400">{t('egp')}</span>
+              </div>
+            </div>
+
+            {/* VAT 14% */}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-neutral-400">
+                {language === 'ar' ? 'ضريبة القيمة المضافة (14%)' : 'VAT (14%)'}
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="font-mono text-xs sm:text-sm text-neutral-300">
+                  +{cartVat.toFixed(2)}
+                </span>
+                <span className="text-[10px] text-neutral-400">{t('egp')}</span>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="pt-2 border-t border-white/10 flex items-center justify-between text-base font-bold">
+              <div>
+                <span className="text-white block">{t('total')}</span>
+                <span className="text-[10px] text-neutral-500 font-normal">
+                  {language === 'ar' ? 'شامل الخدمة والضريبة' : 'Incl. Service & VAT'}
+                </span>
+              </div>
               <div className="flex items-baseline gap-1">
                 <span className="font-serif-luxury text-2xl text-white">
-                  {cartTotal}
+                  {cartTotal.toFixed(2)}
                 </span>
                 <span className="text-xs text-neutral-300 font-semibold">{t('egp')}</span>
               </div>
+            </div>
+
+            {/* Pricing Policy Notice */}
+            <div className="py-1 px-2.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-neutral-400 text-center">
+              {language === 'ar' ? pricingPolicy.taxNotice_ar : pricingPolicy.taxNotice_en}
             </div>
 
             {/* Primary CTA Button: WhatsApp Order */}
             <button
               id="cart-checkout-whatsapp-btn"
               onClick={handleCheckout}
-              className="w-full py-4 px-6 rounded-2xl bg-white text-black hover:bg-neutral-200 active:scale-[0.99] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-white/10 focus:outline-none"
+              className="w-full py-3.5 px-6 rounded-2xl bg-white text-black hover:bg-neutral-200 active:scale-[0.99] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-white/10 focus:outline-none"
             >
               {/* WhatsApp stylized monochrome icon */}
               <Send className="w-4 h-4 stroke-[2.2]" />

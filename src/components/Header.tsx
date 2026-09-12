@@ -1,30 +1,53 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from './BrandLogo';
-import { ShoppingBag, Globe, Calendar } from 'lucide-react';
+import { ShoppingBag, Calendar } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 export const Header: React.FC = () => {
-  const { language, toggleLanguage, cartCount, setIsCartOpen, setIsReservationOpen, setActiveTab, t } = useApp();
+  const { language, setLanguage, cartCount, setIsCartOpen, setIsReservationOpen, setActiveTab, openAdmin, t } = useApp();
+  const logoTapCountRef = useRef(0);
+  const logoTapTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleBrandClick = () => {
+    haptic.tab();
+    setActiveTab('home');
+
+    // Discreet admin access: 5 quick taps on the logo opens admin portal
+    logoTapCountRef.current += 1;
+    if (logoTapTimerRef.current) clearTimeout(logoTapTimerRef.current);
+    logoTapTimerRef.current = setTimeout(() => {
+      logoTapCountRef.current = 0;
+    }, 2500);
+
+    if (logoTapCountRef.current >= 5) {
+      logoTapCountRef.current = 0;
+      openAdmin();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-md border-b border-white/10 px-4 py-3 select-none">
-      <div className="max-w-md mx-auto flex items-center justify-between">
+      <div className="max-w-md sm:max-w-xl mx-auto flex items-center justify-between gap-2">
         {/* Brand Logo & Tap to Home */}
         <button
           id="header-brand-btn"
-          onClick={() => setActiveTab('home')}
-          className="flex items-center text-left rtl:text-right focus:outline-none group"
+          onClick={handleBrandClick}
+          className="flex items-center text-left rtl:text-right focus:outline-none group shrink-0"
           aria-label="Bokharest Black Home"
         >
           <BrandLogo variant="header" />
         </button>
 
-        {/* Right Actions: Reservation, Language Switcher & Cart Button */}
-        <div className="flex items-center gap-2">
+        {/* Right Actions: Reservation, Discreet Language Toggle & Cart Button */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* Quick Book Table Button */}
           <button
             id="header-reservation-btn"
-            onClick={() => setIsReservationOpen(true)}
+            onClick={() => {
+              haptic.tab();
+              setIsReservationOpen(true);
+            }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 bg-neutral-950/80 text-xs font-semibold tracking-wider text-neutral-200 hover:text-white hover:border-white/50 transition-colors focus:outline-none min-h-[36px]"
             title={t('book_table')}
             aria-label="Book Table"
@@ -33,22 +56,62 @@ export const Header: React.FC = () => {
             <span className="hidden sm:inline">{t('book_table')}</span>
           </button>
 
-          {/* Language Switcher Button */}
-          <button
-            id="header-language-toggle-btn"
-            onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/20 bg-neutral-950/80 text-xs font-semibold tracking-wider text-neutral-300 hover:text-white hover:border-white/50 transition-colors focus:outline-none min-h-[36px]"
-            aria-label="Toggle language"
+          {/* Discreet Luxury Language Toggle */}
+          <div
+            id="header-language-toggle"
+            className="inline-flex items-center p-0.5 rounded-full border border-white/15 bg-neutral-950/80 backdrop-blur-md shadow-inner"
+            role="group"
+            aria-label="Language selector"
           >
-            <Globe className="w-3.5 h-3.5 text-neutral-400" />
-            <span>{language === 'ar' ? 'English' : 'عربي'}</span>
-          </button>
+            <button
+              type="button"
+              id="header-lang-ar"
+              onClick={() => {
+                if (language !== 'ar') {
+                  haptic.tab();
+                  setLanguage('ar');
+                }
+              }}
+              className={`px-2.5 py-1 text-[11px] font-medium tracking-wide rounded-full transition-all duration-200 focus:outline-none cursor-pointer ${
+                language === 'ar'
+                  ? 'bg-white text-black font-bold shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              aria-pressed={language === 'ar'}
+              title="التبديل إلى العربية"
+            >
+              عربي
+            </button>
+            <span className="w-px h-2.5 bg-white/10 mx-0.5" />
+            <button
+              type="button"
+              id="header-lang-en"
+              onClick={() => {
+                if (language !== 'en') {
+                  haptic.tab();
+                  setLanguage('en');
+                }
+              }}
+              className={`px-2.5 py-1 text-[11px] font-medium tracking-wider rounded-full transition-all duration-200 focus:outline-none cursor-pointer font-serif-luxury ${
+                language === 'en'
+                  ? 'bg-white text-black font-bold shadow-sm'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+              aria-pressed={language === 'en'}
+              title="Switch to English"
+            >
+              EN
+            </button>
+          </div>
 
           {/* Quick Cart Order Button */}
           <button
             id="header-cart-btn"
-            onClick={() => setIsCartOpen(true)}
-            className="relative p-2.5 rounded-full border border-white/20 bg-neutral-950/80 text-white hover:border-white/50 transition-colors focus:outline-none min-h-[40px] min-w-[40px] flex items-center justify-center"
+            onClick={() => {
+              haptic.tab();
+              setIsCartOpen(true);
+            }}
+            className="relative p-2.5 rounded-full border border-white/20 bg-neutral-950/80 text-white hover:border-white/50 transition-colors focus:outline-none min-h-[40px] min-w-[40px] flex items-center justify-center cursor-pointer"
             aria-label="Shopping Cart"
           >
             <ShoppingBag className="w-4 h-4 text-white" />

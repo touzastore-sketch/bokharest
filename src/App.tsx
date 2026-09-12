@@ -12,6 +12,8 @@ import { CartDrawer } from './components/CartDrawer';
 import { Reservations } from './components/Reservations';
 import { GalleryModal } from './components/GalleryModal';
 import { FloatingCartBar } from './components/FloatingCartBar';
+import { ImageUploadCenterModal } from './components/ImageUploadCenterModal';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 
 const AppContent: React.FC = () => {
   const {
@@ -25,13 +27,54 @@ const AppContent: React.FC = () => {
     setIsReservationOpen,
     isGalleryOpen,
     setIsGalleryOpen,
+    isImageUploadCenterOpen,
+    setIsImageUploadCenterOpen,
+    isAdminOpen,
+    closeAdmin,
   } = useApp();
   const [showSplash, setShowSplash] = useState(true);
+
+  // Standalone Admin Route detection (/admin or #/admin or ?view=admin)
+  const checkIsAdminRoute = () => {
+    if (typeof window === 'undefined') return false;
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    return (
+      path === '/admin' ||
+      path.startsWith('/admin/') ||
+      hash === '#admin' ||
+      hash === '#/admin' ||
+      hash.startsWith('#/admin') ||
+      search.includes('view=admin') ||
+      search.includes('page=admin') ||
+      search.includes('admin=true')
+    );
+  };
+
+  const [isAdminRoute, setIsAdminRoute] = useState(checkIsAdminRoute);
+
+  useEffect(() => {
+    const handleRouteCheck = () => {
+      setIsAdminRoute(checkIsAdminRoute());
+    };
+    window.addEventListener('popstate', handleRouteCheck);
+    window.addEventListener('hashchange', handleRouteCheck);
+    return () => {
+      window.removeEventListener('popstate', handleRouteCheck);
+      window.removeEventListener('hashchange', handleRouteCheck);
+    };
+  }, []);
 
   // Android back button / history handling
   useEffect(() => {
     const handlePopState = () => {
-      if (isGalleryOpen) {
+      if (isAdminOpen || isAdminRoute) {
+        closeAdmin();
+        setIsAdminRoute(false);
+      } else if (isImageUploadCenterOpen) {
+        setIsImageUploadCenterOpen(false);
+      } else if (isGalleryOpen) {
         setIsGalleryOpen(false);
       } else if (selectedItemForDetail) {
         setSelectedItemForDetail(null);
@@ -44,7 +87,19 @@ const AppContent: React.FC = () => {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [selectedItemForDetail, isCartOpen, isReservationOpen, isGalleryOpen, setSelectedItemForDetail, setIsCartOpen, setIsReservationOpen, setIsGalleryOpen]);
+  }, [isAdminOpen, isAdminRoute, closeAdmin, selectedItemForDetail, isCartOpen, isReservationOpen, isGalleryOpen, isImageUploadCenterOpen, setSelectedItemForDetail, setIsCartOpen, setIsReservationOpen, setIsGalleryOpen, setIsImageUploadCenterOpen]);
+
+  // If visiting /admin route or opened via app state, render standalone Admin Dashboard directly
+  if (isAdminOpen || isAdminRoute) {
+    return (
+      <AdminDashboard
+        onClose={() => {
+          closeAdmin();
+          setIsAdminRoute(false);
+        }}
+      />
+    );
+  }
 
   return (
     <div 
@@ -102,6 +157,12 @@ const AppContent: React.FC = () => {
 
       {/* Fullscreen Interactive Luxury Gallery Lightbox */}
       <GalleryModal />
+
+      {/* Firebase Storage Image Upload Center Modal */}
+      <ImageUploadCenterModal
+        isOpen={isImageUploadCenterOpen}
+        onClose={() => setIsImageUploadCenterOpen(false)}
+      />
 
       {/* Floating Quick Order Cart Pill (appears when items are added) */}
       <FloatingCartBar />

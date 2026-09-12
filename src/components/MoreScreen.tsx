@@ -8,7 +8,6 @@ import {
   Phone,
   MessageSquare,
   ExternalLink,
-  ShieldCheck,
   Heart,
   Clock,
   Calendar,
@@ -18,6 +17,7 @@ import {
   Check,
   ArrowLeftRight,
 } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 export const MoreScreen: React.FC = () => {
   const {
@@ -105,7 +105,12 @@ export const MoreScreen: React.FC = () => {
               type="button"
               role="radio"
               aria-checked={language === 'ar'}
-              onClick={() => setLanguage('ar')}
+              onClick={() => {
+                if (language !== 'ar') {
+                  haptic.toggle();
+                }
+                setLanguage('ar');
+              }}
               className={`py-3 px-3 rounded-xl flex items-center justify-between transition-all duration-200 focus:outline-none cursor-pointer ${
                 language === 'ar'
                   ? 'bg-white text-black font-bold shadow-lg shadow-white/10'
@@ -130,7 +135,12 @@ export const MoreScreen: React.FC = () => {
               type="button"
               role="radio"
               aria-checked={language === 'en'}
-              onClick={() => setLanguage('en')}
+              onClick={() => {
+                if (language !== 'en') {
+                  haptic.toggle();
+                }
+                setLanguage('en');
+              }}
               className={`py-3 px-3 rounded-xl flex items-center justify-between transition-all duration-200 focus:outline-none cursor-pointer ${
                 language === 'en'
                   ? 'bg-white text-black font-bold shadow-lg shadow-white/10'
@@ -154,7 +164,10 @@ export const MoreScreen: React.FC = () => {
           {/* Quick Toggle Button */}
           <button
             type="button"
-            onClick={toggleLanguage}
+            onClick={() => {
+              haptic.toggle();
+              toggleLanguage();
+            }}
             className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-[11px] font-medium transition-colors flex items-center justify-center gap-2 border border-white/5 focus:outline-none cursor-pointer"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 text-neutral-400" />
@@ -173,7 +186,10 @@ export const MoreScreen: React.FC = () => {
           {/* Photo Gallery shortcut */}
           <button
             id="more-gallery-btn"
-            onClick={() => openGallery(0)}
+            onClick={() => {
+              haptic.tab();
+              openGallery(0);
+            }}
             className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right focus:outline-none cursor-pointer"
           >
             <div className="flex items-center gap-3">
@@ -202,7 +218,10 @@ export const MoreScreen: React.FC = () => {
           {/* Table Reservations shortcut */}
           <button
             id="more-table-reservations-btn"
-            onClick={() => setIsReservationOpen(true)}
+            onClick={() => {
+              haptic.tab();
+              setIsReservationOpen(true);
+            }}
             className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right focus:outline-none cursor-pointer"
           >
             <div className="flex items-center gap-3">
@@ -231,6 +250,7 @@ export const MoreScreen: React.FC = () => {
           {/* Favorites shortcut */}
           <button
             onClick={() => {
+              haptic.tab();
               setActiveTab('menu');
             }}
             className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right focus:outline-none cursor-pointer"

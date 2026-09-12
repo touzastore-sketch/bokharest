@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronDown,
 } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 interface ReservationsProps {
   isOpen?: boolean;
@@ -176,10 +177,12 @@ export const Reservations: React.FC<ReservationsProps> = ({
   ];
 
   const handleGuestsChange = (delta: number) => {
+    haptic.stepper();
     setGuestsCount((prev) => Math.max(1, Math.min(30, prev + delta)));
   };
 
   const handleClose = () => {
+    haptic.tab();
     if (onClose) {
       onClose();
     }
@@ -189,6 +192,7 @@ export const Reservations: React.FC<ReservationsProps> = ({
 
   const handleCopy = () => {
     if (submittedResult?.message) {
+      haptic.toggle();
       navigator.clipboard.writeText(submittedResult.message);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -216,6 +220,9 @@ export const Reservations: React.FC<ReservationsProps> = ({
     }
 
     setValidationError(null);
+
+    // Trigger celebratory reservation haptic impulse
+    haptic.order();
 
     // Sync back to customer context
     setCustomerInfo((prev) => ({
@@ -289,8 +296,11 @@ export const Reservations: React.FC<ReservationsProps> = ({
         <div className="flex items-center gap-2">
           {/* Sub-tab switcher: New Reservation vs History */}
           <button
-            onClick={() => setActiveSubTab((prev) => (prev === 'new' ? 'history' : 'new'))}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-xs text-neutral-300 hover:text-white transition-colors focus:outline-none"
+            onClick={() => {
+              haptic.tab();
+              setActiveSubTab((prev) => (prev === 'new' ? 'history' : 'new'));
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-xs text-neutral-300 hover:text-white transition-colors focus:outline-none cursor-pointer"
             title={activeSubTab === 'new' ? t('reservation_history') : t('new_reservation')}
           >
             {activeSubTab === 'new' ? (
@@ -512,8 +522,11 @@ export const Reservations: React.FC<ReservationsProps> = ({
                 <button
                   type="button"
                   id="res-date-today"
-                  onClick={() => setSelectedDate(formatDateValue(today))}
-                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none ${
+                  onClick={() => {
+                    haptic.tab();
+                    setSelectedDate(formatDateValue(today));
+                  }}
+                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none cursor-pointer ${
                     selectedDate === formatDateValue(today)
                       ? 'bg-white text-black border-white shadow-lg'
                       : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -529,8 +542,11 @@ export const Reservations: React.FC<ReservationsProps> = ({
                 <button
                   type="button"
                   id="res-date-tomorrow"
-                  onClick={() => setSelectedDate(formatDateValue(tomorrow))}
-                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none ${
+                  onClick={() => {
+                    haptic.tab();
+                    setSelectedDate(formatDateValue(tomorrow));
+                  }}
+                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none cursor-pointer ${
                     selectedDate === formatDateValue(tomorrow)
                       ? 'bg-white text-black border-white shadow-lg'
                       : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -546,8 +562,11 @@ export const Reservations: React.FC<ReservationsProps> = ({
                 <button
                   type="button"
                   id="res-date-day-after"
-                  onClick={() => setSelectedDate(formatDateValue(dayAfterTomorrow))}
-                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none ${
+                  onClick={() => {
+                    haptic.tab();
+                    setSelectedDate(formatDateValue(dayAfterTomorrow));
+                  }}
+                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none cursor-pointer ${
                     selectedDate === formatDateValue(dayAfterTomorrow)
                       ? 'bg-white text-black border-white shadow-lg'
                       : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -650,9 +669,14 @@ export const Reservations: React.FC<ReservationsProps> = ({
                       <button
                         key={slot.id}
                         type="button"
-                        onClick={() => setSelectedTime(slot.id)}
+                        onClick={() => {
+                          if (selectedTime !== slot.id) {
+                            haptic.tab();
+                          }
+                          setSelectedTime(slot.id);
+                        }}
                         dir="ltr"
-                        className={`py-2 px-2 rounded-xl text-xs font-semibold font-mono border transition-all focus:outline-none flex items-center justify-center gap-1 ${
+                        className={`py-2 px-2 rounded-xl text-xs font-semibold font-mono border transition-all focus:outline-none flex items-center justify-center gap-1 cursor-pointer ${
                           isSelected
                             ? 'bg-white text-black border-white shadow-md font-bold scale-[1.02]'
                             : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -734,8 +758,13 @@ export const Reservations: React.FC<ReservationsProps> = ({
                   <button
                     key={num}
                     type="button"
-                    onClick={() => setGuestsCount(num)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all focus:outline-none ${
+                    onClick={() => {
+                      if (guestsCount !== num) {
+                        haptic.stepper();
+                      }
+                      setGuestsCount(num);
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all focus:outline-none cursor-pointer ${
                       guestsCount === num
                         ? 'bg-white text-black'
                         : 'bg-white/5 text-neutral-400 hover:text-white border border-white/10'
@@ -763,8 +792,13 @@ export const Reservations: React.FC<ReservationsProps> = ({
                     <button
                       key={opt.id}
                       type="button"
-                      onClick={() => setSeatingArea(opt.id)}
-                      className={`p-3 rounded-2xl border text-left rtl:text-right transition-all flex items-start gap-3 focus:outline-none ${
+                      onClick={() => {
+                        if (seatingArea !== opt.id) {
+                          haptic.toggle();
+                        }
+                        setSeatingArea(opt.id);
+                      }}
+                      className={`p-3 rounded-2xl border text-left rtl:text-right transition-all flex items-start gap-3 focus:outline-none cursor-pointer ${
                         isSelected
                           ? 'bg-[#1a1a1a] border-white shadow-md'
                           : 'bg-[#121212] border-white/10 hover:border-white/25'

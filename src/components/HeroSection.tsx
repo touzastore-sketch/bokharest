@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { BrandLogo } from './BrandLogo';
 import { ArrowRight, ArrowLeft, MessageSquare, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
+import { haptic } from '../utils/haptics';
 
 export const HeroSection: React.FC = () => {
   const { language, t, setActiveTab, setIsCartOpen, setIsReservationOpen } = useApp();
@@ -103,7 +104,10 @@ export const HeroSection: React.FC = () => {
         {/* Main CTA: View Menu */}
         <button
           id="hero-view-menu-btn"
-          onClick={() => setActiveTab('menu')}
+          onClick={() => {
+            haptic.tab();
+            setActiveTab('menu');
+          }}
           className="w-full py-3.5 px-6 rounded-2xl bg-white text-black font-bold text-sm tracking-widest uppercase hover:bg-neutral-200 transition-all duration-200 flex items-center justify-center gap-2 shadow-xl shadow-white/10 active:scale-[0.98] focus:outline-none cursor-pointer"
         >
           <span>{t('view_menu')}</span>
@@ -115,7 +119,10 @@ export const HeroSection: React.FC = () => {
           {/* Table Reservation Button */}
           <button
             id="hero-book-table-btn"
-            onClick={() => setIsReservationOpen(true)}
+            onClick={() => {
+              haptic.tab();
+              setIsReservationOpen(true);
+            }}
             className="w-full py-3 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.98] focus:outline-none backdrop-blur-sm cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5 text-neutral-200" />
@@ -126,6 +133,7 @@ export const HeroSection: React.FC = () => {
           <button
             id="hero-order-now-btn"
             onClick={() => {
+              haptic.tab();
               setActiveTab('menu');
               setIsCartOpen(true);
             }}

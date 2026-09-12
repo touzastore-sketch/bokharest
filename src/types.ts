@@ -4,6 +4,8 @@ export interface Category {
   id: string;
   name_ar: string;
   name_en: string;
+  note_ar?: string;
+  note_en?: string;
   iconName?: string;
   display_order?: number;
 }
@@ -23,6 +25,7 @@ export interface MenuItem {
   preparation_time?: string;
   badge_en?: string;
   badge_ar?: string;
+  type?: 'hot' | 'cold';
 }
 
 export interface CartItem {
@@ -35,6 +38,9 @@ export interface OrderRecord {
   id: string;
   customerName: string;
   phoneNumber: string;
+  tableNumber?: string;
+  address?: string;
+  type?: 'dine_in' | 'takeaway' | 'delivery';
   notes?: string;
   items: {
     name_ar: string;
@@ -45,6 +51,7 @@ export interface OrderRecord {
   total: number;
   date: string;
   language: Language;
+  status?: 'pending' | 'preparing' | 'completed' | 'cancelled';
   rating?: number;
   feedbackComment?: string;
 }
@@ -72,6 +79,7 @@ export interface ReservationRecord {
   specialRequests?: string;
   createdAt: string;
   language: Language;
+  status?: 'pending' | 'confirmed' | 'cancelled';
 }
 
 export interface ReservationData {
@@ -120,3 +128,60 @@ export interface GalleryImage {
   category_en: string;
   featured?: boolean;
 }
+
+export type AdvertisementActionType =
+  | 'whatsapp'
+  | 'external_url'
+  | 'internal_page'
+  | 'menu'
+  | 'reservation'
+  | 'cart'
+  | 'none';
+
+export interface AdvertisementHotspot {
+  id: string;
+  label?: string;
+  xPercent: number;      // left percentage [0..100]
+  yPercent: number;      // top percentage [0..100]
+  widthPercent: number;  // width percentage [0..100]
+  heightPercent: number; // height percentage [0..100]
+  action: AdvertisementActionType;
+  link?: string;
+  whatsappMessage?: { ar: string; en: string };
+}
+
+export interface AdvertisementItem {
+  id: string;
+  title_ar?: string;
+  title_en?: string;
+  subtitle_ar?: string;
+  subtitle_en?: string;
+  badge_ar?: string;
+  badge_en?: string;
+  badgeColor?: string;
+  image: string;
+  fallbackImage?: string;
+  aspectRatio?: number; // width / height, e.g. 3168 / 1344
+  action?: AdvertisementActionType;
+  actionType?: AdvertisementActionType;
+  actionLabel_ar?: string;
+  actionLabel_en?: string;
+  priority?: number;
+  link?: string;
+  targetId?: string;
+  whatsappMessage?: { ar: string; en: string };
+  hotspots?: AdvertisementHotspot[];
+  active?: boolean;
+}
+
+export interface UploadedImageRecord {
+  id: string;
+  name: string;
+  url: string;
+  storagePath?: string;
+  sizeBytes?: number;
+  folder?: 'menu' | 'ads' | 'gallery' | 'general';
+  createdAt: string;
+  contentType?: string;
+}
+

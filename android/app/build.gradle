@@ -1,0 +1,53 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.bokharest.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.bokharest.app"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Import the Firebase BoM (Bill of Materials) for automatic version alignment
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+
+    // Firebase Authentication
+    implementation 'com.google.firebase:firebase-auth'
+
+    // Cloud Firestore
+    implementation 'com.google.firebase:firebase-firestore'
+
+    // Firebase Analytics (Recommended when using Google Services)
+    implementation 'com.google.firebase:firebase-analytics'
+
+    // Standard AndroidX & Material Design libraries
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
+    implementation 'androidx.core:core-ktx:1.13.1'
+}
+
+// Apply Google Services Gradle plugin at the end of the file
+apply plugin: 'com.google.gms.google-services'

@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { MenuItemCard } from './MenuItemCard';
-import { Search, X, Heart, SlidersHorizontal } from 'lucide-react';
+import { Search, X, Heart, SlidersHorizontal, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
+import { PullToRefresh } from './PullToRefresh';
+import { motion, AnimatePresence } from 'motion/react';
+import { haptic } from '../utils/haptics';
 
 export const MenuScreen: React.FC = () => {
   const {
@@ -15,9 +18,22 @@ export const MenuScreen: React.FC = () => {
     language,
     t,
     favorites,
+    refreshMenu,
+    isMenuRefreshing,
+    pricingPolicy,
   } = useApp();
 
   const [onlyFavorites, setOnlyFavorites] = useState(false);
+  const [justRefreshed, setJustRefreshed] = useState(false);
+
+  const handleRefresh = async () => {
+    haptic.refresh();
+    await refreshMenu();
+    setJustRefreshed(true);
+    setTimeout(() => {
+      setJustRefreshed(false);
+    }, 2800);
+  };
 
   // Filtered menu items
   const filteredItems = useMemo(() => {
@@ -78,8 +94,11 @@ export const MenuScreen: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
           {/* Favorites Filter Chip */}
           <button
-            onClick={() => setOnlyFavorites(!onlyFavorites)}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none ${
+            onClick={() => {
+              haptic.favorite();
+              setOnlyFavorites(!onlyFavorites);
+            }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none cursor-pointer ${
               onlyFavorites
                 ? 'bg-white text-black border-white'
                 : 'bg-[#111111] text-neutral-400 border-white/15 hover:border-white/30'
@@ -97,10 +116,13 @@ export const MenuScreen: React.FC = () => {
           {/* "All" Category Pill */}
           <button
             onClick={() => {
+              if (selectedCategory !== 'all' || onlyFavorites) {
+                haptic.toggle();
+              }
               setSelectedCategory('all');
               setOnlyFavorites(false);
             }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none ${
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none cursor-pointer ${
               selectedCategory === 'all' && !onlyFavorites
                 ? 'bg-white text-black border-white'
                 : 'bg-[#111111] text-neutral-400 border-white/15 hover:border-white/30'
@@ -119,10 +141,13 @@ export const MenuScreen: React.FC = () => {
                 key={cat.id}
                 id={`cat-filter-${cat.id}`}
                 onClick={() => {
+                  if (selectedCategory !== cat.id || onlyFavorites) {
+                    haptic.toggle();
+                  }
                   setSelectedCategory(cat.id);
                   setOnlyFavorites(false);
                 }}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none ${
+                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none cursor-pointer ${
                   isSelected
                     ? 'bg-white text-black border-white'
                     : 'bg-[#111111] text-neutral-400 border-white/15 hover:border-white/30'
@@ -133,119 +158,213 @@ export const MenuScreen: React.FC = () => {
             );
           })}
         </div>
-      </div>
 
-      {/* Menu Items Container */}
-      <div className="mt-6 space-y-8">
-        {filteredItems.length === 0 ? (
-          /* Empty Search / Filter State */
-          <div className="py-20 text-center flex flex-col items-center justify-center">
-            <div className="w-16 h-16 rounded-full border border-white/15 flex items-center justify-center bg-white/5 mb-3">
-              {onlyFavorites ? (
-                <Heart className="w-6 h-6 text-neutral-400" />
-              ) : (
-                <Search className="w-6 h-6 text-neutral-400" />
-              )}
-            </div>
-            <h3 className="font-bold text-white text-base">
-              {onlyFavorites
-                ? language === 'ar'
-                  ? 'قائمة المفضلة فارغة حالياً'
-                  : 'Your Favorites list is empty'
+        {/* Subtle Live Status & Manual Refresh Bar */}
+        <div className="flex items-center justify-between text-[11px] text-neutral-400 pt-0.5 px-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className={`absolute inline-flex h-full w-full rounded-full ${isMenuRefreshing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 opacity-75'}`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${isMenuRefreshing ? 'bg-amber-400' : 'bg-emerald-500'}`} />
+            </span>
+            <span className="font-medium text-neutral-300">
+              {isMenuRefreshing
+                ? t('refreshing_menu')
                 : language === 'ar'
-                ? 'لم يتم العثور على أطباق'
-                : 'No menu items found'}
-            </h3>
-            <p className="text-xs text-neutral-400 mt-1 max-w-xs leading-relaxed">
-              {onlyFavorites
-                ? language === 'ar'
-                  ? 'اضغط على أيقونة القلب على أي طبق مميز في المنيو لإضافته لمفضلتك والرجوع إليه بسرعة'
-                  : 'Tap the heart icon on any dish to save it to your favorites for quick access.'
-                : language === 'ar'
-                ? 'جرب البحث بكلمات أخرى أو اختر قسماً مختلفاً'
-                : 'Try different search keywords or choose another category.'}
-            </p>
+                ? 'قائمة اليوم الفاخرة'
+                : "Today's Fine Dining Offerings"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-neutral-500 hidden sm:inline">
+              {language === 'ar' ? 'اسحب لأسفل للتحديث' : 'Pull down to refresh'}
+            </span>
             <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('all');
-                setOnlyFavorites(false);
-              }}
-              className="mt-4 px-4 py-2 rounded-full border border-white/20 text-xs font-semibold text-white hover:bg-white/10"
+              id="menu-pull-refresh-trigger"
+              onClick={handleRefresh}
+              disabled={isMenuRefreshing}
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/10 hover:border-white/25 text-neutral-300 hover:text-white transition-all focus:outline-none cursor-pointer"
+              title={t('refresh_now')}
+              aria-label={t('refresh_now')}
             >
-              {onlyFavorites
-                ? language === 'ar'
-                  ? 'تصفح كافة الأصناف'
-                  : 'Browse All Items'
-                : language === 'ar'
-                ? 'إعادة ضبط البحث'
-                : 'Reset Search'}
+              <RefreshCw className={`w-3 h-3 ${isMenuRefreshing ? 'animate-spin text-white' : 'text-neutral-400'}`} />
+              <span className="text-[11px] font-medium">{t('refresh_now')}</span>
             </button>
           </div>
-        ) : shouldGroup ? (
-          /* Grouped by Categories with Clear Premium Headings */
-          categories.map((category) => {
-            const itemsInCategory = menuItems.filter(
-              (i) => i.category_id === category.id && i.available
-            );
-            if (itemsInCategory.length === 0) return null;
-
-            const categoryName = language === 'ar' ? category.name_ar : category.name_en;
-
-            return (
-              <ScrollReveal key={category.id} yOffset={24} delay={0.04}>
-                <section className="space-y-4">
-                  {/* Section Header */}
-                  <div className="flex items-center gap-3 border-b border-white/10 pb-2">
-                    <h2 className="font-serif-luxury text-xl sm:text-2xl font-bold text-white tracking-wide">
-                      {categoryName}
-                    </h2>
-                    <div className="h-[1px] flex-1 bg-white/10" />
-                    <span className="text-xs text-neutral-500 font-medium">
-                      {itemsInCategory.length} {language === 'ar' ? 'أصناف' : 'items'}
-                    </span>
-                  </div>
-
-                  {/* Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {itemsInCategory.map((item) => (
-                      <MenuItemCard key={item.id} item={item} />
-                    ))}
-                  </div>
-                </section>
-              </ScrollReveal>
-            );
-          })
-        ) : (
-          /* Single Flat Grid for Selected Category or Active Search */
-          <ScrollReveal yOffset={20}>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                <h2 className="font-serif-luxury text-xl font-bold text-white">
-                  {onlyFavorites
-                    ? t('favorites')
-                    : selectedCategory === 'all'
-                    ? language === 'ar'
-                      ? 'نتائج البحث'
-                      : 'Search Results'
-                    : categories.find((c) => c.id === selectedCategory)?.[
-                        language === 'ar' ? 'name_ar' : 'name_en'
-                      ]}
-                </h2>
-                <span className="text-xs text-neutral-500">
-                  {filteredItems.length} {language === 'ar' ? 'أصناف' : 'items'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {filteredItems.map((item) => (
-                  <MenuItemCard key={item.id} item={item} />
-                ))}
-              </div>
-            </div>
-          </ScrollReveal>
-        )}
+        </div>
       </div>
+
+      {/* Pull-to-Refresh Wrapper */}
+      <PullToRefresh onRefresh={handleRefresh} isRefreshing={isMenuRefreshing}>
+        {/* Dynamic Visual Refresh Toast / Shimmer Confirmation */}
+        <AnimatePresence>
+          {justRefreshed && (
+            <motion.div
+              initial={{ opacity: 0, y: -12, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.98 }}
+              className="mt-4 mb-2 p-3 rounded-2xl bg-neutral-900/95 border border-white/25 backdrop-blur-md shadow-2xl flex items-center justify-between gap-3 text-xs"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shrink-0">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <p className="font-bold text-white tracking-wide">
+                    {language === 'ar'
+                      ? 'تم تحديث قائمة بوخارست بلاك الفاخرة'
+                      : 'Bokharest Black Menu Refreshed'}
+                  </p>
+                  <p className="text-[11px] text-neutral-400">
+                    {language === 'ar'
+                      ? 'معروض الآن أحدث أطباق وتشكيلات الشيف الطازجة'
+                      : "Presenting Chef's latest creations & seasonal selections"}
+                  </p>
+                </div>
+              </div>
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Menu Items Container */}
+        <div className={`mt-5 space-y-8 transition-all duration-300 ${isMenuRefreshing ? 'filter brightness-90' : ''}`}>
+          {/* Official Restaurant Tax & Pricing Notice */}
+          <div className="py-2.5 px-4 rounded-xl bg-[#111111] border border-white/10 flex items-center justify-between gap-3 text-xs text-neutral-400">
+            <span className="leading-relaxed">
+              {language === 'ar' ? pricingPolicy.taxNotice_ar : pricingPolicy.taxNotice_en}
+            </span>
+          </div>
+
+          {filteredItems.length === 0 ? (
+            /* Empty Search / Filter State */
+            <div className="py-20 text-center flex flex-col items-center justify-center">
+              <div className="w-16 h-16 rounded-full border border-white/15 flex items-center justify-center bg-white/5 mb-3">
+                {onlyFavorites ? (
+                  <Heart className="w-6 h-6 text-neutral-400" />
+                ) : (
+                  <Search className="w-6 h-6 text-neutral-400" />
+                )}
+              </div>
+              <h3 className="font-bold text-white text-base">
+                {onlyFavorites
+                  ? language === 'ar'
+                    ? 'قائمة المفضلة فارغة حالياً'
+                    : 'Your Favorites list is empty'
+                  : language === 'ar'
+                  ? 'لم يتم العثور على أطباق'
+                  : 'No menu items found'}
+              </h3>
+              <p className="text-xs text-neutral-400 mt-1 max-w-xs leading-relaxed">
+                {onlyFavorites
+                  ? language === 'ar'
+                    ? 'اضغط على أيقونة القلب على أي طبق مميز في المنيو لإضافته لمفضلتك والرجوع إليه بسرعة'
+                    : 'Tap the heart icon on any dish to save it to your favorites for quick access.'
+                  : language === 'ar'
+                  ? 'جرب البحث بكلمات أخرى أو اختر قسماً مختلفاً'
+                  : 'Try different search keywords or choose another category.'}
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                  setOnlyFavorites(false);
+                }}
+                className="mt-4 px-4 py-2 rounded-full border border-white/20 text-xs font-semibold text-white hover:bg-white/10"
+              >
+                {onlyFavorites
+                  ? language === 'ar'
+                    ? 'تصفح كافة الأصناف'
+                    : 'Browse All Items'
+                  : language === 'ar'
+                  ? 'إعادة ضبط البحث'
+                  : 'Reset Search'}
+              </button>
+            </div>
+          ) : shouldGroup ? (
+            /* Grouped by Categories with Clear Premium Headings and Notes */
+            categories.map((category) => {
+              const itemsInCategory = menuItems.filter(
+                (i) => i.category_id === category.id && i.available
+              );
+              if (itemsInCategory.length === 0) return null;
+
+              const categoryName = language === 'ar' ? category.name_ar : category.name_en;
+              const categoryNote = language === 'ar' ? category.note_ar : category.note_en;
+
+              return (
+                <ScrollReveal key={category.id} yOffset={24} delay={0.04}>
+                  <section className="space-y-4">
+                    {/* Section Header */}
+                    <div className="border-b border-white/10 pb-2.5">
+                      <div className="flex items-center gap-3">
+                        <h2 className="font-serif-luxury text-xl sm:text-2xl font-bold text-white tracking-wide">
+                          {categoryName}
+                        </h2>
+                        <div className="h-[1px] flex-1 bg-white/10" />
+                        <span className="text-xs text-neutral-500 font-medium">
+                          {itemsInCategory.length} {language === 'ar' ? 'أصناف' : 'items'}
+                        </span>
+                      </div>
+                      {categoryNote && (
+                        <p className="text-xs text-neutral-400 mt-1 font-light italic">
+                          ℹ️ {categoryNote}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {itemsInCategory.map((item) => (
+                        <MenuItemCard key={item.id} item={item} />
+                      ))}
+                    </div>
+                  </section>
+                </ScrollReveal>
+              );
+            })
+          ) : (
+            /* Single Flat Grid for Selected Category or Active Search */
+            <ScrollReveal yOffset={20}>
+              <div className="space-y-4">
+                {(() => {
+                  const activeCat = categories.find((c) => c.id === selectedCategory);
+                  const catNote = activeCat ? (language === 'ar' ? activeCat.note_ar : activeCat.note_en) : null;
+                  return (
+                    <div className="border-b border-white/10 pb-2.5">
+                      <div className="flex items-center justify-between">
+                        <h2 className="font-serif-luxury text-xl font-bold text-white">
+                          {onlyFavorites
+                            ? t('favorites')
+                            : selectedCategory === 'all'
+                            ? language === 'ar'
+                              ? 'نتائج البحث'
+                              : 'Search Results'
+                            : activeCat?.[language === 'ar' ? 'name_ar' : 'name_en']}
+                        </h2>
+                        <span className="text-xs text-neutral-500">
+                          {filteredItems.length} {language === 'ar' ? 'أصناف' : 'items'}
+                        </span>
+                      </div>
+                      {catNote && (
+                        <p className="text-xs text-neutral-400 mt-1 font-light italic">
+                          ℹ️ {catNote}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {filteredItems.map((item) => (
+                    <MenuItemCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          )}
+        </div>
+      </PullToRefresh>
     </div>
   );
 };

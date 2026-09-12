@@ -1,6 +1,26 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, MenuItem, CartItem, OrderRecord, ReservationRecord, ReservationData, RestaurantInfo, Language, CustomerFeedback } from '../types';
-import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO } from '../data/restaurantData';
+import { Category, MenuItem, CartItem, OrderRecord, ReservationRecord, ReservationData, RestaurantInfo, Language, CustomerFeedback, AdvertisementItem } from '../types';
+import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO, MENU_PRICING_POLICY, UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { INITIAL_ADVERTISEMENTS } from '../data/ads';
+import {
+  seedFirestoreIfEmpty,
+  subscribeToCategories,
+  subscribeToMenuItems,
+  subscribeToAdvertisements,
+  subscribeToRestaurantInfo,
+  saveMenuItemToFirestore,
+  deleteMenuItemFromFirestore,
+  saveCategoryToFirestore,
+  deleteCategoryFromFirestore,
+  saveAdvertisementToFirestore,
+  deleteAdvertisementFromFirestore,
+  toggleAdvertisementActiveInFirestore,
+  saveRestaurantInfoToFirestore,
+  saveOrderToFirestore,
+  saveReservationToFirestore,
+  saveFeedbackToFirestore,
+} from '../services/firestoreDataService';
+import { autoSyncAllAppAssetsToFirebase } from '../services/firebaseStorageService';
 
 interface CustomerInfo {
   name: string;
@@ -21,11 +41,16 @@ interface AppContextType {
   // Menu data & management (centralized for Google Play & Admin readiness)
   categories: Category[];
   menuItems: MenuItem[];
+  saveMenuItem: (item: MenuItem) => Promise<boolean>;
+  deleteMenuItem: (itemId: string) => Promise<boolean>;
   updateMenuItem: (item: MenuItem) => void;
   updateItemPrice: (id: string, newPrice: number) => void;
   toggleItemAvailability: (id: string) => void;
   toggleItemFeatured: (id: string) => void;
   resetMenuToDefaults: () => void;
+  refreshMenu: () => Promise<{ success: boolean; count: number }>;
+  isMenuRefreshing: boolean;
+  lastMenuRefreshed: Date;
   
   // Active selection & details modal
   selectedCategory: string;
@@ -42,7 +67,11 @@ interface AppContextType {
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
   cartCount: number;
+  cartSubtotal: number;
+  cartServiceCharge: number;
+  cartVat: number;
   cartTotal: number;
+  pricingPolicy: typeof MENU_PRICING_POLICY;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   
@@ -91,16 +120,40 @@ interface AppContextType {
   
   // Restaurant info
   restaurantInfo: RestaurantInfo;
+  saveRestaurantInfo: (info: RestaurantInfo) => Promise<boolean>;
+  updateRestaurantSettings: (info: RestaurantInfo) => Promise<boolean>;
+
+  // Advertisements & Banners Management
+  advertisements: AdvertisementItem[];
+  saveAdvertisement: (ad: AdvertisementItem) => Promise<boolean>;
+  deleteAdvertisement: (adId: string) => Promise<boolean>;
+  toggleAdvertisementActive: (adId: string, active: boolean) => Promise<boolean>;
+
+  // Categories mutation
+  saveCategory: (category: Category) => Promise<boolean>;
+  deleteCategory: (categoryId: string) => Promise<boolean>;
+
+  // Firebase Cloud Storage & Image Upload Center
+  isImageUploadCenterOpen: boolean;
+  setIsImageUploadCenterOpen: (open: boolean) => void;
+  openImageUploadCenter: () => void;
+  firestoreSyncStatus: 'idle' | 'syncing' | 'synced' | 'error';
+
+  // Standalone Cloud Admin Dashboard
+  isAdminOpen: boolean;
+  setIsAdminOpen: (open: boolean) => void;
+  openAdmin: () => void;
+  closeAdmin: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   LANG: 'bokharest_lang',
-  MENU_ITEMS: 'bokharest_menu_items_v1',
-  CATEGORIES: 'bokharest_categories_v1',
-  CART: 'bokharest_cart',
-  FAVORITES: 'bokharest_favorites',
+  MENU_ITEMS: 'bokharest_menu_items_v3',
+  CATEGORIES: 'bokharest_categories_v2',
+  CART: 'bokharest_cart_v2',
+  FAVORITES: 'bokharest_favorites_v2',
   ORDERS: 'bokharest_orders',
   CUSTOMER: 'bokharest_customer_info',
   RESERVATIONS: 'bokharest_reservations',
@@ -123,6 +176,68 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isGalleryOpen, setIsGalleryOpen] = useState<boolean>(false);
   const [selectedGalleryIndex, setSelectedGalleryIndex] = useState<number>(0);
 
+  // Firebase Cloud Storage Image Upload Center State
+  const [isImageUploadCenterOpen, setIsImageUploadCenterOpen] = useState<boolean>(false);
+  const [firestoreSyncStatus, setFirestoreSyncStatus] = useState<'idle' | 'syncing' | 'synced' | 'error'>('idle');
+
+  // Standalone Cloud Admin Portal State
+  const checkInitialAdminState = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    return (
+      path === '/admin' ||
+      path.startsWith('/admin/') ||
+      hash === '#admin' ||
+      hash === '#/admin' ||
+      hash.startsWith('#/admin') ||
+      search.includes('view=admin') ||
+      search.includes('page=admin') ||
+      search.includes('admin=true')
+    );
+  };
+
+  const [isAdminOpen, setIsAdminOpen] = useState<boolean>(checkInitialAdminState);
+
+  const openAdmin = () => {
+    setIsAdminOpen(true);
+    try {
+      window.location.hash = '#/admin';
+    } catch {
+      // safe fallback for restricted iframes
+    }
+  };
+
+  const closeAdmin = () => {
+    setIsAdminOpen(false);
+    try {
+      if (window.location.hash.includes('admin')) {
+        window.location.hash = '';
+      }
+    } catch {
+      // safe fallback
+    }
+  };
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      if (checkInitialAdminState()) {
+        setIsAdminOpen(true);
+      }
+    };
+    window.addEventListener('hashchange', handleUrlChange);
+    window.addEventListener('popstate', handleUrlChange);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlChange);
+      window.removeEventListener('popstate', handleUrlChange);
+    };
+  }, []);
+
+  const openImageUploadCenter = () => {
+    setIsImageUploadCenterOpen(true);
+  };
+
   const openGallery = (initialIndex: number = 0) => {
     setSelectedGalleryIndex(initialIndex);
     setIsGalleryOpen(true);
@@ -136,6 +251,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     document.documentElement.lang = language;
     document.documentElement.setAttribute('lang', language);
     localStorage.setItem(STORAGE_KEYS.LANG, language);
+
+    // Clear legacy cache keys to ensure exclusively fresh menu data
+    try {
+      localStorage.removeItem('bokharest_menu_items_v1');
+      localStorage.removeItem('bokharest_categories_v1');
+      localStorage.removeItem('bokharest_cart');
+      localStorage.removeItem('bokharest_favorites');
+    } catch {
+      // ignore
+    }
   }, [language]);
 
   const setLanguage = (lang: Language) => {
@@ -179,25 +304,184 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
-  // Save menu items when changed
+  // Advertisements state with local caching
+  const [advertisements, setAdvertisements] = useState<AdvertisementItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('bokharest_advertisements_v2');
+      return saved ? JSON.parse(saved) : INITIAL_ADVERTISEMENTS;
+    } catch {
+      return INITIAL_ADVERTISEMENTS;
+    }
+  });
+
+  // Restaurant Info state with local caching
+  const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo>(() => {
+    try {
+      const saved = localStorage.getItem('bokharest_restaurant_info_v1');
+      return saved ? JSON.parse(saved) : OFFICIAL_RESTAURANT_INFO;
+    } catch {
+      return OFFICIAL_RESTAURANT_INFO;
+    }
+  });
+
+  // Cloud Firestore Initialization and Real-time Synchronization
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(menuItems));
+    setFirestoreSyncStatus('syncing');
+    
+    // 1. Seed or verify collections in Cloud Firestore
+    seedFirestoreIfEmpty()
+      .then((res) => {
+        if (res.seeded) {
+          console.log(`[AppContext] Cloud Firestore populated with ${res.menuItemsCount} dishes & ${res.categoriesCount} categories`);
+        }
+        setFirestoreSyncStatus('synced');
+      })
+      .catch((err) => {
+        console.warn('[AppContext] Firestore seeding notice:', err);
+        setFirestoreSyncStatus('error');
+      });
+
+    // 2. Real-time subscription to Categories in Cloud Firestore
+    const unsubCategories = subscribeToCategories((remoteCategories) => {
+      if (remoteCategories && remoteCategories.length > 0) {
+        setCategories(remoteCategories);
+        try {
+          localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(remoteCategories));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    // 3. Real-time subscription to Menu Items in Cloud Firestore
+    const unsubMenuItems = subscribeToMenuItems((remoteItems) => {
+      if (remoteItems && remoteItems.length > 0) {
+        setMenuItems(remoteItems);
+        try {
+          localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(remoteItems));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    // 4. Real-time subscription to Advertisements in Cloud Firestore
+    const unsubAdvertisements = subscribeToAdvertisements((remoteAds) => {
+      if (remoteAds && remoteAds.length > 0) {
+        setAdvertisements(remoteAds);
+        try {
+          localStorage.setItem('bokharest_advertisements_v2', JSON.stringify(remoteAds));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    // 5. Real-time subscription to Restaurant Info in Cloud Firestore
+    const unsubRestaurantInfo = subscribeToRestaurantInfo((remoteInfo) => {
+      if (remoteInfo) {
+        setRestaurantInfo(remoteInfo);
+        try {
+          localStorage.setItem('bokharest_restaurant_info_v1', JSON.stringify(remoteInfo));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    return () => {
+      unsubCategories();
+      unsubMenuItems();
+      unsubAdvertisements();
+      unsubRestaurantInfo();
+    };
+  }, []);
+
+  // Auto-sync all app assets to Firebase Storage & Firestore with Auto F/Q
+  useEffect(() => {
+    autoSyncAllAppAssetsToFirebase()
+      .then((res) => {
+        if (res.menuItemUrl) {
+          console.log('[AppContext] ✅ كافة صور التطبيق تمت مزامنتها تلقائياً على Firebase بنظام Auto F/Q');
+        }
+      })
+      .catch((err) => {
+        console.warn('[AppContext] Auto assets sync note:', err);
+      });
+  }, []);
+
+  // Save menu items locally when changed
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(menuItems));
+    } catch {
+      // ignore
+    }
   }, [menuItems]);
+
+  const saveMenuItem = async (item: MenuItem): Promise<boolean> => {
+    setMenuItems((prev) => {
+      const exists = prev.some((i) => i.id === item.id);
+      const updated = exists ? prev.map((i) => (i.id === item.id ? item : i)) : [item, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    const ok = await saveMenuItemToFirestore(item);
+    return ok;
+  };
+
+  const deleteMenuItem = async (itemId: string): Promise<boolean> => {
+    setMenuItems((prev) => {
+      const updated = prev.filter((i) => i.id !== itemId);
+      try {
+        localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    const ok = await deleteMenuItemFromFirestore(itemId);
+    return ok;
+  };
+
+  const updateRestaurantSettings = async (info: RestaurantInfo): Promise<boolean> => {
+    setRestaurantInfo(info);
+    try {
+      localStorage.setItem('bokharest_restaurant_info_v1', JSON.stringify(info));
+    } catch {}
+    return await saveRestaurantInfoToFirestore(info);
+  };
 
   const updateMenuItem = (updatedItem: MenuItem) => {
     setMenuItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
+    saveMenuItemToFirestore(updatedItem);
   };
 
   const updateItemPrice = (id: string, newPrice: number) => {
-    setMenuItems(prev => prev.map(item => item.id === id ? { ...item, price: newPrice } : item));
+    setMenuItems(prev => {
+      const next = prev.map(item => item.id === id ? { ...item, price: newPrice } : item);
+      const target = next.find(item => item.id === id);
+      if (target) saveMenuItemToFirestore(target);
+      return next;
+    });
   };
 
   const toggleItemAvailability = (id: string) => {
-    setMenuItems(prev => prev.map(item => item.id === id ? { ...item, available: !item.available } : item));
+    setMenuItems(prev => {
+      const next = prev.map(item => item.id === id ? { ...item, available: !item.available } : item);
+      const target = next.find(item => item.id === id);
+      if (target) saveMenuItemToFirestore(target);
+      return next;
+    });
   };
 
   const toggleItemFeatured = (id: string) => {
-    setMenuItems(prev => prev.map(item => item.id === id ? { ...item, featured: !item.featured } : item));
+    setMenuItems(prev => {
+      const next = prev.map(item => item.id === id ? { ...item, featured: !item.featured } : item);
+      const target = next.find(item => item.id === id);
+      if (target) saveMenuItemToFirestore(target);
+      return next;
+    });
   };
 
   const resetMenuToDefaults = () => {
@@ -207,11 +491,78 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
   };
 
+  const saveAdvertisement = async (ad: AdvertisementItem): Promise<boolean> => {
+    setAdvertisements((prev) => {
+      const exists = prev.some((a) => a.id === ad.id);
+      return exists ? prev.map((a) => (a.id === ad.id ? ad : a)) : [ad, ...prev];
+    });
+    return await saveAdvertisementToFirestore(ad);
+  };
+
+  const deleteAdvertisement = async (adId: string): Promise<boolean> => {
+    setAdvertisements((prev) => prev.filter((a) => a.id !== adId));
+    return await deleteAdvertisementFromFirestore(adId);
+  };
+
+  const toggleAdvertisementActive = async (adId: string, active: boolean): Promise<boolean> => {
+    setAdvertisements((prev) => prev.map((a) => (a.id === adId ? { ...a, active } : a)));
+    return await toggleAdvertisementActiveInFirestore(adId, active);
+  };
+
+  const saveCategory = async (cat: Category): Promise<boolean> => {
+    setCategories((prev) => {
+      const exists = prev.some((c) => c.id === cat.id);
+      return exists ? prev.map((c) => (c.id === cat.id ? cat : c)) : [...prev, cat];
+    });
+    return await saveCategoryToFirestore(cat);
+  };
+
+  const deleteCategory = async (catId: string): Promise<boolean> => {
+    setCategories((prev) => prev.filter((c) => c.id !== catId));
+    return await deleteCategoryFromFirestore(catId);
+  };
+
+  const saveRestaurantInfo = async (info: RestaurantInfo): Promise<boolean> => {
+    setRestaurantInfo(info);
+    return await saveRestaurantInfoToFirestore(info);
+  };
+
+  // Pull-to-refresh & synchronization for fine-dining menu
+  const [lastMenuRefreshed, setLastMenuRefreshed] = useState<Date>(new Date());
+  const [isMenuRefreshing, setIsMenuRefreshing] = useState<boolean>(false);
+
+  const refreshMenu = async (): Promise<{ success: boolean; count: number }> => {
+    setIsMenuRefreshing(true);
+    // Simulate real-time fine dining catalog sync and cache re-evaluation
+    await new Promise(resolve => setTimeout(resolve, 850));
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.MENU_ITEMS);
+      if (saved) {
+        setMenuItems(JSON.parse(saved));
+      } else {
+        setMenuItems(INITIAL_MENU_ITEMS);
+      }
+    } catch {
+      setMenuItems(INITIAL_MENU_ITEMS);
+    }
+    setLastMenuRefreshed(new Date());
+    setIsMenuRefreshing(false);
+    return { success: true, count: menuItems.length };
+  };
+
   // Cart state
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.CART);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: CartItem[] = JSON.parse(saved);
+      return parsed.map((ci) => ({
+        ...ci,
+        item: {
+          ...ci.item,
+          image: UNIFIED_MENU_ITEM_IMAGE,
+        },
+      }));
     } catch {
       return [];
     }
@@ -258,9 +609,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return cart.reduce((acc, curr) => acc + curr.quantity, 0);
   }, [cart]);
 
-  const cartTotal = useMemo(() => {
-    return cart.reduce((acc, curr) => acc + curr.item.price * curr.quantity, 0);
+  // Subtotal (sum of menu item prices)
+  const cartSubtotal = useMemo(() => {
+    const raw = cart.reduce((acc, curr) => acc + curr.item.price * curr.quantity, 0);
+    return Math.round(raw * 100) / 100;
   }, [cart]);
+
+  // 12% Service charge
+  const cartServiceCharge = useMemo(() => {
+    return Math.round(cartSubtotal * MENU_PRICING_POLICY.serviceChargeRate * 100) / 100;
+  }, [cartSubtotal]);
+
+  // 14% VAT applied on the bill (Subtotal + Service Charge)
+  const cartVat = useMemo(() => {
+    return Math.round((cartSubtotal + cartServiceCharge) * MENU_PRICING_POLICY.vatRate * 100) / 100;
+  }, [cartSubtotal, cartServiceCharge]);
+
+  // Final Total including service charge and VAT
+  const cartTotal = useMemo(() => {
+    return Math.round((cartSubtotal + cartServiceCharge + cartVat) * 100) / 100;
+  }, [cartSubtotal, cartServiceCharge, cartVat]);
 
   // Customer Info
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(() => {
@@ -340,6 +708,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setFeedbacks(prev => [newFeedback, ...prev]);
+    saveFeedbackToFirestore(newFeedback);
 
     // If linked to an order, update rating on that order in order history
     if (data.orderId) {
@@ -396,7 +765,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (language === 'ar') {
       const itemsList = cart.map(
-        ci => `${ci.quantity} × ${ci.item.name_ar} — ${ci.item.price * ci.quantity} ج.م`
+        ci => `• ${ci.quantity} × ${ci.item.name_ar} — ${(ci.item.price * ci.quantity).toFixed(2)} ج.م${ci.notes ? ` (${ci.notes})` : ''}`
       ).join('\n');
 
       return `*بوخارست بلاك | BOKHAREST BLACK — طلب جديد* 🍽️
@@ -404,17 +773,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 *اسم العميل:* ${customerInfo.name || 'عميل كريم'}
 *رقم الهاتف:* \u202A${customerInfo.phone || 'غير محدد'}\u202C
 
-*تفاصيل الطلب:*
+*تفاصيل الأصناف المطلوبة:*
 ${itemsList}
 
 -----------------------------------
-*الإجمالي:* ${cartTotal} ج.م
-${customerInfo.notes ? `*ملاحظات خاصة:* ${customerInfo.notes}` : ''}
------------------------------------
+*المجموع الفرعي:* ${cartSubtotal.toFixed(2)} ج.م
+*رسوم الخدمة (12%):* ${cartServiceCharge.toFixed(2)} ج.م
+*ضريبة القيمة المضافة (14%):* ${cartVat.toFixed(2)} ج.م
+*الإجمالي النهائي المطلوب:* ${cartTotal.toFixed(2)} ج.م
+${customerInfo.notes ? `\n*ملاحظات خاصة:* ${customerInfo.notes}\n` : ''}-----------------------------------
+_تخضع جميع الأسعار لـ 12% رسوم خدمة و14% ضريبة قيمة مضافة_
 _تم إرسال الطلب عبر تطبيق بوخارست بلاك الرسمي_`;
     } else {
       const itemsList = cart.map(
-        ci => `${ci.quantity} × ${ci.item.name_en} — ${ci.item.price * ci.quantity} EGP`
+        ci => `• ${ci.quantity} × ${ci.item.name_en} — ${(ci.item.price * ci.quantity).toFixed(2)} EGP${ci.notes ? ` (${ci.notes})` : ''}`
       ).join('\n');
 
       return `*BOKHAREST BLACK — NEW ORDER* 🍽️
@@ -422,13 +794,16 @@ _تم إرسال الطلب عبر تطبيق بوخارست بلاك الرسم
 *Customer:* ${customerInfo.name || 'Valued Guest'}
 *Phone:* ${customerInfo.phone || 'Not provided'}
 
-*Order Details:*
+*Order Items:*
 ${itemsList}
 
 -----------------------------------
-*Total:* ${cartTotal} EGP
-${customerInfo.notes ? `*Notes:* ${customerInfo.notes}` : ''}
------------------------------------
+*Subtotal:* ${cartSubtotal.toFixed(2)} EGP
+*Service Charge (12%):* ${cartServiceCharge.toFixed(2)} EGP
+*VAT (14%):* ${cartVat.toFixed(2)} EGP
+*Final Total:* ${cartTotal.toFixed(2)} EGP
+${customerInfo.notes ? `\n*Special Notes:* ${customerInfo.notes}\n` : ''}-----------------------------------
+_All prices are subject to 12% Service Charge & 14% VAT_
 _Sent via official Bokharest Black mobile application_`;
     }
   };
@@ -458,6 +833,7 @@ _Sent via official Bokharest Black mobile application_`;
     };
 
     setOrderHistory(prev => [newRecord, ...prev]);
+    saveOrderToFirestore(newRecord);
 
     return {
       success: true,
@@ -532,6 +908,7 @@ _Sent via official Bokharest Black mobile application_`;
     };
 
     setReservationHistory(prev => [newRecord, ...prev]);
+    saveReservationToFirestore(newRecord);
 
     return {
       success: true,
@@ -626,6 +1003,15 @@ _Sent via official Bokharest Black mobile application_`;
     contact_details_reservation: { ar: 'بيانات الضيف للتواصل', en: 'Guest Contact Information' },
     copy_reservation: { ar: 'نسخ تفاصيل الحجز', en: 'Copy Reservation Text' },
     new_reservation: { ar: 'حجز جديد', en: 'New Reservation' },
+
+    // Pull to refresh translations
+    pull_to_refresh: { ar: 'اسحب لأسفل لتحديث قائمة الطعام...', en: 'Pull down to refresh menu...' },
+    release_to_refresh: { ar: 'أفلت لتحديث القائمة الآن', en: 'Release to refresh menu now' },
+    refreshing_menu: { ar: 'جاري تحديث أحدث أطباق بوخارست بلاك...', en: 'Updating latest fine-dining offerings...' },
+    menu_refreshed: { ar: 'تم تحديث القائمة بأحدث الإبداعات ✨', en: 'Menu updated with latest offerings ✨' },
+    menu_up_to_date: { ar: 'القائمة محدثة بالكامل', en: 'Menu is up to date' },
+    refresh_now: { ar: 'تحديث القائمة', en: 'Refresh Menu' },
+    last_updated: { ar: 'آخر تحديث: للتو', en: 'Updated: Just now' },
   };
 
   const t = (key: string): string => {
@@ -643,11 +1029,16 @@ _Sent via official Bokharest Black mobile application_`;
         setActiveTab,
         categories,
         menuItems,
+        saveMenuItem,
+        deleteMenuItem,
         updateMenuItem,
         updateItemPrice,
         toggleItemAvailability,
         toggleItemFeatured,
         resetMenuToDefaults,
+        refreshMenu,
+        isMenuRefreshing,
+        lastMenuRefreshed,
         selectedCategory,
         setSelectedCategory,
         searchQuery,
@@ -660,13 +1051,23 @@ _Sent via official Bokharest Black mobile application_`;
         removeFromCart,
         clearCart,
         cartCount,
+        cartSubtotal,
+        cartServiceCharge,
+        cartVat,
         cartTotal,
+        pricingPolicy: MENU_PRICING_POLICY,
         isCartOpen,
         setIsCartOpen,
         customerInfo,
         setCustomerInfo,
         generateWhatsAppOrderMessage,
         sendWhatsAppOrder,
+        isFeedbackModalOpen,
+        setIsFeedbackModalOpen,
+        activeFeedbackOrder,
+        setActiveFeedbackOrder,
+        feedbacks,
+        submitFeedback,
         isReservationOpen,
         setIsReservationOpen,
         reservationHistory,
@@ -681,7 +1082,23 @@ _Sent via official Bokharest Black mobile application_`;
         favorites,
         toggleFavorite,
         isFavorite,
-        restaurantInfo: OFFICIAL_RESTAURANT_INFO,
+        restaurantInfo,
+        saveRestaurantInfo,
+        updateRestaurantSettings,
+        advertisements,
+        saveAdvertisement,
+        deleteAdvertisement,
+        toggleAdvertisementActive,
+        saveCategory,
+        deleteCategory,
+        isImageUploadCenterOpen,
+        setIsImageUploadCenterOpen,
+        openImageUploadCenter,
+        firestoreSyncStatus,
+        isAdminOpen,
+        setIsAdminOpen,
+        openAdmin,
+        closeAdmin,
       }}
     >
       {children}

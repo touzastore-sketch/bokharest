@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Pizza, Utensils, Coffee, Wine, Cake, Salad, Sandwich, Flame } from 'lucide-react';
+import { Pizza, Utensils, Salad, Sandwich, Flame, Fish, Soup } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 export const PopularCategories: React.FC = () => {
   const { categories, menuItems, language, t, setSelectedCategory, setActiveTab } = useApp();
@@ -9,26 +10,33 @@ export const PopularCategories: React.FC = () => {
     switch (id) {
       case 'salads':
         return Salad;
-      case 'pastas':
+      case 'tagines':
+        return Soup;
+      case 'beef_veal':
+        return Flame;
+      case 'fajita':
+        return Flame;
+      case 'pasta':
         return Utensils;
-      case 'pizzas':
-        return Pizza;
+      case 'lebanese_appetizers':
+        return Utensils;
       case 'sandwiches':
         return Sandwich;
-      case 'platters':
+      case 'chicken':
+        return Utensils;
+      case 'pizza':
+        return Pizza;
+      case 'seafood':
+        return Fish;
+      case 'bbq':
         return Flame;
-      case 'desserts':
-        return Cake;
-      case 'hot_drinks':
-        return Coffee;
-      case 'cold_drinks':
-        return Wine;
       default:
         return Utensils;
     }
   };
 
   const handleSelectCategory = (catId: string) => {
+    haptic.tab();
     setSelectedCategory(catId);
     setActiveTab('menu');
   };
@@ -44,8 +52,8 @@ export const PopularCategories: React.FC = () => {
         </h2>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {categories.slice(0, 8).map((cat) => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {categories.map((cat) => {
           const Icon = getCategoryIcon(cat.id);
           const name = language === 'ar' ? cat.name_ar : cat.name_en;
           const itemCount = menuItems.filter(i => i.category_id === cat.id).length;

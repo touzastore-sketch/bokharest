@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Home, UtensilsCrossed, ReceiptText, MoreHorizontal } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 interface NavItem {
   id: 'home' | 'menu' | 'orders' | 'more';
@@ -33,7 +34,12 @@ export const BottomNavigation: React.FC = () => {
             <button
               key={item.id}
               id={`nav-tab-${item.id}`}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                if (activeTab !== item.id) {
+                  haptic.tab();
+                }
+                setActiveTab(item.id);
+              }}
               className={`relative flex-1 flex flex-col items-center justify-center h-full py-1 transition-all duration-200 focus:outline-none ${
                 isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
               }`}

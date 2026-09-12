@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useApp } from '../context/AppContext';
 import { ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 export const FloatingCartBar: React.FC = () => {
   const { cartCount, cartTotal, isCartOpen, setIsCartOpen, language } = useApp();
@@ -24,7 +25,10 @@ export const FloatingCartBar: React.FC = () => {
             transition={{ type: 'spring', stiffness: 380, damping: 26 }}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => setIsCartOpen(true)}
+            onClick={() => {
+              haptic.tab();
+              setIsCartOpen(true);
+            }}
             className="pointer-events-auto bg-[#101010]/95 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white rounded-full py-2 ps-3.5 pe-2 flex items-center justify-between gap-3 shadow-[0_12px_32px_rgba(0,0,0,0.85),0_0_20px_rgba(255,255,255,0.08)] cursor-pointer w-full max-w-sm transition-colors group"
           >
             {/* Left / Info Cluster */}

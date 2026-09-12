@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { X, Heart, Plus, Minus, Check, Clock, Flame } from 'lucide-react';
+import { haptic } from '../utils/haptics';
 
 export const ItemDetailModal: React.FC = () => {
   const { selectedItemForDetail, setSelectedItemForDetail, language, t, addToCart, isFavorite, toggleFavorite } = useApp();
@@ -21,6 +23,7 @@ export const ItemDetailModal: React.FC = () => {
   };
 
   const handleAddToCart = () => {
+    haptic.add();
     addToCart(item, quantity, notes);
     setAdded(true);
     setTimeout(() => {
@@ -31,7 +34,7 @@ export const ItemDetailModal: React.FC = () => {
 
   const imageSrc = !imgError && item.image
     ? item.image
-    : 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80';
+    : UNIFIED_MENU_ITEM_IMAGE;
 
   const totalPrice = item.price * quantity;
 
@@ -66,7 +69,10 @@ export const ItemDetailModal: React.FC = () => {
             </button>
 
             <button
-              onClick={() => toggleFavorite(item.id)}
+              onClick={() => {
+                haptic.favorite();
+                toggleFavorite(item.id);
+              }}
               aria-label="Toggle favorite"
               className="p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-colors focus:outline-none"
             >
@@ -78,12 +84,19 @@ export const ItemDetailModal: React.FC = () => {
             </button>
           </div>
 
-          {/* Badge */}
-          {item.badge_en && (
-            <div className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 px-3 py-1 rounded-full bg-white text-black text-xs font-bold uppercase tracking-wider shadow-lg">
-              {language === 'ar' ? item.badge_ar : item.badge_en}
-            </div>
-          )}
+          {/* Badges */}
+          <div className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 flex items-center gap-2">
+            {item.badge_en && (
+              <div className="px-3 py-1 rounded-full bg-white text-black text-xs font-bold uppercase tracking-wider shadow-lg">
+                {language === 'ar' ? item.badge_ar : item.badge_en}
+              </div>
+            )}
+            {item.type && (
+              <div className="px-3 py-1 rounded-full bg-black/80 backdrop-blur-md border border-white/20 text-white text-xs font-medium tracking-wide shadow-lg">
+                {item.type === 'hot' ? (language === 'ar' ? '🔥 ساخن' : '🔥 Hot') : (language === 'ar' ? '❄️ بارد' : '❄️ Cold')}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Content Body */}
@@ -155,7 +168,10 @@ export const ItemDetailModal: React.FC = () => {
             </span>
             <div className="flex items-center gap-4 bg-neutral-900 border border-white/20 rounded-full px-3 py-1.5">
               <button
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                onClick={() => {
+                  haptic.stepper();
+                  setQuantity(Math.max(1, quantity - 1));
+                }}
                 aria-label="Decrease quantity"
                 className="w-7 h-7 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none"
               >
@@ -165,7 +181,10 @@ export const ItemDetailModal: React.FC = () => {
                 {quantity}
               </span>
               <button
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => {
+                  haptic.stepper();
+                  setQuantity(quantity + 1);
+                }}
                 aria-label="Increase quantity"
                 className="w-7 h-7 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none"
               >

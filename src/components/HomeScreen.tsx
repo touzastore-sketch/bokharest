@@ -1,6 +1,6 @@
 import React from 'react';
 import { HeroSection } from './HeroSection';
-import { ChefsSelection } from './ChefsSelection';
+import { AdvertisementSlider } from './AdvertisementSlider';
 import { PopularCategories } from './PopularCategories';
 import { GallerySection } from './GallerySection';
 import { TableReservationSection, OrderBannerSection, AboutSection, LocationSection, SocialMediaSection, Footer } from './HomeSections';
@@ -13,14 +13,14 @@ export const HomeScreen: React.FC = () => {
       <HeroSection />
 
       <div className="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto space-y-6">
+        {/* Dynamic Multi-Ad Carousel / Slider */}
+        <ScrollReveal yOffset={20} delay={0.04}>
+          <AdvertisementSlider />
+        </ScrollReveal>
+
         {/* Table Reservation VIP Banner */}
         <ScrollReveal yOffset={24} delay={0.05}>
           <TableReservationSection />
-        </ScrollReveal>
-
-        {/* 4. Featured Items: Chef's Selection */}
-        <ScrollReveal yOffset={28} delay={0.08}>
-          <ChefsSelection />
         </ScrollReveal>
 
         {/* 5. Popular Categories */}
