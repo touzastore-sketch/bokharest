@@ -74,7 +74,6 @@ type AdminTab =
   | 'reservations'
   | 'ads'
   | 'categories'
-  | 'feedback'
   | 'settings';
 
 interface AdminDashboardProps {
@@ -199,8 +198,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
   // Login handler
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Default PIN: 2026
-    if (pinInput === '2026' || pinInput === 'admin') {
+    if (pinInput === 'bokharest!!@') {
       setIsAuthenticated(true);
       localStorage.setItem('bb_admin_auth', 'true');
       setPinError(false);
@@ -372,7 +370,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   type="password"
                   value={pinInput}
                   onChange={(e) => setPinInput(e.target.value)}
-                  placeholder="الرمز الافتراضي: 2026"
+                  placeholder="أدخل رمز المرور"
                   className={`w-full bg-black/70 border ${
                     pinError ? 'border-rose-500' : 'border-white/20 focus:border-amber-500'
                   } rounded-xl px-4 py-3 text-sm text-center tracking-widest font-mono text-white focus:outline-none transition-all`}
@@ -382,7 +380,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </div>
               {pinError && (
                 <p className="text-rose-400 text-xs mt-1 text-center">
-                  رمز المرور غير صحيح! (الرمز الافتراضي: 2026)
+                  رمز المرور غير صحيح! يرجى المحاولة مرة أخرى
                 </p>
               )}
             </div>
@@ -404,8 +402,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               <ExternalLink className="w-3.5 h-3.5" />
               العودة لتطبيق العملاء
             </button>
-            <span className="font-mono text-[10px] text-amber-400/80">
-              PIN: 2026
+            <span className="font-mono text-[10px] text-neutral-500">
+              Bokharest Black Cloud
             </span>
           </div>
         </div>
@@ -514,7 +512,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               badge: advertisements.length,
             },
             { id: 'categories', label: 'إدارة الأقسام', icon: Layers, badge: categories.length },
-            { id: 'feedback', label: 'تقييمات العملاء', icon: Star, badge: liveFeedbacks.length },
             { id: 'settings', label: 'معلومات المطعم', icon: Settings },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -1623,86 +1620,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           )}
 
           {/* ==========================================
-              TAB 7: CUSTOMER FEEDBACK & REVIEWS
-          ========================================== */}
-          {activeTab === 'feedback' && (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#111111] p-4 rounded-2xl border border-white/10">
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                    <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                    تقييمات وآراء العملاء ({liveFeedbacks.length})
-                  </h2>
-                  <p className="text-xs text-neutral-400">
-                    متابعة تجربة العملاء وملاحظاتهم المرسلة من خلال التطبيق
-                  </p>
-                </div>
-              </div>
-
-              {liveFeedbacks.length === 0 ? (
-                <div className="py-16 text-center text-neutral-400 space-y-2 bg-[#111111] rounded-2xl border border-white/5">
-                  <Star className="w-10 h-10 mx-auto text-neutral-600" />
-                  <p className="text-sm font-medium">لا توجد تقييمات واردة حتى الآن</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {liveFeedbacks.map((fb) => (
-                    <div
-                      key={fb.id}
-                      className="bg-[#111111] border border-white/10 rounded-2xl p-4 space-y-2.5"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="text-sm font-bold text-white">
-                            {fb.customerName || 'عميل'}
-                          </h4>
-                          {fb.phoneNumber && (
-                            <span className="text-[11px] text-neutral-400 font-mono">
-                              {fb.phoneNumber}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {[1, 2, 3, 4, 5].map((s) => (
-                            <Star
-                              key={s}
-                              className={`w-3.5 h-3.5 ${
-                                s <= fb.rating
-                                  ? 'text-amber-400 fill-amber-400'
-                                  : 'text-neutral-700'
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-
-                      {fb.comment && (
-                        <p className="text-xs text-neutral-200 bg-black/40 p-2.5 rounded-xl border border-white/5">
-                          "{fb.comment}"
-                        </p>
-                      )}
-
-                      {fb.tags && fb.tags.length > 0 && (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          {fb.tags.map((t, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20"
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ==========================================
-              TAB 8: RESTAURANT SETTINGS & INFO
+              TAB 7: RESTAURANT SETTINGS & INFO
           ========================================== */}
           {activeTab === 'settings' && (
             <div className="space-y-4">

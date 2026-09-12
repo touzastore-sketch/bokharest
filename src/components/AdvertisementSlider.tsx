@@ -104,6 +104,17 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
       e.stopPropagation();
     }
 
+    // If a direct URL/link is provided, navigate directly to it
+    if (link && (link.startsWith('http://') || link.startsWith('https://') || link.startsWith('wa.me'))) {
+      const targetUrl = link.startsWith('wa.me') ? `https://${link}` : link;
+      try {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      } catch {
+        window.location.href = targetUrl;
+      }
+      return;
+    }
+
     if (!action || action === 'none') return;
 
     if (action === 'whatsapp') {
@@ -123,6 +134,15 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
       } else if (link === 'menu' || link === 'home' || link === 'gallery' || link === 'orders' || link === 'more') {
         setActiveTab(link as any);
       }
+    } else if (action === 'menu') {
+      haptic.tab();
+      setActiveTab('menu');
+    } else if (action === 'reservation') {
+      haptic.tab();
+      setIsReservationOpen(true);
+    } else if (action === 'cart') {
+      haptic.tab();
+      setIsCartOpen(true);
     }
   };
 
@@ -259,13 +279,13 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                   key={ad.id || `ad-${idx}`}
                   className="relative w-full h-full shrink-0 flex items-center justify-center bg-black overflow-hidden"
                   onClick={() => {
-                    // If no specific hotspots, clicking whole slide triggers ad action
+                    // If no specific hotspots, clicking whole slide triggers ad action or link
                     if (!hasHotspots) {
-                      handleAction(ad.action, ad.link, ad.whatsappMessage);
+                      handleAction(ad.actionType || ad.action, ad.link, ad.whatsappMessage);
                     }
                   }}
                   style={{
-                    cursor: !hasHotspots && ad.action && ad.action !== 'none' ? 'pointer' : 'default'
+                    cursor: !hasHotspots && (ad.link || (ad.action && ad.action !== 'none') || (ad.actionType && ad.actionType !== 'none')) ? 'pointer' : 'default'
                   }}
                 >
                   {/* High Quality Ad Image */}

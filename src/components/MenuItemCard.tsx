@@ -56,11 +56,21 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   const description = language === 'ar' ? item.description_ar : item.description_en;
   const badge = language === 'ar' ? item.badge_ar : item.badge_en;
 
+  const isAvailable = item.available !== false;
+
   return (
     <div
       id={`menu-item-${item.id}`}
-      onClick={() => setSelectedItemForDetail(item)}
-      className="group relative bg-[#0e0e0e] border border-white/10 rounded-2xl overflow-hidden hover:border-white/30 transition-all duration-300 flex flex-col justify-between cursor-pointer select-none active:scale-[0.99]"
+      onClick={() => {
+        if (isAvailable) {
+          setSelectedItemForDetail(item);
+        }
+      }}
+      className={`group relative bg-[#0e0e0e] border rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between select-none ${
+        isAvailable
+          ? 'border-white/10 hover:border-white/30 cursor-pointer active:scale-[0.99]'
+          : 'border-white/5 opacity-65 cursor-not-allowed filter grayscale-[30%]'
+      }`}
     >
       {/* Image Container with 16:10 aspect ratio */}
       <div className="relative w-full aspect-[16/10] bg-neutral-900 overflow-hidden">
@@ -70,24 +80,38 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setImgError(true)}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+          className={`w-full h-full object-cover transition-transform duration-500 ease-out ${
+            isAvailable ? 'group-hover:scale-105' : 'filter brightness-75'
+          }`}
         />
+
+        {/* Unavailable Banner Overlay */}
+        {!isAvailable && (
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center z-10">
+            <span className="px-3.5 py-1.5 rounded-full bg-rose-950/80 border border-rose-500/50 text-rose-300 text-xs font-bold tracking-wide shadow-xl flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              {language === 'ar' ? 'غير متوفر حالياً' : 'Currently Unavailable'}
+            </span>
+          </div>
+        )}
 
         {/* Subtle Dark Gradient Overlay for Contrast */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
         {/* Favorite Button */}
-        <button
-          onClick={handleFavorite}
-          aria-label="Toggle favorite"
-          className="absolute top-2.5 right-2.5 rtl:right-auto rtl:left-2.5 p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-black/80 transition-colors focus:outline-none z-10"
-        >
-          <Heart
-            className={`w-4 h-4 transition-colors ${
-              isFav ? 'fill-white text-white' : 'text-neutral-400 group-hover:text-white'
-            }`}
-          />
-        </button>
+        {isAvailable && (
+          <button
+            onClick={handleFavorite}
+            aria-label="Toggle favorite"
+            className="absolute top-2.5 right-2.5 rtl:right-auto rtl:left-2.5 p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-black/80 transition-colors focus:outline-none z-10"
+          >
+            <Heart
+              className={`w-4 h-4 transition-colors ${
+                isFav ? 'fill-white text-white' : 'text-neutral-400 group-hover:text-white'
+              }`}
+            />
+          </button>
+        )}
 
         {/* Badges (Chef's choice, Signature, Hot/Cold) */}
         <div className="absolute top-2.5 left-2.5 rtl:left-auto rtl:right-2.5 flex items-center gap-1.5">
@@ -138,14 +162,18 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
             {item.preparation_time || (language === 'ar' ? 'تحضير طازج' : 'Freshly made')}
           </span>
 
-          {quantityInCart === 0 ? (
+          {!isAvailable ? (
+            <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-neutral-900 border border-white/10 text-neutral-500 cursor-not-allowed">
+              {language === 'ar' ? 'غير متاح' : 'Unavailable'}
+            </span>
+          ) : quantityInCart === 0 ? (
             <button
               id={`add-btn-${item.id}`}
               onClick={handleAdd}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 focus:outline-none min-h-[34px] ${
                 justAdded
                   ? 'bg-white text-black'
-                  : 'bg-white/10 hover:bg-white hover:text-black text-white border border-white/20'
+                  : 'bg-white/10 hover:bg-white hover:text-black text-white border border-white/20 cursor-pointer'
               }`}
             >
               {justAdded ? (
@@ -165,7 +193,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
               <button
                 onClick={handleDecrement}
                 aria-label="Decrease quantity"
-                className="w-6 h-6 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none"
+                className="w-6 h-6 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
               >
                 <Minus className="w-3 h-3" />
               </button>
@@ -175,7 +203,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
               <button
                 onClick={handleIncrement}
                 aria-label="Increase quantity"
-                className="w-6 h-6 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none"
+                className="w-6 h-6 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
               >
                 <Plus className="w-3 h-3" />
               </button>

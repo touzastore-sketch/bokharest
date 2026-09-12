@@ -77,6 +77,7 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
       image: 'https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop',
       active: true,
       priority: (advertisements.length || 0) + 1,
+      link: '',
       actionType: 'menu',
       actionLabel_ar: 'اطلب الآن',
       actionLabel_en: 'Order Now',
@@ -145,6 +146,7 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
       image: formData.image || '',
       active: formData.active ?? true,
       priority: Number(formData.priority) || 1,
+      link: formData.link ? formData.link.trim() : undefined,
       actionType: formData.actionType || 'menu',
       actionLabel_ar: formData.actionLabel_ar || 'اطلب الآن',
       actionLabel_en: formData.actionLabel_en || 'Order Now',
@@ -509,6 +511,28 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+
+              {/* Optional Link Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-neutral-300 text-xs font-semibold">
+                    رابط الإعلان (اختياري)
+                  </label>
+                  <span className="text-[10px] text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                    اختياري — يمكنك تركه فارغاً
+                  </span>
+                </div>
+                <input
+                  type="url"
+                  value={formData.link || ''}
+                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                  placeholder="https://example.com أو wa.me/... (اختياري حسب رغبتك)"
+                  className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white text-xs font-mono focus:border-amber-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-neutral-500">
+                  إذا تركت هذا الحقل فارغاً، سيعمل الإعلان بناءً على وجهة النقر المحددة بالأسفل (مثل فتح المنيو أو الحجز).
+                </p>
               </div>
 
               {/* Action Type & Label */}

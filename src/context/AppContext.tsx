@@ -573,6 +573,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [cart]);
 
   const addToCart = (item: MenuItem, quantity: number = 1, notes: string = '') => {
+    if (item.available === false) {
+      return;
+    }
     setCart(prev => {
       const existingIndex = prev.findIndex(ci => ci.item.id === item.id);
       if (existingIndex > -1) {
