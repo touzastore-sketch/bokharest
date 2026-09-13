@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // إعدادات Firebase المشتقة من ملف google-services.json المرفق (Project ID: bo5arestblack)
@@ -15,8 +15,18 @@ export const firebaseConfig = {
 // تهيئة تطبيق Firebase
 export const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// تهيئة Cloud Firestore
-export const firestoreDb = getFirestore(firebaseApp);
+// تهيئة Cloud Firestore مع إعدادات متقدمة تمنع تعليق الاتصال وتدعم التبديل السلس للشبكة
+let firestoreInstance;
+try {
+  firestoreInstance = initializeFirestore(firebaseApp, {
+    experimentalAutoDetectLongPolling: true,
+    ignoreUndefinedProperties: true,
+  });
+} catch {
+  firestoreInstance = getFirestore(firebaseApp);
+}
+
+export const firestoreDb = firestoreInstance;
 
 // تهيئة Firebase Storage لرفع الصور
 export const firebaseStorage = getStorage(firebaseApp);
