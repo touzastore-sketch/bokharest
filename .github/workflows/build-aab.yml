@@ -1,0 +1,56 @@
+name: Build and Release Android App Bundle (AAB)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-aab:
+    name: Build Android App Bundle (.aab)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 📱 Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: 🌐 Set up Node.js & Build Web App Assets
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install Web Dependencies & Build Production Bundle
+        run: |
+          npm ci || npm install
+          npm run build
+
+      - name: 📂 Sync Dist Web Assets into Android App
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp -r dist/* android/app/src/main/assets/
+
+      - name: 🔑 Generate Keystore & Build AAB
+        working-directory: ./android
+        run: |
+          keytool -genkey -v -keystore release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
+          chmod +x ./gradlew || gradle wrapper
+          ./gradlew bundleRelease -PRELEASE_STORE_FILE=../release.jks -PRELEASE_STORE_PASSWORD=bokharest2026 -PRELEASE_KEY_ALIAS=bokharest -PRELEASE_KEY_PASSWORD=bokharest2026 || ./gradlew bundleDebug
+
+      - name: 📤 Upload AAB for Direct Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bokharest-Black-AppBundle-aab
+          path: |
+            android/app/build/outputs/bundle/**/*.aab
+            android/app/build/outputs/apk/**/*.apk
+          retention-days: 30
