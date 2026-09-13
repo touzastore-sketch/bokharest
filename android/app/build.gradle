@@ -24,9 +24,9 @@ android {
             }
             if (store.exists()) {
                 storeFile store
-                storePassword "bokharest2026"
-                keyAlias "bokharest"
-                keyPassword "bokharest2026"
+                storePassword (project.findProperty('RELEASE_STORE_PASSWORD') ?: "bokharest2026")
+                keyAlias (project.findProperty('RELEASE_KEY_ALIAS') ?: "bokharest")
+                keyPassword (project.findProperty('RELEASE_KEY_PASSWORD') ?: "bokharest2026")
             }
         }
     }
