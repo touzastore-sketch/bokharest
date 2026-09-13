@@ -43,11 +43,30 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: 🔑 Generate Keystore & Build Release AAB
-        working-directory: ./android
+      - name: 🔑 Prepare Keystore (Automatic or from GitHub Secrets)
+        working-directory: ./android/app
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          keytool -genkey -v -keystore release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
-          gradle bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD=bokharest2026 -PRELEASE_KEY_ALIAS=bokharest -PRELEASE_KEY_PASSWORD=bokharest2026
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using Keystore from GitHub Secrets..."
+            echo "$KEYSTORE_BASE64" | base64 -d > release.jks
+          else
+            echo "Generating Fresh Release Keystore..."
+            keytool -genkey -v -keystore release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
+          fi
+
+      - name: 🔨 Build Release AAB & APK
+        working-directory: ./android
+        env:
+          STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD || 'bokharest2026' }}
+          KEY_AL: ${{ secrets.KEY_ALIAS || 'bokharest' }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD || 'bokharest2026' }}
+        run: |
+          gradle bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD="$STORE_PASS" -PRELEASE_KEY_ALIAS="$KEY_AL" -PRELEASE_KEY_PASSWORD="$KEY_PASS" --no-daemon --stacktrace
 
       - name: 📤 Upload AAB for Direct Download
         uses: actions/upload-artifact@v4
