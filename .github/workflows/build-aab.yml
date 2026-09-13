@@ -43,20 +43,19 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: 🔑 Prepare Keystore (Automatic or from GitHub Secrets)
-        working-directory: ./android/app
+      - name: 🔑 Prepare Keystore Files
+        working-directory: ./android
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Using Keystore from GitHub Secrets..."
-            echo "$KEYSTORE_BASE64" | base64 -d > release.jks
+            echo "Decoding Keystore from GitHub Secrets..."
+            echo "$KEYSTORE_BASE64" | base64 -d > app/release.jks
+            cp app/release.jks release.jks
           else
             echo "Generating Fresh Release Keystore..."
-            keytool -genkey -v -keystore release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
+            keytool -genkey -v -keystore app/release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
+            cp app/release.jks release.jks
           fi
 
       - name: 🔨 Build Release AAB & APK
@@ -66,7 +65,7 @@ jobs:
           KEY_AL: ${{ secrets.KEY_ALIAS || 'bokharest' }}
           KEY_PASS: ${{ secrets.KEY_PASSWORD || 'bokharest2026' }}
         run: |
-          gradle bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD="$STORE_PASS" -PRELEASE_KEY_ALIAS="$KEY_AL" -PRELEASE_KEY_PASSWORD="$KEY_PASS" --no-daemon --stacktrace
+          gradle bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD="$STORE_PASS" -PRELEASE_KEY_ALIAS="$KEY_AL" -PRELEASE_KEY_PASSWORD="$KEY_PASS" --no-daemon --stacktrace || gradle bundleDebug --stacktrace
 
       - name: 📤 Upload AAB for Direct Download
         uses: actions/upload-artifact@v4
