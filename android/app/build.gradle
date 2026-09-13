@@ -19,17 +19,15 @@ android {
 
     signingConfigs {
         release {
-            if (project.hasProperty('RELEASE_STORE_FILE')) {
-                def keystoreFile = file(RELEASE_STORE_FILE)
-                if (!keystoreFile.exists()) {
-                    keystoreFile = file("app/${RELEASE_STORE_FILE}")
-                }
-                if (keystoreFile.exists()) {
-                    storeFile keystoreFile
-                    storePassword RELEASE_STORE_PASSWORD
-                    keyAlias RELEASE_KEY_ALIAS
-                    keyPassword RELEASE_KEY_PASSWORD
-                }
+            def store = file('release.jks')
+            if (!store.exists()) {
+                store = file('app/release.jks')
+            }
+            if (store.exists()) {
+                storeFile store
+                storePassword "bokharest2026"
+                keyAlias "bokharest"
+                keyPassword "bokharest2026"
             }
         }
     }
@@ -38,9 +36,10 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            if (signingConfigs.release.storeFile != null) {
-                signingConfig signingConfigs.release
-            }
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.release
         }
     }
 

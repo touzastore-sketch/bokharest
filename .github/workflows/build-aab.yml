@@ -40,29 +40,17 @@ jobs:
 
       - name: 🔑 Prepare Keystore Files
         working-directory: ./android
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Decoding Keystore from GitHub Secrets..."
-            echo "$KEYSTORE_BASE64" | base64 -d > app/release.jks
-            cp app/release.jks release.jks
-          else
-            echo "Generating Fresh Release Keystore..."
-            keytool -genkey -v -keystore app/release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
-            cp app/release.jks release.jks
-          fi
+          echo "Generating Clean Release Keystore..."
+          keytool -genkey -v -keystore app/release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
+          cp app/release.jks release.jks
 
-      - name: 🐘 Build Release AAB with Gradle Wrapper
+      - name: 🐘 Build Release AAB
         working-directory: ./android
-        env:
-          STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD || 'bokharest2026' }}
-          KEY_AL: ${{ secrets.KEY_ALIAS || 'bokharest' }}
-          KEY_PASS: ${{ secrets.KEY_PASSWORD || 'bokharest2026' }}
         run: |
-          chmod +x ./gradlew || gradle wrapper --gradle-version 8.9
+          gradle wrapper --gradle-version 8.9 --distribution-type bin
           chmod +x ./gradlew
-          ./gradlew bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD="$STORE_PASS" -PRELEASE_KEY_ALIAS="$KEY_AL" -PRELEASE_KEY_PASSWORD="$KEY_PASS" --no-daemon --stacktrace
+          ./gradlew bundleRelease --stacktrace
 
       - name: 📤 Upload AAB for Direct Download
         uses: actions/upload-artifact@v4
