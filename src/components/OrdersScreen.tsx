@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ShoppingBag, Clock, CheckCircle2, RotateCcw, ArrowRight, ArrowLeft, Send, Calendar, Users, Plus, Check } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle2, RotateCcw, ArrowRight, ArrowLeft, Send, Calendar, Users, Plus, Check, Trash2 } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
 
 export const OrdersScreen: React.FC = () => {
@@ -8,7 +8,11 @@ export const OrdersScreen: React.FC = () => {
     cart,
     cartTotal,
     orderHistory,
+    deleteOrder,
+    clearAllOrders,
     reservationHistory,
+    deleteReservation,
+    clearAllReservations,
     language,
     t,
     setIsCartOpen,
@@ -32,6 +36,30 @@ export const OrdersScreen: React.FC = () => {
       }
     });
     setIsCartOpen(true);
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الطلب من سجلك؟' : 'Are you sure you want to delete this order from history?')) {
+      deleteOrder(orderId);
+    }
+  };
+
+  const handleDeleteReservation = (resId: string) => {
+    if (confirm(language === 'ar' ? 'هل أنت متأكد من حذف هذا الحجز من سجلك؟' : 'Are you sure you want to delete this reservation?')) {
+      deleteReservation(resId);
+    }
+  };
+
+  const handleClearOrders = () => {
+    if (confirm(language === 'ar' ? 'هل تريد مسح سجل كافة الطلبات؟' : 'Clear all order history?')) {
+      clearAllOrders();
+    }
+  };
+
+  const handleClearReservations = () => {
+    if (confirm(language === 'ar' ? 'هل تريد مسح سجل كافة حجوزات الطاولات؟' : 'Clear all reservations history?')) {
+      clearAllReservations();
+    }
   };
 
   return (
@@ -104,17 +132,36 @@ export const OrdersScreen: React.FC = () => {
         <ScrollReveal yOffset={20}>
           <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-white/10 pb-2">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
-              {t('reservation_history')}
-            </h2>
-            <button
-              id="orders-book-table-btn"
-              onClick={() => setIsReservationOpen(true)}
-              className="flex items-center gap-1 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 rounded-full transition-colors"
-            >
-              <Plus className="w-3 h-3" />
-              <span>{t('book_table')}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
+                {t('reservation_history')}
+              </h2>
+              {reservationHistory.length > 0 && (
+                <span className="text-[10px] bg-white/10 text-neutral-300 px-2 py-0.5 rounded-full font-mono">
+                  {reservationHistory.length}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {reservationHistory.length > 0 && (
+                <button
+                  onClick={handleClearReservations}
+                  className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-rose-400 transition-colors px-2 py-1 rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                  title={language === 'ar' ? 'مسح الكل' : 'Clear all'}
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>{language === 'ar' ? 'مسح الكل' : 'Clear'}</span>
+                </button>
+              )}
+              <button
+                id="orders-book-table-btn"
+                onClick={() => setIsReservationOpen(true)}
+                className="flex items-center gap-1 text-xs font-bold text-white bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 rounded-full transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                <span>{t('book_table')}</span>
+              </button>
+            </div>
           </div>
 
           {reservationHistory.length === 0 ? (
@@ -199,6 +246,17 @@ export const OrdersScreen: React.FC = () => {
                       <span className="text-neutral-300 italic">{res.specialRequests}</span>
                     </div>
                   )}
+
+                  <div className="pt-2 border-t border-white/5 flex items-center justify-end">
+                    <button
+                      onClick={() => handleDeleteReservation(res.id)}
+                      className="px-2.5 py-1 text-[11px] text-neutral-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                      title={language === 'ar' ? 'حذف الحجز' : 'Delete reservation'}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>{language === 'ar' ? 'حذف الحجز' : 'Delete'}</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -255,12 +313,26 @@ export const OrdersScreen: React.FC = () => {
           <ScrollReveal yOffset={20} delay={0.08}>
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
-                  {language === 'ar' ? 'سجل الطلبات المرسلة' : 'Sent Orders History'}
-                </h2>
-                <span className="text-xs text-neutral-500">
-                  {orderHistory.length} {language === 'ar' ? 'طلبات' : 'orders'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
+                    {language === 'ar' ? 'سجل الطلبات المرسلة' : 'Sent Orders History'}
+                  </h2>
+                  {orderHistory.length > 0 && (
+                    <span className="text-[10px] bg-white/10 text-neutral-300 px-2 py-0.5 rounded-full font-mono">
+                      {orderHistory.length}
+                    </span>
+                  )}
+                </div>
+                {orderHistory.length > 0 && (
+                  <button
+                    onClick={handleClearOrders}
+                    className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-rose-400 transition-colors px-2 py-1 rounded-lg hover:bg-rose-500/10 cursor-pointer"
+                    title={language === 'ar' ? 'مسح كافة الطلبات' : 'Clear all orders'}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                    <span>{language === 'ar' ? 'مسح الكل' : 'Clear'}</span>
+                  </button>
+                )}
               </div>
 
             {orderHistory.length === 0 ? (
@@ -330,13 +402,22 @@ export const OrdersScreen: React.FC = () => {
                           <span className="text-[11px] text-neutral-400">{t('egp')}</span>
                         </div>
 
-                        <button
-                          onClick={() => handleRepeatOrder(order)}
-                          className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white hover:text-black text-white text-xs font-semibold flex items-center gap-1.5 transition-colors focus:outline-none"
-                        >
-                          <RotateCcw className="w-3 h-3" />
-                          <span>{language === 'ar' ? 'إعادة الطلب' : 'Reorder'}</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                            title={language === 'ar' ? 'حذف من السجل' : 'Delete from history'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleRepeatOrder(order)}
+                            className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white hover:text-black text-white text-xs font-semibold flex items-center gap-1.5 transition-colors focus:outline-none cursor-pointer"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            <span>{language === 'ar' ? 'إعادة الطلب' : 'Reorder'}</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

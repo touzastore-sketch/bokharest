@@ -17,7 +17,9 @@ import {
   toggleAdvertisementActiveInFirestore,
   saveRestaurantInfoToFirestore,
   saveOrderToFirestore,
+  deleteOrderFromFirestore,
   saveReservationToFirestore,
+  deleteReservationFromFirestore,
   saveFeedbackToFirestore,
 } from '../services/firestoreDataService';
 import { autoSyncAllAppAssetsToFirebase } from '../services/firebaseStorageService';
@@ -100,6 +102,8 @@ interface AppContextType {
   isReservationOpen: boolean;
   setIsReservationOpen: (open: boolean) => void;
   reservationHistory: ReservationRecord[];
+  deleteReservation: (reservationId: string) => Promise<boolean>;
+  clearAllReservations: () => void;
   generateWhatsAppReservationMessage: (data: ReservationData) => string;
   sendWhatsAppReservation: (data: ReservationData) => { success: boolean; url: string; message: string };
 
@@ -112,6 +116,8 @@ interface AppContextType {
 
   // Orders history
   orderHistory: OrderRecord[];
+  deleteOrder: (orderId: string) => Promise<boolean>;
+  clearAllOrders: () => void;
   
   // Favorites
   favorites: string[];
@@ -445,11 +451,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateRestaurantSettings = async (info: RestaurantInfo): Promise<boolean> => {
-    setRestaurantInfo(info);
+    const rawNumber = (info.whatsappRaw || '').replace(/\D/g, '');
+    const cleanWa = rawNumber || '201201016669';
+    const preparedInfo: RestaurantInfo = {
+      ...info,
+      whatsappRaw: cleanWa,
+      whatsappPhone: info.whatsappPhone || (cleanWa.startsWith('2') ? `+${cleanWa}` : `+2${cleanWa}`),
+      whatsappUrl: `https://wa.me/${cleanWa}`,
+      phoneCall: info.phoneCall || info.phoneDisplay,
+    };
+    setRestaurantInfo(preparedInfo);
     try {
-      localStorage.setItem('bokharest_restaurant_info_v1', JSON.stringify(info));
+      localStorage.setItem('bokharest_restaurant_info_v1', JSON.stringify(preparedInfo));
     } catch {}
-    return await saveRestaurantInfoToFirestore(info);
+    return await saveRestaurantInfoToFirestore(preparedInfo);
   };
 
   const updateMenuItem = (updatedItem: MenuItem) => {
@@ -661,6 +676,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(orderHistory));
   }, [orderHistory]);
 
+  const deleteOrder = async (orderId: string): Promise<boolean> => {
+    setOrderHistory(prev => prev.filter(o => o.id !== orderId));
+    return await deleteOrderFromFirestore(orderId);
+  };
+
+  const clearAllOrders = () => {
+    setOrderHistory([]);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.ORDERS);
+    } catch {}
+  };
+
   // Reservation history
   const [reservationHistory, setReservationHistory] = useState<ReservationRecord[]>(() => {
     try {
@@ -674,6 +701,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(reservationHistory));
   }, [reservationHistory]);
+
+  const deleteReservation = async (reservationId: string): Promise<boolean> => {
+    setReservationHistory(prev => prev.filter(r => r.id !== reservationId));
+    return await deleteReservationFromFirestore(reservationId);
+  };
+
+  const clearAllReservations = () => {
+    setReservationHistory([]);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.RESERVATIONS);
+    } catch {}
+  };
 
   // Customer Feedback & Rating state
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState<boolean>(false);
@@ -816,7 +855,8 @@ _Sent via official Bokharest Black mobile application_`;
     if (!message) return { success: false, url: '', message: '' };
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${OFFICIAL_RESTAURANT_INFO.whatsappRaw}?text=${encodedMessage}`;
+    const targetWhatsapp = (restaurantInfo.whatsappRaw || OFFICIAL_RESTAURANT_INFO.whatsappRaw || '201201016669').replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${targetWhatsapp}?text=${encodedMessage}`;
 
     // Record order in order history
     const newRecord: OrderRecord = {
@@ -893,7 +933,8 @@ _Sent via official Bokharest Black mobile application_`;
     if (!message) return { success: false, url: '', message: '' };
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${OFFICIAL_RESTAURANT_INFO.whatsappRaw}?text=${encodedMessage}`;
+    const targetWhatsapp = (restaurantInfo.whatsappRaw || OFFICIAL_RESTAURANT_INFO.whatsappRaw || '201201016669').replace(/\D/g, '');
+    const whatsappUrl = `https://wa.me/${targetWhatsapp}?text=${encodedMessage}`;
 
     // Record reservation in history
     const newRecord: ReservationRecord = {
@@ -1074,6 +1115,8 @@ _Sent via official Bokharest Black mobile application_`;
         isReservationOpen,
         setIsReservationOpen,
         reservationHistory,
+        deleteReservation,
+        clearAllReservations,
         generateWhatsAppReservationMessage,
         sendWhatsAppReservation,
         isGalleryOpen,
@@ -1082,6 +1125,8 @@ _Sent via official Bokharest Black mobile application_`;
         setSelectedGalleryIndex,
         openGallery,
         orderHistory,
+        deleteOrder,
+        clearAllOrders,
         favorites,
         toggleFavorite,
         isFavorite,

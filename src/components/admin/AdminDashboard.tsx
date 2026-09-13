@@ -33,7 +33,10 @@ import {
   KeyRound,
   ArrowRight,
   TrendingUp,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Share2,
+  MapPin,
+  Globe
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -52,7 +55,9 @@ import {
   saveCategoryToFirestore,
   deleteCategoryFromFirestore,
   updateOrderStatusInFirestore,
+  deleteOrderFromFirestore,
   updateReservationStatusInFirestore,
+  deleteReservationFromFirestore,
   subscribeToOrders,
   subscribeToReservations,
   subscribeToFeedbacks,
@@ -148,6 +153,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
   // Settings Form State
   const [settingsData, setSettingsData] = useState<RestaurantInfo>(restaurantInfo);
+
+  // Sync settings when restaurantInfo updates from Firestore
+  useEffect(() => {
+    if (restaurantInfo) {
+      setSettingsData(restaurantInfo);
+    }
+  }, [restaurantInfo]);
 
   // Real-time subscriptions
   useEffect(() => {
@@ -319,11 +331,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     }
   };
 
+  // Delete order from Firestore
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الطلب نهائياً من قاعدة بيانات Firestore؟')) {
+      return;
+    }
+    const ok = await deleteOrderFromFirestore(orderId);
+    if (ok) {
+      setLiveOrders((prev) => prev.filter((o) => o.id !== orderId));
+      showNotification('🗑️ تم حذف الطلب نهائياً من سحابة Firestore بنجاح');
+    }
+  };
+
   // Update reservation status
   const handleUpdateReservationStatus = async (resId: string, newStatus: ReservationRecord['status']) => {
     const ok = await updateReservationStatusInFirestore(resId, newStatus);
     if (ok) {
       showNotification(`✅ تم تغيير حالة الحجز إلى: ${newStatus}`);
+    }
+  };
+
+  // Delete reservation from Firestore
+  const handleDeleteReservation = async (resId: string) => {
+    if (!confirm('هل أنت متأكد من حذف هذا الحجز نهائياً من قاعدة بيانات Firestore؟')) {
+      return;
+    }
+    const ok = await deleteReservationFromFirestore(resId);
+    if (ok) {
+      setLiveReservations((prev) => prev.filter((r) => r.id !== resId));
+      showNotification('🗑️ تم حذف الحجز نهائياً من سحابة Firestore بنجاح');
     }
   };
 
@@ -512,7 +548,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               badge: advertisements.length,
             },
             { id: 'categories', label: 'إدارة الأقسام', icon: Layers, badge: categories.length },
-            { id: 'settings', label: 'معلومات المطعم', icon: Settings },
+            { id: 'settings', label: 'الواتساب والتواصل الاجتماعي', icon: MessageCircle },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1347,6 +1383,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                             إلغاء
                           </button>
 
+                          <button
+                            onClick={() => handleDeleteOrder(order.id)}
+                            className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-[11px] transition-colors"
+                            title="حذف الطلب نهائياً"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+
                           {order.phoneNumber && (
                             <button
                               onClick={() =>
@@ -1466,6 +1510,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                             className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-xs transition-colors"
                           >
                             إلغاء الحجز
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteReservation(res.id)}
+                            className="p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 text-xs transition-colors"
+                            title="حذف الحجز نهائياً"
+                          >
+                            <Trash2 className="w-4 h-4" />
                           </button>
 
                           {res.phoneNumber && (
@@ -1622,16 +1674,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           {/* ==========================================
               TAB 7: RESTAURANT SETTINGS & INFO
           ========================================== */}
+          {/* ==========================================
+              TAB 7: WHATSAPP, SOCIAL MEDIA & RESTAURANT SETTINGS
+          ========================================== */}
           {activeTab === 'settings' && (
-            <div className="space-y-4">
-              <div className="bg-[#111111] p-4 rounded-2xl border border-white/10">
-                <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-amber-400" />
-                  إعدادات المطعم والفروع
-                </h2>
-                <p className="text-xs text-neutral-400">
-                  تعديل أرقام الهواتف، الواتساب، ساعات العمل، والعناوين
-                </p>
+            <div className="space-y-6">
+              <div className="bg-[#111111] p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-emerald-400" />
+                    التحكم في رقم الواتساب ولينكات السوشيال ميديا
+                  </h2>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    أي تعديل هنا يتم حفظه مباشرة في Cloud Firestore ويتحدث فوراً في تطبيق الزبائن
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const ok = await updateRestaurantSettings(settingsData);
+                    if (ok) {
+                      showNotification('✅ تم حفظ كافة الإعدادات والروابط بنجاح في Cloud Firestore!');
+                    }
+                  }}
+                  className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer transition-transform active:scale-95 shrink-0"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  حفظ التعديلات الآن
+                </button>
               </div>
 
               <form
@@ -1639,67 +1710,278 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   e.preventDefault();
                   const ok = await updateRestaurantSettings(settingsData);
                   if (ok) {
-                    showNotification('✅ تم حفظ إعدادات المطعم بنجاح في Firestore!');
+                    showNotification('✅ تم حفظ كافة الإعدادات والروابط بنجاح في Cloud Firestore!');
                   }
                 }}
-                className="bg-[#111111] border border-white/10 rounded-2xl p-5 space-y-4"
+                className="space-y-6"
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-neutral-300 mb-1">
-                      رقم الواتساب الرسمي (مع كود الدولة)
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsData.whatsappRaw || ''}
-                      onChange={(e) => setSettingsData({ ...settingsData, whatsappRaw: e.target.value })}
-                      className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs font-mono text-white"
-                    />
+                {/* SECTION 1: WHATSAPP & PHONE CALL */}
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 pb-3 border-b border-white/10">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                      <MessageCircle className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">إعدادات الواتساب واستقبال الطلبات</h3>
+                      <p className="text-[11px] text-neutral-400">الرقم الذي يستقبل رسائل طلبات الطعام وحجوزات الطاولات</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs text-neutral-300 mb-1">
-                      رقم الهاتف للاتصال المباشر
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsData.phoneDisplay || ''}
-                      onChange={(e) => setSettingsData({ ...settingsData, phoneDisplay: e.target.value })}
-                      className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs font-mono text-white"
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-neutral-200">
+                        رقم الواتساب الرسمي (استقبال الطلبات والحجوزات) *
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsData.whatsappRaw || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, whatsappRaw: e.target.value })}
+                        placeholder="201201016669"
+                        className="w-full bg-black/70 border border-white/15 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none transition-colors"
+                        dir="ltr"
+                      />
+                      <p className="text-[10px] text-neutral-400">
+                        اكتب الرقم مع كود مصر 20 بدون علامة + أو مسافات (مثال: <span className="font-mono text-emerald-400">201201016669</span>)
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold text-neutral-200">
+                        رقم الهاتف للاتصال المباشر (خدمة العملاء)
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsData.phoneDisplay || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, phoneDisplay: e.target.value })}
+                        placeholder="01201016669"
+                        className="w-full bg-black/70 border border-white/15 focus:border-amber-500 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none transition-colors"
+                        dir="ltr"
+                      />
+                      <p className="text-[10px] text-neutral-400">
+                        الرقم الظاهر للعملاء عند الضغط على زر "اتصل بنا"
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Test WhatsApp Link Button */}
+                  <div className="pt-2 flex items-center justify-between bg-white/[0.03] p-3 rounded-xl border border-white/5">
+                    <span className="text-xs text-neutral-300">
+                      معاينة رابط الواتساب النشط حالياً:
+                    </span>
+                    <a
+                      href={`https://wa.me/${(settingsData.whatsappRaw || '201201016669').replace(/\D/g, '')}?text=${encodeURIComponent('تجربة التواصل مع بوخارست بلاك')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      تجربة فتح محادثة الواتساب
+                    </a>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs text-neutral-300 mb-1">
-                      ساعات العمل بالعربية
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsData.openingHours_ar || ''}
-                      onChange={(e) => setSettingsData({ ...settingsData, openingHours_ar: e.target.value })}
-                      className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
-                    />
+                {/* SECTION 2: SOCIAL MEDIA LINKS */}
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 pb-3 border-b border-white/10">
+                    <div className="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
+                      <Share2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">روابط السوشيال ميديا وحسابات المطعم</h3>
+                      <p className="text-[11px] text-neutral-400">الروابط التي تفتح عند ضغط الزبون على أزرار التواصل في الشاشة الرئيسية وقسم المزيد</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs text-neutral-300 mb-1">
-                      العنوان بالعربية
-                    </label>
-                    <input
-                      type="text"
-                      value={settingsData.address_ar || ''}
-                      onChange={(e) => setSettingsData({ ...settingsData, address_ar: e.target.value })}
-                      className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Facebook */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                          <span>رابط صفحة الفيسبوك (Facebook)</span>
+                        </label>
+                        {settingsData.facebookUrl && (
+                          <a
+                            href={settingsData.facebookUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-blue-400 hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            معاينة الرابط
+                          </a>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        value={settingsData.facebookUrl || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, facebookUrl: e.target.value })}
+                        placeholder="https://facebook.com/bokharestblackeg"
+                        className="w-full bg-black/70 border border-white/15 focus:border-blue-500 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none transition-colors"
+                        dir="ltr"
+                      />
+                    </div>
+
+                    {/* Instagram */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                          <span>رابط حساب إنستجرام (Instagram)</span>
+                        </label>
+                        {settingsData.instagramUrl && (
+                          <a
+                            href={settingsData.instagramUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-pink-400 hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            معاينة الرابط
+                          </a>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        value={settingsData.instagramUrl || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, instagramUrl: e.target.value })}
+                        placeholder="https://instagram.com/bokharestblackeg"
+                        className="w-full bg-black/70 border border-white/15 focus:border-pink-500 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none transition-colors"
+                        dir="ltr"
+                      />
+                    </div>
+
+                    {/* TikTok */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                          <span>رابط حساب تيك توك (TikTok)</span>
+                        </label>
+                        {settingsData.tiktokUrl && (
+                          <a
+                            href={settingsData.tiktokUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-neutral-300 hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            معاينة الرابط
+                          </a>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        value={settingsData.tiktokUrl || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, tiktokUrl: e.target.value })}
+                        placeholder="https://tiktok.com/@bokharestblackeg"
+                        className="w-full bg-black/70 border border-white/15 focus:border-neutral-400 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none transition-colors"
+                        dir="ltr"
+                      />
+                    </div>
+
+                    {/* Google Maps */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1.5">
+                          <MapPin className="w-3 h-3 text-red-400" />
+                          <span>رابط خرائط جوجل (Google Maps Location)</span>
+                        </label>
+                        {settingsData.googleMapsUrl && (
+                          <a
+                            href={settingsData.googleMapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-red-400 hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" />
+                            معاينة الموقع
+                          </a>
+                        )}
+                      </div>
+                      <input
+                        type="url"
+                        value={settingsData.googleMapsUrl || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, googleMapsUrl: e.target.value })}
+                        placeholder="https://maps.app.goo.gl/..."
+                        className="w-full bg-black/70 border border-white/15 focus:border-red-500 rounded-xl px-3.5 py-2.5 text-xs font-mono text-white outline-none transition-colors"
+                        dir="ltr"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-white/10 flex justify-end">
+                {/* SECTION 3: HOURS & ADDRESS */}
+                <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 space-y-4">
+                  <div className="flex items-center gap-2 pb-3 border-b border-white/10">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">مواعيد العمل والعنوان</h3>
+                      <p className="text-[11px] text-neutral-400">تظهر في الشاشة الرئيسية وبطاقات المعلومات</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-200 mb-1.5">
+                        ساعات العمل بالعربية
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsData.openingHours_ar || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, openingHours_ar: e.target.value })}
+                        placeholder="يومياً من 12:00 ظهراً حتى 2:00 صباحاً"
+                        className="w-full bg-black/70 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-200 mb-1.5">
+                        ساعات العمل بالإنجليزية
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsData.openingHours_en || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, openingHours_en: e.target.value })}
+                        placeholder="Daily: 12:00 PM – 2:00 AM"
+                        className="w-full bg-black/70 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-200 mb-1.5">
+                        العنوان بالعربية
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsData.address_ar || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, address_ar: e.target.value })}
+                        placeholder="فرع الزقازيق - طريق الشوبك"
+                        className="w-full bg-black/70 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-200 mb-1.5">
+                        العنوان بالإنجليزية
+                      </label>
+                      <input
+                        type="text"
+                        value={settingsData.address_en || ''}
+                        onChange={(e) => setSettingsData({ ...settingsData, address_en: e.target.value })}
+                        placeholder="Zagazig Branch - El-Shobak Road"
+                        className="w-full bg-black/70 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white"
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Action */}
+                <div className="pt-2 flex justify-end">
                   <button
                     type="submit"
-                    className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl shadow-md shadow-amber-500/20"
+                    className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
                   >
-                    حفظ التغييرات في Firestore
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>حفظ التغييرات في سحابة Firebase (تحديث حي فوري)</span>
                   </button>
                 </div>
               </form>

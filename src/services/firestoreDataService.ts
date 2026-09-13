@@ -390,6 +390,36 @@ export async function updateReservationStatusInFirestore(
 }
 
 /**
+ * حذف طلب من Cloud Firestore
+ */
+export async function deleteOrderFromFirestore(orderId: string): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.ORDERS, orderId);
+    await deleteDoc(ref);
+    console.log(`[FirestoreData] 🗑️ تم حذف الطلب (${orderId}) من Cloud Firestore`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Error deleting order from Firestore:', error);
+    return false;
+  }
+}
+
+/**
+ * حذف حجز طاولة من Cloud Firestore
+ */
+export async function deleteReservationFromFirestore(resId: string): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, resId);
+    await deleteDoc(ref);
+    console.log(`[FirestoreData] 🗑️ تم حذف حجز الطاولة (${resId}) من Cloud Firestore`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Error deleting reservation from Firestore:', error);
+    return false;
+  }
+}
+
+/**
  * الاستماع لتقييمات وآراء العملاء
  */
 export function subscribeToFeedbacks(
