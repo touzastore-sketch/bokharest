@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.application'
-    id 'com.google.gms.google-services'
 }
 
 android {
@@ -50,18 +49,6 @@ android {
 }
 
 dependencies {
-    // Import the Firebase BoM (Bill of Materials) for automatic version alignment
-    implementation platform('com.google.firebase:firebase-bom:33.7.0')
-
-    // Firebase Authentication
-    implementation 'com.google.firebase:firebase-auth'
-
-    // Cloud Firestore
-    implementation 'com.google.firebase:firebase-firestore'
-
-    // Firebase Analytics (Recommended when using Google Services)
-    implementation 'com.google.firebase:firebase-analytics'
-
     // Standard AndroidX & Material Design libraries
     implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.12.0'
