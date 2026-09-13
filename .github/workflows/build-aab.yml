@@ -38,11 +38,6 @@ jobs:
           mkdir -p android/app/src/main/assets
           cp -r dist/* android/app/src/main/assets/
 
-      - name: 🐘 Set up Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.9'
-
       - name: 🔑 Prepare Keystore Files
         working-directory: ./android
         env:
@@ -58,14 +53,16 @@ jobs:
             cp app/release.jks release.jks
           fi
 
-      - name: 🔨 Build Release AAB & APK
+      - name: 🐘 Build Release AAB with Gradle Wrapper
         working-directory: ./android
         env:
           STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD || 'bokharest2026' }}
           KEY_AL: ${{ secrets.KEY_ALIAS || 'bokharest' }}
           KEY_PASS: ${{ secrets.KEY_PASSWORD || 'bokharest2026' }}
         run: |
-          gradle bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD="$STORE_PASS" -PRELEASE_KEY_ALIAS="$KEY_AL" -PRELEASE_KEY_PASSWORD="$KEY_PASS" --no-daemon --stacktrace || gradle bundleDebug --stacktrace
+          chmod +x ./gradlew || gradle wrapper --gradle-version 8.9
+          chmod +x ./gradlew
+          ./gradlew bundleRelease -PRELEASE_STORE_FILE=release.jks -PRELEASE_STORE_PASSWORD="$STORE_PASS" -PRELEASE_KEY_ALIAS="$KEY_AL" -PRELEASE_KEY_PASSWORD="$KEY_PASS" --no-daemon --stacktrace
 
       - name: 📤 Upload AAB for Direct Download
         uses: actions/upload-artifact@v4
