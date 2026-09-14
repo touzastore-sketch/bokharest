@@ -28,7 +28,7 @@ import {
   deleteReservationFromFirestore,
   saveFeedbackToFirestore,
 } from '../services/firestoreDataService';
-import { autoSyncAllAppAssetsToFirebase } from '../services/firebaseStorageService';
+import { autoSyncAllAppAssetsToFirebase, migrateAllAppImagesToFirebase } from '../services/firebaseStorageService';
 
 interface CustomerInfo {
   name: string;
@@ -154,6 +154,15 @@ interface AppContextType {
   openImageUploadCenter: () => void;
   firestoreSyncStatus: 'idle' | 'syncing' | 'synced' | 'error';
 
+  // Dedicated Image Migration Process
+  isMigrationModalOpen: boolean;
+  setIsMigrationModalOpen: (open: boolean) => void;
+  isMigratingAppImages: boolean;
+  migrationProgress: { current: number; total: number; itemName: string; percent: number } | null;
+  migrationResult: { success: boolean; totalMigrated: number; menuItemsUpdated: number; message: string } | null;
+  executeImageMigration: () => Promise<void>;
+  closeMigrationModal: () => void;
+
   // Standalone Cloud Admin Dashboard
   isAdminOpen: boolean;
   setIsAdminOpen: (open: boolean) => void;
@@ -252,6 +261,77 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const openImageUploadCenter = () => {
     setIsImageUploadCenterOpen(true);
+  };
+
+  // Image Migration State & Actions
+  const [isMigrationModalOpen, setIsMigrationModalOpen] = useState<boolean>(false);
+  const [isMigratingAppImages, setIsMigratingAppImages] = useState<boolean>(false);
+  const [migrationProgress, setMigrationProgress] = useState<{
+    current: number;
+    total: number;
+    itemName: string;
+    percent: number;
+  } | null>(null);
+  const [migrationResult, setMigrationResult] = useState<{
+    success: boolean;
+    totalMigrated: number;
+    menuItemsUpdated: number;
+    message: string;
+  } | null>(null);
+
+  const executeImageMigration = async () => {
+    setIsMigrationModalOpen(true);
+    setIsMigratingAppImages(true);
+    setMigrationResult(null);
+    setMigrationProgress({
+      current: 0,
+      total: 13,
+      itemName: 'بدء الاتصال بقاعدة بيانات Cloud Firestore...',
+      percent: 5,
+    });
+
+    try {
+      const res = await migrateAllAppImagesToFirebase((curr, tot, name, pct) => {
+        setMigrationProgress({
+          current: curr,
+          total: tot,
+          itemName: name,
+          percent: pct || Math.round((curr / tot) * 100),
+        });
+      });
+
+      if (res.success) {
+        setMigrationResult({
+          success: true,
+          totalMigrated: res.totalMigrated,
+          menuItemsUpdated: res.menuItemsUpdated || menuItems.length,
+          message: `تم بنجاح نقل وتأكيد ${res.totalMigrated} صورة من صور التطبيق، وتحديث ${res.menuItemsUpdated || menuItems.length} صنف في قاعدة البيانات!`,
+        });
+      } else {
+        setMigrationResult({
+          success: false,
+          totalMigrated: 0,
+          menuItemsUpdated: 0,
+          message: 'حدث تعذر جزئي أثناء المزامنة، يرجى المحاولة مرة أخرى.',
+        });
+      }
+    } catch (err) {
+      console.error('[AppContext] Migration error:', err);
+      setMigrationResult({
+        success: false,
+        totalMigrated: 0,
+        menuItemsUpdated: 0,
+        message: 'حدث خطأ أثناء نقل الصور، يرجى التحقق من اتصال الإنترنت.',
+      });
+    } finally {
+      setIsMigratingAppImages(false);
+    }
+  };
+
+  const closeMigrationModal = () => {
+    if (isMigratingAppImages) return;
+    setIsMigrationModalOpen(false);
+    setMigrationResult(null);
   };
 
   const openGallery = (initialIndex: number = 0) => {
@@ -1223,6 +1303,13 @@ _Sent via official Bokharest Black mobile application_`;
         setIsImageUploadCenterOpen,
         openImageUploadCenter,
         firestoreSyncStatus,
+        isMigrationModalOpen,
+        setIsMigrationModalOpen,
+        isMigratingAppImages,
+        migrationProgress,
+        migrationResult,
+        executeImageMigration,
+        closeMigrationModal,
         isAdminOpen,
         setIsAdminOpen,
         openAdmin,

@@ -22,7 +22,7 @@ interface GalleryManagerProps {
 }
 
 export const GalleryManager: React.FC<GalleryManagerProps> = ({ onNotify }) => {
-  const { galleryImages, saveGalleryImage, deleteGalleryImage, openImageUploadCenter, language } = useApp();
+  const { galleryImages, saveGalleryImage, deleteGalleryImage, openImageUploadCenter, executeImageMigration, language } = useApp();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
@@ -167,9 +167,9 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ onNotify }) => {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
-            onClick={openImageUploadCenter}
+            onClick={executeImageMigration}
             className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0"
-            title="نقل ورفع صور التطبيق إلى Firebase Storage"
+            title="نقل ومزامنة صور التطبيق إلى Firebase"
           >
             <UploadCloud className="w-4 h-4 text-amber-400 animate-bounce" />
             <span>نقل الصور إلى Firebase</span>

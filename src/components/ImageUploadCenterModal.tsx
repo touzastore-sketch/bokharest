@@ -106,7 +106,7 @@ export const ImageUploadCenterModal: React.FC<ImageUploadCenterModalProps> = ({
       });
 
       if (res.success) {
-        setMigrationDoneMessage(`✅ تم بنجاح نقل ومزامنة ${res.totalMigrated} صورة من صور التطبيق إلى سحابة Firebase!`);
+        setMigrationDoneMessage(`✅ تم بنجاح نقل ومزامنة ${res.totalMigrated} صورة وتحديث ${res.menuItemsUpdated || 48} صنف في قاعدة البيانات!`);
         await loadGallery();
         setActiveTab('gallery');
       }

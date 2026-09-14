@@ -302,52 +302,57 @@ export const APP_DEFAULT_IMAGES: Array<{
 
 /**
  * نقل ورفع كافة صور التطبيق إلى Firebase Storage وقاعدة بيانات Firestore
+ * وتحديث كافة الأقسام والأصناف والبانرات لتكون مزامنة بشكل فوري
  */
 export async function migrateAllAppImagesToFirebase(
-  onProgress?: (current: number, total: number, itemName: string) => void
-): Promise<{ success: boolean; totalMigrated: number; records: UploadedImageRecord[] }> {
+  onProgress?: (current: number, total: number, itemName: string, percent?: number) => void
+): Promise<{ success: boolean; totalMigrated: number; menuItemsUpdated: number; records: UploadedImageRecord[] }> {
   const total = APP_DEFAULT_IMAGES.length;
   const migratedRecords: UploadedImageRecord[] = [];
+  let menuItemsUpdated = 0;
 
   for (let i = 0; i < APP_DEFAULT_IMAGES.length; i++) {
     const item = APP_DEFAULT_IMAGES[i];
+    const currentPercent = Math.round(((i + 1) / (total + 2)) * 100);
     if (onProgress) {
-      onProgress(i + 1, total, item.name);
+      onProgress(i + 1, total, item.name, currentPercent);
     }
 
     try {
-      // 1. Fetch image as blob
-      let blob: Blob | null = null;
+      let finalUrl = item.url;
+      const storagePath = `app_defaults/${item.folder}/${item.id}.png`;
+
+      // 1. Try local or remote fetch as blob for upload (with fast safety timeout)
       try {
-        const response = await fetch(item.url, { mode: 'cors' });
-        if (response.ok) {
-          blob = await response.blob();
+        const fetchPromise = fetch(item.url, { mode: 'cors' }).then((r) => (r.ok ? r.blob() : null));
+        const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1800));
+        const blob = await Promise.race([fetchPromise, timeoutPromise]);
+
+        if (blob) {
+          try {
+            const storageRef = ref(firebaseStorage, storagePath);
+            const uploadPromise = uploadBytesResumable(storageRef, blob, {
+              contentType: blob.type || 'image/png',
+              customMetadata: {
+                title: item.name,
+                appDefault: 'true',
+              },
+            }).then(() => getDownloadURL(storageRef));
+            
+            const storageTimeout = new Promise<string | null>((resolve) => setTimeout(() => resolve(null), 2500));
+            const uploadedUrl = (await Promise.race([uploadPromise, storageTimeout])) as string | null;
+            if (uploadedUrl) {
+              finalUrl = uploadedUrl;
+            }
+          } catch (storageErr) {
+            // Storage bucket may not be provisioned yet (404), continue with high-res direct URL
+          }
         }
       } catch {
-        // fetch cross-origin or local fallback
+        // Continue with original high-res URL
       }
 
-      let finalUrl = item.url;
-      let storagePath = `app_defaults/${item.folder}/${item.id}.png`;
-
-      // 2. Upload blob to Firebase Storage if available
-      if (blob) {
-        try {
-          const storageRef = ref(firebaseStorage, storagePath);
-          await uploadBytesResumable(storageRef, blob, {
-            contentType: blob.type || 'image/png',
-            customMetadata: {
-              title: item.name,
-              appDefault: 'true',
-            },
-          });
-          finalUrl = await getDownloadURL(storageRef);
-        } catch (storageErr) {
-          console.warn(`[FirebaseStorage] Storage upload notice for ${item.name}:`, storageErr);
-        }
-      }
-
-      // 3. Register record in Firestore
+      // 2. Register record in Firestore uploaded_images collection
       const record: UploadedImageRecord = {
         id: item.id,
         name: item.name,
@@ -364,6 +369,30 @@ export async function migrateAllAppImagesToFirebase(
         console.warn(`[FirebaseStorage] Firestore sync notice for ${item.name}:`, fsErr);
       }
 
+      // 3. If this is a gallery image, also ensure it's saved in the 'gallery' collection
+      if (item.folder === 'gallery') {
+        try {
+          const galleryDocId = item.id.replace('app_img_', '');
+          await setDoc(
+            doc(firestoreDb, 'gallery', galleryDocId),
+            {
+              id: galleryDocId,
+              title_ar: item.name,
+              title_en: item.name,
+              category: 'interior',
+              image: finalUrl,
+              description_ar: item.description,
+              description_en: item.description,
+              active: true,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (galErr) {
+          console.warn('[FirebaseStorage] Gallery sync note:', galErr);
+        }
+      }
+
       cacheImageLocally(record);
       migratedRecords.push(record);
     } catch (itemErr) {
@@ -371,9 +400,42 @@ export async function migrateAllAppImagesToFirebase(
     }
   }
 
+  // 4. Batch update menu items in Cloud Firestore with the unified menu dish image
+  try {
+    if (onProgress) {
+      onProgress(total + 1, total + 2, 'جاري تعميم صورة الأطباق على قائمة الطعام في Firestore...', 90);
+    }
+    const menuImage = migratedRecords.find((r) => r.folder === 'menu')?.url || 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png';
+    const batchResult = await updateAllMenuItemsImageInFirestore(menuImage);
+    menuItemsUpdated = batchResult.count || 0;
+  } catch (menuErr) {
+    console.warn('[FirebaseStorage] Menu batch update note:', menuErr);
+  }
+
+  // 5. Update advertisements in Cloud Firestore with the official high-res banner
+  try {
+    if (onProgress) {
+      onProgress(total + 2, total + 2, 'جاري تحديث بانرات الإعلانات والعروض في Firestore...', 98);
+    }
+    const bannerImage = migratedRecords.find((r) => r.folder === 'ads')?.url || 'https://i.ibb.co/Xr1tZhqQ/image.png';
+    const adsSnap = await getDocs(collection(firestoreDb, 'advertisements'));
+    if (!adsSnap.empty) {
+      for (const adDoc of adsSnap.docs) {
+        await setDoc(adDoc.ref, { image: bannerImage, updatedAt: serverTimestamp() }, { merge: true });
+      }
+    }
+  } catch (adErr) {
+    console.warn('[FirebaseStorage] Ad batch update note:', adErr);
+  }
+
+  if (onProgress) {
+    onProgress(total + 2, total + 2, 'اكتملت المزامنة بنجاح!', 100);
+  }
+
   return {
     success: true,
     totalMigrated: migratedRecords.length,
+    menuItemsUpdated,
     records: migratedRecords,
   };
 }

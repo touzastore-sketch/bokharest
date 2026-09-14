@@ -13,6 +13,7 @@ import { Reservations } from './components/Reservations';
 import { GalleryModal } from './components/GalleryModal';
 import { FloatingCartBar } from './components/FloatingCartBar';
 import { ImageUploadCenterModal } from './components/ImageUploadCenterModal';
+import { ImageMigrationModal } from './components/ImageMigrationModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 
 const AppContent: React.FC = () => {
@@ -163,6 +164,9 @@ const AppContent: React.FC = () => {
         isOpen={isImageUploadCenterOpen}
         onClose={() => setIsImageUploadCenterOpen(false)}
       />
+
+      {/* Direct Cloud Image Migration Live Progress Modal */}
+      <ImageMigrationModal />
 
       {/* Floating Quick Order Cart Pill (appears when items are added) */}
       <FloatingCartBar />

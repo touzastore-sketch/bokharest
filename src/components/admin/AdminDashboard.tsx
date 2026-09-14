@@ -102,6 +102,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     deleteCategory,
     updateRestaurantSettings,
     openImageUploadCenter,
+    executeImageMigration,
   } = useApp();
 
   // Authentication State
@@ -486,9 +487,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <button
-            onClick={openImageUploadCenter}
+            onClick={executeImageMigration}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-xs font-bold text-amber-300 hover:text-amber-200 transition-all border border-amber-500/40 shadow-sm cursor-pointer active:scale-95"
-            title="نقل ورفع صور التطبيق إلى Firebase Storage"
+            title="نقل ومزامنة صور التطبيق إلى Firebase"
           >
             <UploadCloud className="w-4 h-4 text-amber-400 animate-bounce" />
             <span className="font-bold">نقل ورفع الصور لـ Firebase</span>
@@ -598,8 +599,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           <div className="pt-2 mt-2 border-t border-white/10 hidden md:block">
             <button
               type="button"
-              onClick={openImageUploadCenter}
-              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-amber-300 hover:text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition-all text-right cursor-pointer"
+              onClick={executeImageMigration}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-amber-300 hover:text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition-all text-right cursor-pointer active:scale-95"
             >
               <div className="flex items-center gap-2">
                 <UploadCloud className="w-4 h-4 text-amber-400" />
@@ -632,7 +633,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
-                    onClick={openImageUploadCenter}
+                    onClick={executeImageMigration}
                     className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer"
                   >
                     <UploadCloud className="w-3.5 h-3.5 text-black" />
