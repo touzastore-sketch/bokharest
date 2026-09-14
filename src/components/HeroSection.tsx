@@ -71,35 +71,14 @@ export const HeroSection: React.FC = () => {
       >
         {/* Official Brand Logo lockup */}
         <BrandLogo variant="hero" />
-
-        {/* Premium Tagline */}
-        <motion.p 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-          className="font-serif-luxury italic text-sm sm:text-base text-neutral-300 tracking-wide mt-4 max-w-xs sm:max-w-sm"
-        >
-          "{language === 'ar' ? 'حيث يلتقي المذاق بالأناقة' : 'Where Taste Meets Elegance'}"
-        </motion.p>
-
-        <motion.p 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-          className="text-xs text-neutral-400 font-light mt-2 max-w-xs leading-relaxed"
-        >
-          {language === 'ar' 
-            ? 'تجربة طهي ومشروبات استثنائية في أرقى أجواء الفخامة والضيافة'
-            : 'An exceptional dining and cafe journey crafted in sophisticated luxury.'}
-        </motion.p>
       </motion.div>
 
       {/* Hero CTAs */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-sm mx-auto flex flex-col gap-3 pt-8 pb-4"
+        transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10 w-full max-w-sm mx-auto flex flex-col gap-3 pt-6 pb-4"
       >
         {/* Main CTA: View Menu */}
         <button

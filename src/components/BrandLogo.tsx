@@ -128,7 +128,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ variant = 'header', classN
         <div className="h-[1px] flex-1 bg-white/25" />
       </div>
 
-      <h2 className="font-arabic-luxury text-xl sm:text-2xl font-bold text-white">
+      <h2 className="font-arabic-luxury text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-wide drop-shadow-md">
         بوخارست بلاك
       </h2>
     </div>

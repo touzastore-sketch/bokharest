@@ -38,7 +38,7 @@ export const ImageUploadCenterModal: React.FC<ImageUploadCenterModalProps> = ({
   onSelectImageForMenuItem,
 }) => {
   const { menuItems, updateMenuItem, language } = useApp();
-  const [activeTab, setActiveTab] = useState<'upload' | 'gallery'>('gallery');
+  const [activeTab, setActiveTab] = useState<'upload' | 'gallery' | 'migrate'>('migrate');
   
   // Upload State
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -248,10 +248,21 @@ export const ImageUploadCenterModal: React.FC<ImageUploadCenterModalProps> = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex border-b border-white/10 bg-neutral-950/60 px-4 pt-2 gap-2">
+          <div className="flex border-b border-white/10 bg-neutral-950/60 px-4 pt-2 gap-2 overflow-x-auto scrollbar-none">
+            <button
+              onClick={() => setActiveTab('migrate')}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold transition-all border-b-2 shrink-0 ${
+                activeTab === 'migrate'
+                  ? 'border-amber-500 text-amber-300 bg-neutral-900 shadow-sm'
+                  : 'border-transparent text-amber-400/90 hover:text-amber-300 hover:bg-white/5'
+              }`}
+            >
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span>نقل الصور لقاعدة البيانات (Firebase)</span>
+            </button>
             <button
               onClick={() => setActiveTab('upload')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 shrink-0 ${
                 activeTab === 'upload'
                   ? 'border-amber-500 text-amber-400 bg-neutral-900'
                   : 'border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
@@ -262,7 +273,7 @@ export const ImageUploadCenterModal: React.FC<ImageUploadCenterModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('gallery')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold transition-all border-b-2 shrink-0 ${
                 activeTab === 'gallery'
                   ? 'border-amber-500 text-amber-400 bg-neutral-900'
                   : 'border-transparent text-neutral-400 hover:text-white hover:bg-white/5'
@@ -275,7 +286,120 @@ export const ImageUploadCenterModal: React.FC<ImageUploadCenterModalProps> = ({
 
           {/* Content Body */}
           <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-6">
-            {activeTab === 'upload' ? (
+            {activeTab === 'migrate' ? (
+              /* Dedicated One-Click Migration Tab */
+              <div className="space-y-6">
+                {/* Hero Feature Box */}
+                <div className="bg-gradient-to-br from-amber-950/50 via-[#161616] to-black border-2 border-amber-500/50 rounded-3xl p-6 sm:p-8 shadow-2xl text-center space-y-5">
+                  <div className="w-16 h-16 mx-auto rounded-3xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center shadow-lg">
+                    <UploadCloud className="w-9 h-9 animate-bounce" />
+                  </div>
+
+                  <div className="space-y-2 max-w-xl mx-auto">
+                    <h3 className="text-xl sm:text-2xl font-bold text-white font-serif-luxury">
+                      زر نقل كافة الصور إلى قاعدة بيانات وسيرفر Firebase
+                    </h3>
+                    <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+                      هذا الإجراء يقوم بنسخ جميع صور التطبيق الافتراضية ({APP_DEFAULT_IMAGES.length} صورة تشمل قائمة الطعام، الشعار، الأجواء والبانرات الإعلانية) وتحويلها إلى روابط سريعة ومحفوظة سحابياً على خوادم Firebase Storage & Firestore.
+                    </p>
+                  </div>
+
+                  {/* Big Action Button */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleMigrateAllAppImages}
+                      disabled={isMigratingAll}
+                      className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-extrabold text-sm sm:text-base rounded-2xl transition-all shadow-xl shadow-amber-500/30 active:scale-95 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-3 mx-auto"
+                    >
+                      {isMigratingAll ? (
+                        <>
+                          <RefreshCw className="w-5 h-5 animate-spin" />
+                          <span>جارٍ نقل ومزامنة الصور سحابياً...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5" />
+                          <span>ابدأ نقل الصور الآن إلى Firebase (نقرة واحدة)</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Progress Status */}
+                  {isMigratingAll && migrationStatus && (
+                    <div className="p-4 bg-black/60 border border-amber-500/40 rounded-2xl space-y-2 text-right">
+                      <div className="flex items-center justify-between text-xs text-amber-300 font-bold">
+                        <span>جارٍ رفع: {migrationStatus.itemName}</span>
+                        <span className="font-mono">
+                          {migrationStatus.current} / {migrationStatus.total}
+                        </span>
+                      </div>
+                      <div className="w-full h-3 bg-neutral-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-amber-500 via-amber-400 to-emerald-400 transition-all duration-300 rounded-full"
+                          style={{
+                            width: `${(migrationStatus.current / migrationStatus.total) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Success Message */}
+                  {migrationDoneMessage && (
+                    <div className="p-4 bg-emerald-950/70 border border-emerald-500/40 text-emerald-200 text-xs sm:text-sm font-bold rounded-2xl flex items-center justify-between shadow-lg">
+                      <span className="flex items-center gap-2">
+                        <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                        {migrationDoneMessage}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setMigrationDoneMessage(null);
+                          setActiveTab('gallery');
+                        }}
+                        className="text-white hover:underline text-xs bg-emerald-800/40 px-3 py-1.5 rounded-xl"
+                      >
+                        عرض الصور المرفوعة ←
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Information cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs text-neutral-300">
+                  <div className="bg-neutral-950/80 p-4 rounded-2xl border border-white/10 space-y-1.5">
+                    <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                      <Check className="w-4 h-4" />
+                      روابط سحابية دائمة
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      تبقى الصور محفوظة سحابياً ويمكن الوصول إليها من أي هاتف أو كمبيوتر في أي وقت.
+                    </p>
+                  </div>
+
+                  <div className="bg-neutral-950/80 p-4 rounded-2xl border border-white/10 space-y-1.5">
+                    <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4" />
+                      ضغط فوري فائق الجودة
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      يتم حفظ الصور بصيغة خفيفة جداً لضمان فتح التطبيق للعملاء في أقل من ثانية.
+                    </p>
+                  </div>
+
+                  <div className="bg-neutral-950/80 p-4 rounded-2xl border border-white/10 space-y-1.5">
+                    <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                      <FolderOpen className="w-4 h-4" />
+                      تحكم كامل ومباشر
+                    </div>
+                    <p className="text-[11px] text-neutral-400">
+                      يمكنك استبدال أي صورة أو تعيينها لأي طبق أو إعلان أو صورة للمعرض بضغطة زر.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : activeTab === 'upload' ? (
               <div className="space-y-5">
                 {/* Folder / Target selector */}
                 <div className="flex flex-wrap items-center justify-between gap-3 bg-neutral-950/80 p-3 rounded-2xl border border-white/5">

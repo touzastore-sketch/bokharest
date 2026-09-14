@@ -1073,7 +1073,7 @@ _Sent via official Bokharest Black mobile application_`;
     customer_name: { ar: 'اسم العميل', en: 'Customer Name' },
     customer_phone: { ar: 'رقم الهاتف (واتساب)', en: 'Phone Number (WhatsApp)' },
     special_notes: { ar: 'ملاحظات خاصة (اختياري)', en: 'Special Notes (Optional)' },
-    notes_placeholder: { ar: 'مثال: بدون بصل، صوص إضافي، درجة التسوية...', en: 'e.g., No onions, extra dressing...' },
+    notes_placeholder: { ar: 'اكتب اختيار الطبق الجانبي أو أي ملاحظات أخرى...', en: 'Specify your side dish choice or special requests...' },
     empty_cart_title: { ar: 'سلة طلبك فارغة', en: 'Your cart is empty' },
     empty_cart_desc: { ar: 'استكشف قائمتنا الفاخرة واختر أشهى الأطباق والمشروبات', en: 'Explore our luxurious menu and indulge in fine dishes and signature drinks.' },
     empty_orders_title: { ar: 'لا توجد طلبات سابقة', en: 'No previous orders' },

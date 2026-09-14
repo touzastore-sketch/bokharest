@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Upload,
+  UploadCloud,
   RefreshCw,
   Image as ImageIcon,
 } from 'lucide-react';
@@ -21,7 +22,7 @@ interface GalleryManagerProps {
 }
 
 export const GalleryManager: React.FC<GalleryManagerProps> = ({ onNotify }) => {
-  const { galleryImages, saveGalleryImage, deleteGalleryImage, language } = useApp();
+  const { galleryImages, saveGalleryImage, deleteGalleryImage, openImageUploadCenter, language } = useApp();
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingImage, setEditingImage] = useState<GalleryImage | null>(null);
@@ -163,19 +164,31 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ onNotify }) => {
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            if (isAdding) {
-              resetForm();
-            } else {
-              setIsAdding(true);
-            }
-          }}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
-        >
-          {isAdding ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          <span>{isAdding ? 'إلغاء النافذة' : 'إضافة صورة جديدة للمعرض'}</span>
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={openImageUploadCenter}
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-amber-200 border border-amber-500/40 text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0"
+            title="نقل ورفع صور التطبيق إلى Firebase Storage"
+          >
+            <UploadCloud className="w-4 h-4 text-amber-400 animate-bounce" />
+            <span>نقل الصور إلى Firebase</span>
+          </button>
+
+          <button
+            onClick={() => {
+              if (isAdding) {
+                resetForm();
+              } else {
+                setIsAdding(true);
+              }
+            }}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+          >
+            {isAdding ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            <span>{isAdding ? 'إلغاء النافذة' : 'إضافة صورة جديدة للمعرض'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Add / Edit Form Modal or Block */}

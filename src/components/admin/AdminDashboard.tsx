@@ -101,6 +101,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     saveCategory,
     deleteCategory,
     updateRestaurantSettings,
+    openImageUploadCenter,
   } = useApp();
 
   // Authentication State
@@ -485,6 +486,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <button
+            onClick={openImageUploadCenter}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-xs font-bold text-amber-300 hover:text-amber-200 transition-all border border-amber-500/40 shadow-sm cursor-pointer active:scale-95"
+            title="نقل ورفع صور التطبيق إلى Firebase Storage"
+          >
+            <UploadCloud className="w-4 h-4 text-amber-400 animate-bounce" />
+            <span className="font-bold">نقل ورفع الصور لـ Firebase</span>
+          </button>
+
+          <button
             onClick={navigateToClientApp}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-neutral-300 hover:text-white transition-colors border border-white/10"
             title="فتح تطبيق العملاء"
@@ -583,6 +593,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               </button>
             );
           })}
+
+          {/* Quick Storage Migration Button in Sidebar */}
+          <div className="pt-2 mt-2 border-t border-white/10 hidden md:block">
+            <button
+              type="button"
+              onClick={openImageUploadCenter}
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500/20 to-amber-600/10 text-amber-300 hover:text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition-all text-right cursor-pointer"
+            >
+              <div className="flex items-center gap-2">
+                <UploadCloud className="w-4 h-4 text-amber-400" />
+                <span>نقل الصور لـ Firebase</span>
+              </div>
+              <span className="text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded font-bold">
+                سحابي
+              </span>
+            </button>
+          </div>
         </aside>
 
         {/* Dynamic Content Area */}
@@ -603,12 +630,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={openImageUploadCenter}
+                    className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 cursor-pointer"
+                  >
+                    <UploadCloud className="w-3.5 h-3.5 text-black" />
+                    نقل الصور لـ Firebase
+                  </button>
                   <button
                     onClick={() => setActiveTab('menu')}
-                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                    className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
                   >
-                    <UtensilsCrossed className="w-3.5 h-3.5" />
+                    <UtensilsCrossed className="w-3.5 h-3.5 text-amber-400" />
                     إدارة قائمة الطعام
                   </button>
                   <button
