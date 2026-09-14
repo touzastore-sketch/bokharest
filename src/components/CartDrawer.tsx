@@ -56,10 +56,23 @@ export const CartDrawer: React.FC = () => {
     setOrderSentUrl(null);
     setOrderMessage(null);
     setActiveStep('items');
+    setPhoneError(false);
   };
 
   const handleCheckout = () => {
     if (cart.length === 0) return;
+
+    if (activeStep === 'items') {
+      setActiveStep('details');
+      return;
+    }
+
+    // Gentle phone validation (if entered, check minimum length)
+    const phoneDigits = (customerInfo.phone || '').replace(/\D/g, '');
+    if (customerInfo.phone && phoneDigits.length < 8) {
+      setPhoneError(true);
+      return;
+    }
 
     // Trigger high-quality celebratory haptic feedback
     haptic.order();
@@ -97,12 +110,12 @@ export const CartDrawer: React.FC = () => {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex justify-end animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex justify-end animate-in fade-in duration-200 overscroll-contain"
       onClick={handleClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-[#0a0a0a] border-l rtl:border-r rtl:border-l-0 border-white/15 h-full flex flex-col justify-between shadow-2xl animate-in slide-in-from-right rtl:slide-in-from-left duration-300 select-none overflow-hidden"
+        className="w-full max-w-md bg-[#0a0a0a] border-l rtl:border-r rtl:border-l-0 border-white/15 h-full h-[100dvh] max-h-[100dvh] flex flex-col justify-between shadow-2xl animate-in slide-in-from-right rtl:slide-in-from-left duration-300 select-none overflow-hidden overscroll-contain"
       >
         {/* Top Header */}
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between bg-black/80 shrink-0">
@@ -186,7 +199,11 @@ export const CartDrawer: React.FC = () => {
         )}
 
         {/* Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div
+          className={`flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 scroll-smooth ${
+            activeStep === 'details' ? 'pb-36 sm:pb-40' : 'pb-24 sm:pb-28'
+          }`}
+        >
           {/* If an order was just placed, show confirmation card */}
           {orderSentUrl && orderMessage ? (
             <div className="bg-[#121212] border border-white/20 rounded-2xl p-5 space-y-4 animate-in zoom-in-95 duration-200">
@@ -417,86 +434,130 @@ export const CartDrawer: React.FC = () => {
                 </button>
               </div>
 
-              {/* Customer Information Card (Organized and spacious) */}
-              <div className="p-4 bg-[#121212] border-2 border-amber-500/30 rounded-2xl space-y-3.5 shadow-lg">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              {/* Customer Information Card (Organized, spacious with Flexbox/Grid) */}
+              <div className="p-4 sm:p-5 bg-[#121212] border-2 border-amber-500/35 rounded-3xl space-y-4 sm:space-y-5 shadow-xl">
+                <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0 shadow-sm">
                       <User className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs sm:text-sm font-bold text-white">
-                        {language === 'ar' ? 'بيانات العميل للتواصل' : 'Customer Contact Details'}
+                      <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <span>{language === 'ar' ? 'بيانات التواصل والتأكيد' : 'Customer & Contact Info'}</span>
+                        <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
+                          {language === 'ar' ? 'الخطوة الأخيرة' : 'Final Step'}
+                        </span>
                       </h4>
-                      <p className="text-[10px] text-neutral-400">
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
                         {language === 'ar'
-                          ? 'لتأكيد وتجهيز طلبك باسمك الرسمي'
-                          : 'Used to prepare and link your official order'}
+                          ? 'لتسجيل الطلب باسمك وتأكيد التواصل عبر الواتساب'
+                          : 'Used to link your official order and confirm via WhatsApp'}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Customer Name */}
-                <div>
-                  <label className="block text-[11px] font-medium text-neutral-300 mb-1 flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{t('customer_name')}</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={customerInfo.name}
-                    onChange={(e) =>
-                      setCustomerInfo((prev) => ({ ...prev, name: e.target.value }))
-                    }
-                    placeholder={language === 'ar' ? 'مثال: أحمد محمد' : 'e.g. Ahmed Mohamed'}
-                    className="w-full bg-black/70 border border-white/15 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 transition-colors shadow-inner"
-                  />
-                </div>
+                {/* Form Fields: Structured via Flexbox / Grid */}
+                <div className="grid grid-cols-1 gap-4">
+                  {/* Customer Name */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <label htmlFor="customer-name-field" className="flex items-center gap-1.5 text-neutral-200">
+                        <User className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{t('customer_name')}</span>
+                      </label>
+                      <span className="text-[10px] text-neutral-400">
+                        {language === 'ar' ? 'اسمك الكريم' : 'Full Name'}
+                      </span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        id="customer-name-field"
+                        type="text"
+                        autoComplete="name"
+                        value={customerInfo.name}
+                        onChange={(e) =>
+                          setCustomerInfo((prev) => ({ ...prev, name: e.target.value }))
+                        }
+                        placeholder={language === 'ar' ? 'مثال: أحمد محمد' : 'e.g. Ahmed Mohamed'}
+                        className="w-full min-h-[48px] bg-black/80 border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all scroll-mt-24 shadow-inner"
+                      />
+                    </div>
+                  </div>
 
-                {/* Customer Phone */}
-                <div>
-                  <label className="block text-[11px] font-medium text-neutral-300 mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{t('customer_phone')}</span>
-                  </label>
-                  <input
-                    type="tel"
-                    dir="ltr"
-                    value={customerInfo.phone}
-                    onChange={(e) => {
-                      setCustomerInfo((prev) => ({ ...prev, phone: e.target.value }));
-                      if (phoneError) setPhoneError(false);
-                    }}
-                    placeholder="010XXXXXXXX"
-                    className={`w-full bg-black/70 border rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors font-mono text-left shadow-inner ${
-                      phoneError
-                        ? 'border-red-500 focus:border-red-400'
-                        : 'border-white/15 focus:border-amber-400'
-                    }`}
-                  />
-                </div>
+                  {/* Customer Phone */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <label htmlFor="customer-phone-field" className="flex items-center gap-1.5 text-neutral-200">
+                        <Phone className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{t('customer_phone')}</span>
+                      </label>
+                      <span className="text-[10px] text-amber-400 font-medium">
+                        {language === 'ar' ? 'مطلوب للتأكيد' : 'Required'}
+                      </span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        id="customer-phone-field"
+                        type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
+                        dir="ltr"
+                        value={customerInfo.phone}
+                        onChange={(e) => {
+                          setCustomerInfo((prev) => ({ ...prev, phone: e.target.value }));
+                          if (phoneError) setPhoneError(false);
+                        }}
+                        placeholder="010XXXXXXXX"
+                        className={`w-full min-h-[48px] bg-black/80 border rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 transition-all font-mono text-left scroll-mt-24 shadow-inner ${
+                          phoneError
+                            ? 'border-red-500 focus:border-red-400 focus:ring-red-500/20'
+                            : 'border-white/15 focus:border-amber-400 focus:ring-amber-400/20'
+                        }`}
+                      />
+                    </div>
+                    {phoneError && (
+                      <p className="text-[11px] text-red-400 mt-0.5 font-medium">
+                        {language === 'ar'
+                          ? 'يرجى إدخال رقم هاتف صحيح للتواصل'
+                          : 'Please enter a valid contact phone number'}
+                      </p>
+                    )}
+                  </div>
 
-                {/* Special Notes / Side Dish */}
-                <div>
-                  <label className="block text-[11px] font-medium text-neutral-300 mb-1 flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5 text-amber-400" />
-                    <span>{t('special_notes')}</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={customerInfo.notes}
-                    onChange={(e) =>
-                      setCustomerInfo((prev) => ({ ...prev, notes: e.target.value }))
-                    }
-                    placeholder={t('notes_placeholder')}
-                    className="w-full bg-black/70 border border-white/15 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 transition-colors resize-none shadow-inner leading-relaxed"
-                  />
-                  <p className="text-[10px] text-amber-300/80 mt-1">
-                    {language === 'ar'
-                      ? '💡 يمكنك كتابة اختيار الطبق الجانبي أو أي تفضيلات خاصة للطلب هنا'
-                      : '💡 You can specify your side dish choice or custom requests here'}
-                  </p>
+                  {/* Special Notes / Direct Writing Only */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <label htmlFor="customer-notes-field" className="flex items-center gap-1.5 text-neutral-200">
+                        <FileText className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{t('special_notes')}</span>
+                      </label>
+                      <span className="text-[10px] text-neutral-400">
+                        {language === 'ar' ? 'اختياري' : 'Optional'}
+                      </span>
+                    </div>
+
+                    <textarea
+                      id="customer-notes-field"
+                      rows={3}
+                      value={customerInfo.notes}
+                      onChange={(e) =>
+                        setCustomerInfo((prev) => ({ ...prev, notes: e.target.value }))
+                      }
+                      placeholder={
+                        language === 'ar'
+                          ? 'اكتب أي ملاحظات أو تفضيلات خاصة لتحضير طلبك هنا...'
+                          : 'Write any notes or special requests for your order here...'
+                      }
+                      className="w-full min-h-[96px] bg-black/80 border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all resize-none scroll-mt-24 shadow-inner leading-relaxed"
+                    />
+
+                    <p className="text-[11px] text-neutral-400 leading-normal">
+                      {language === 'ar'
+                        ? '💡 يمكنك كتابة اختيار الطبق الجانبي أو أي تفاصيل خاصة بالتوصيل أو التجهيز.'
+                        : '💡 You can write your side dish choice or any special delivery/preparation details.'}
+                    </p>
+                  </div>
                 </div>
               </div>
 
