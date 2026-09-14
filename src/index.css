@@ -7,6 +7,10 @@
     --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   }
 
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     background-color: #000000;
     color: #ffffff;
@@ -57,3 +61,96 @@
   background-color: #141414;
 }
 
+/* Universal Premium Mobile Touch Feedback Utilities */
+.touch-press {
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.touch-press:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* Standardized primary & secondary touch buttons: min 48px height, 14px py, 24px px */
+.btn-touch-primary {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 14px 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 16px;
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  cursor: pointer;
+}
+
+.btn-touch-primary:hover {
+  background-color: #e5e5e5;
+}
+
+.btn-touch-primary:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.btn-touch-secondary {
+  min-height: 48px;
+  min-width: 48px;
+  padding: 14px 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease, border-color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  cursor: pointer;
+}
+
+.btn-touch-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.btn-touch-secondary:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+/* Icon / Tap Target with minimum 48px dimension */
+.touch-target-48 {
+  min-height: 48px;
+  min-width: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.touch-target-48:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}

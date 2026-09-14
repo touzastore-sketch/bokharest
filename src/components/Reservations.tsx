@@ -517,7 +517,7 @@ export const Reservations: React.FC<ReservationsProps> = ({
                 1. {t('reservation_date')}
               </label>
 
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5">
                 {/* Today */}
                 <button
                   type="button"
@@ -526,7 +526,7 @@ export const Reservations: React.FC<ReservationsProps> = ({
                     haptic.tab();
                     setSelectedDate(formatDateValue(today));
                   }}
-                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none cursor-pointer ${
+                  className={`min-h-[48px] p-3 rounded-xl border text-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press ${
                     selectedDate === formatDateValue(today)
                       ? 'bg-white text-black border-white shadow-lg'
                       : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -546,7 +546,7 @@ export const Reservations: React.FC<ReservationsProps> = ({
                     haptic.tab();
                     setSelectedDate(formatDateValue(tomorrow));
                   }}
-                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none cursor-pointer ${
+                  className={`min-h-[48px] p-3 rounded-xl border text-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press ${
                     selectedDate === formatDateValue(tomorrow)
                       ? 'bg-white text-black border-white shadow-lg'
                       : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -566,7 +566,7 @@ export const Reservations: React.FC<ReservationsProps> = ({
                     haptic.tab();
                     setSelectedDate(formatDateValue(dayAfterTomorrow));
                   }}
-                  className={`p-3 rounded-xl border text-center transition-all focus:outline-none cursor-pointer ${
+                  className={`min-h-[48px] p-3 rounded-xl border text-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press ${
                     selectedDate === formatDateValue(dayAfterTomorrow)
                       ? 'bg-white text-black border-white shadow-lg'
                       : 'bg-[#141414] border-white/10 text-neutral-300 hover:border-white/30'
@@ -725,13 +725,13 @@ export const Reservations: React.FC<ReservationsProps> = ({
                 </div>
 
                 {/* Stepper */}
-                <div className="flex items-center gap-3 bg-black border border-white/20 rounded-full px-2 py-1">
+                <div className="flex items-center gap-3 bg-black border border-white/20 rounded-full p-1 min-h-[44px]">
                   <button
                     type="button"
                     id="res-guests-minus-btn"
                     onClick={() => handleGuestsChange(-1)}
                     disabled={guestsCount <= 1}
-                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white hover:text-black disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-white text-white flex items-center justify-center transition-colors focus:outline-none"
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white hover:text-black disabled:opacity-30 disabled:hover:bg-white/10 disabled:hover:text-white text-white flex items-center justify-center transition-all duration-150 focus:outline-none active:scale-95 active:opacity-80 touch-press cursor-pointer"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
@@ -912,7 +912,7 @@ export const Reservations: React.FC<ReservationsProps> = ({
               <button
                 type="submit"
                 id="submit-reservation-whatsapp-btn"
-                className="w-full py-4 px-6 rounded-2xl bg-white text-black hover:bg-neutral-200 active:scale-[0.99] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-white/10 focus:outline-none cursor-pointer"
+                className="w-full min-h-[48px] py-4 px-6 rounded-2xl bg-white text-black hover:bg-neutral-200 active:scale-95 active:opacity-80 font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-3 transition-all duration-150 shadow-xl shadow-white/10 focus:outline-none cursor-pointer touch-press"
               >
                 <Send className="w-4 h-4 stroke-[2.2]" />
                 <span>{t('submit_reservation')}</span>

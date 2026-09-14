@@ -2,10 +2,20 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { X, Heart, Plus, Minus, Check, Clock, Flame } from 'lucide-react';
+import { CategoryServingNote } from './CategoryServingNote';
 import { haptic } from '../utils/haptics';
 
 export const ItemDetailModal: React.FC = () => {
-  const { selectedItemForDetail, setSelectedItemForDetail, language, t, addToCart, isFavorite, toggleFavorite } = useApp();
+  const {
+    selectedItemForDetail,
+    setSelectedItemForDetail,
+    categories,
+    language,
+    t,
+    addToCart,
+    isFavorite,
+    toggleFavorite,
+  } = useApp();
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState('');
   const [added, setAdded] = useState(false);
@@ -15,6 +25,25 @@ export const ItemDetailModal: React.FC = () => {
 
   const item = selectedItemForDetail;
   const isFav = isFavorite(item.id);
+
+  const itemCategory = categories.find((c) => c.id === item.category_id);
+  const categoryNote = itemCategory
+    ? language === 'ar'
+      ? itemCategory.note_ar
+      : itemCategory.note_en
+    : undefined;
+
+  const handleSelectOption = (option: string) => {
+    haptic.selection();
+    if (notes.includes(option)) {
+      const updated = notes
+        .replace(new RegExp(`(\\s*\\+\\s*)?${option}|${option}(\\s*\\+\\s*)?`), '')
+        .trim();
+      setNotes(updated);
+    } else {
+      setNotes(notes ? `${notes} + ${option}` : option);
+    }
+  };
 
   const handleClose = () => {
     setSelectedItemForDetail(null);
@@ -63,7 +92,7 @@ export const ItemDetailModal: React.FC = () => {
             <button
               onClick={handleClose}
               aria-label="Close detail modal"
-              className="p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-colors focus:outline-none"
+              className="min-h-[48px] min-w-[48px] p-3 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-all duration-150 focus:outline-none flex items-center justify-center active:scale-95 active:opacity-80 touch-press cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -74,7 +103,7 @@ export const ItemDetailModal: React.FC = () => {
                 toggleFavorite(item.id);
               }}
               aria-label="Toggle favorite"
-              className="p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-colors focus:outline-none"
+              className="min-h-[48px] min-w-[48px] p-3 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-all duration-150 focus:outline-none flex items-center justify-center active:scale-95 active:opacity-80 touch-press cursor-pointer"
             >
               <Heart
                 className={`w-5 h-5 transition-colors ${
@@ -147,6 +176,17 @@ export const ItemDetailModal: React.FC = () => {
             </p>
           </div>
 
+          {/* Serving Options Note (if category has one) */}
+          {categoryNote && (
+            <CategoryServingNote
+              note={categoryNote}
+              language={language}
+              interactive={true}
+              selectedOptions={notes ? notes.split('+').map((s) => s.trim()) : []}
+              onSelectOption={handleSelectOption}
+            />
+          )}
+
           {/* Special Notes */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">
@@ -214,12 +254,12 @@ export const ItemDetailModal: React.FC = () => {
             id="modal-add-to-order-btn"
             onClick={handleAddToCart}
             disabled={!item.available}
-            className={`flex-1 py-3.5 px-6 rounded-2xl font-bold text-sm tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none ${
+            className={`flex-1 min-h-[48px] py-3.5 px-6 rounded-2xl font-bold text-sm tracking-wider uppercase transition-all duration-150 flex items-center justify-center gap-2 focus:outline-none cursor-pointer ${
               !item.available
                 ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
                 : added
-                ? 'bg-white text-black shadow-lg shadow-white/20'
-                : 'bg-white text-black hover:bg-neutral-200 active:scale-[0.98]'
+                ? 'bg-white text-black shadow-lg shadow-white/20 active:scale-95 active:opacity-80 touch-press'
+                : 'bg-white text-black hover:bg-neutral-200 active:scale-95 active:opacity-80 touch-press'
             }`}
           >
             {added ? (

@@ -24,12 +24,12 @@ export const FloatingCartBar: React.FC = () => {
             exit={{ y: 25, opacity: 0, scale: 0.94 }}
             transition={{ type: 'spring', stiffness: 380, damping: 26 }}
             whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               haptic.tab();
               setIsCartOpen(true);
             }}
-            className="pointer-events-auto bg-[#101010]/95 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white rounded-full py-2 ps-3.5 pe-2 flex items-center justify-between gap-3 shadow-[0_12px_32px_rgba(0,0,0,0.85),0_0_20px_rgba(255,255,255,0.08)] cursor-pointer w-full max-w-sm transition-colors group"
+            className="pointer-events-auto min-h-[48px] bg-[#101010]/95 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white rounded-full py-2.5 ps-4 pe-2.5 flex items-center justify-between gap-3 shadow-[0_12px_32px_rgba(0,0,0,0.85),0_0_20px_rgba(255,255,255,0.08)] cursor-pointer w-full max-w-sm transition-all duration-150 group touch-press"
           >
             {/* Left / Info Cluster */}
             <div className="flex items-center gap-2.5 min-w-0">

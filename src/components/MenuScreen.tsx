@@ -4,6 +4,7 @@ import { MenuItemCard } from './MenuItemCard';
 import { Search, X, Heart, SlidersHorizontal, RefreshCw, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
 import { PullToRefresh } from './PullToRefresh';
+import { CategoryServingNote } from './CategoryServingNote';
 import { motion, AnimatePresence } from 'motion/react';
 import { haptic } from '../utils/haptics';
 
@@ -91,23 +92,23 @@ export const MenuScreen: React.FC = () => {
         </div>
 
         {/* Categories Horizontal Scroll Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+        <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1.5 px-0.5">
           {/* Favorites Filter Chip */}
           <button
             onClick={() => {
               haptic.favorite();
               setOnlyFavorites(!onlyFavorites);
             }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none cursor-pointer ${
+            className={`flex items-center gap-2 min-h-[48px] px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 shrink-0 border focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press shadow-sm ${
               onlyFavorites
-                ? 'bg-white text-black border-white'
-                : 'bg-[#111111] text-neutral-400 border-white/15 hover:border-white/30'
+                ? 'bg-amber-400 text-black border-amber-400 shadow-amber-500/20'
+                : 'bg-[#161616] text-neutral-200 border-white/20 hover:border-white/40 hover:text-white'
             }`}
           >
-            <Heart className={`w-3.5 h-3.5 ${onlyFavorites ? 'fill-black' : ''}`} />
+            <Heart className={`w-4 h-4 ${onlyFavorites ? 'fill-black' : 'text-neutral-400'}`} />
             <span>{t('favorites')}</span>
             {favorites.length > 0 && (
-              <span className={`text-[10px] px-1 rounded-full ${onlyFavorites ? 'bg-black text-white' : 'bg-white/10 text-neutral-300'}`}>
+              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-bold ${onlyFavorites ? 'bg-black text-amber-300' : 'bg-white/15 text-white'}`}>
                 {favorites.length}
               </span>
             )}
@@ -122,10 +123,10 @@ export const MenuScreen: React.FC = () => {
               setSelectedCategory('all');
               setOnlyFavorites(false);
             }}
-            className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none cursor-pointer ${
+            className={`min-h-[48px] px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 shrink-0 border focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press shadow-sm ${
               selectedCategory === 'all' && !onlyFavorites
-                ? 'bg-white text-black border-white'
-                : 'bg-[#111111] text-neutral-400 border-white/15 hover:border-white/30'
+                ? 'bg-amber-400 text-black border-amber-400 shadow-amber-500/20'
+                : 'bg-[#161616] text-neutral-200 border-white/20 hover:border-white/40 hover:text-white'
             }`}
           >
             {t('all_categories')}
@@ -147,10 +148,10 @@ export const MenuScreen: React.FC = () => {
                   setSelectedCategory(cat.id);
                   setOnlyFavorites(false);
                 }}
-                className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors shrink-0 border focus:outline-none cursor-pointer ${
+                className={`min-h-[48px] px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 shrink-0 border focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press shadow-sm ${
                   isSelected
-                    ? 'bg-white text-black border-white'
-                    : 'bg-[#111111] text-neutral-400 border-white/15 hover:border-white/30'
+                    ? 'bg-amber-400 text-black border-amber-400 shadow-amber-500/20'
+                    : 'bg-[#161616] text-neutral-200 border-white/20 hover:border-white/40 hover:text-white'
                 }`}
               >
                 {name}
@@ -307,9 +308,7 @@ export const MenuScreen: React.FC = () => {
                         </span>
                       </div>
                       {categoryNote && (
-                        <p className="text-xs text-neutral-400 mt-1 font-light italic">
-                          ℹ️ {categoryNote}
-                        </p>
+                        <CategoryServingNote note={categoryNote} language={language} />
                       )}
                     </div>
 
@@ -347,9 +346,7 @@ export const MenuScreen: React.FC = () => {
                         </span>
                       </div>
                       {catNote && (
-                        <p className="text-xs text-neutral-400 mt-1 font-light italic">
-                          ℹ️ {catNote}
-                        </p>
+                        <CategoryServingNote note={catNote} language={language} />
                       )}
                     </div>
                   );

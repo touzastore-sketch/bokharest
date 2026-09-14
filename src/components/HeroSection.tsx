@@ -99,7 +99,7 @@ export const HeroSection: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 w-full max-w-xs mx-auto flex flex-col gap-2.5 pt-8 pb-4"
+        className="relative z-10 w-full max-w-sm mx-auto flex flex-col gap-3 pt-8 pb-4"
       >
         {/* Main CTA: View Menu */}
         <button
@@ -108,14 +108,14 @@ export const HeroSection: React.FC = () => {
             haptic.tab();
             setActiveTab('menu');
           }}
-          className="w-full py-3.5 px-6 rounded-2xl bg-white text-black font-bold text-sm tracking-widest uppercase hover:bg-neutral-200 transition-all duration-200 flex items-center justify-center gap-2 shadow-xl shadow-white/10 active:scale-[0.98] focus:outline-none cursor-pointer"
+          className="w-full min-h-[48px] min-w-[48px] py-3.5 px-6 rounded-2xl bg-white text-black font-bold text-sm tracking-widest uppercase hover:bg-neutral-200 transition-all duration-150 flex items-center justify-center gap-2 shadow-xl shadow-white/10 active:scale-95 active:opacity-80 focus:outline-none cursor-pointer touch-press"
         >
           <span>{t('view_menu')}</span>
           <ArrowIcon className="w-4 h-4" />
         </button>
 
-        {/* Action Row: Book a Table & Order Now */}
-        <div className="grid grid-cols-2 gap-2 w-full">
+        {/* Action Row: Book a Table & Order Now with minimum 8px spacing and 48px touch targets */}
+        <div className="grid grid-cols-2 gap-3 w-full">
           {/* Table Reservation Button */}
           <button
             id="hero-book-table-btn"
@@ -123,9 +123,9 @@ export const HeroSection: React.FC = () => {
               haptic.tab();
               setIsReservationOpen(true);
             }}
-            className="w-full py-3 px-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.98] focus:outline-none backdrop-blur-sm cursor-pointer"
+            className="w-full min-h-[48px] min-w-[48px] py-3.5 px-4 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-150 flex items-center justify-center gap-2 active:scale-95 active:opacity-80 focus:outline-none backdrop-blur-sm cursor-pointer touch-press"
           >
-            <Calendar className="w-3.5 h-3.5 text-neutral-200" />
+            <Calendar className="w-4 h-4 text-neutral-200 shrink-0" />
             <span className="truncate">{t('book_table')}</span>
           </button>
 
@@ -137,9 +137,9 @@ export const HeroSection: React.FC = () => {
               setActiveTab('menu');
               setIsCartOpen(true);
             }}
-            className="w-full py-3 px-3 rounded-2xl bg-black/60 hover:bg-white/10 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-[0.98] focus:outline-none backdrop-blur-sm cursor-pointer"
+            className="w-full min-h-[48px] min-w-[48px] py-3.5 px-4 rounded-2xl bg-black/60 hover:bg-white/10 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-150 flex items-center justify-center gap-2 active:scale-95 active:opacity-80 focus:outline-none backdrop-blur-sm cursor-pointer touch-press"
           >
-            <MessageSquare className="w-3.5 h-3.5" />
+            <MessageSquare className="w-4 h-4 shrink-0" />
             <span className="truncate">{t('order_now')}</span>
           </button>
         </div>

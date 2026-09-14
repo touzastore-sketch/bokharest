@@ -111,7 +111,7 @@ export const MoreScreen: React.FC = () => {
                 }
                 setLanguage('ar');
               }}
-              className={`py-3 px-3 rounded-xl flex items-center justify-between transition-all duration-200 focus:outline-none cursor-pointer ${
+              className={`min-h-[48px] py-3.5 px-3.5 rounded-xl flex items-center justify-between transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press ${
                 language === 'ar'
                   ? 'bg-white text-black font-bold shadow-lg shadow-white/10'
                   : 'text-neutral-400 hover:text-white hover:bg-white/5'
@@ -141,7 +141,7 @@ export const MoreScreen: React.FC = () => {
                 }
                 setLanguage('en');
               }}
-              className={`py-3 px-3 rounded-xl flex items-center justify-between transition-all duration-200 focus:outline-none cursor-pointer ${
+              className={`min-h-[48px] py-3.5 px-3.5 rounded-xl flex items-center justify-between transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press ${
                 language === 'en'
                   ? 'bg-white text-black font-bold shadow-lg shadow-white/10'
                   : 'text-neutral-400 hover:text-white hover:bg-white/5'
@@ -168,7 +168,7 @@ export const MoreScreen: React.FC = () => {
               haptic.toggle();
               toggleLanguage();
             }}
-            className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-[11px] font-medium transition-colors flex items-center justify-center gap-2 border border-white/5 focus:outline-none cursor-pointer"
+            className="w-full min-h-[44px] py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 hover:text-white text-[11px] font-medium transition-all duration-150 flex items-center justify-center gap-2 border border-white/5 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 text-neutral-400" />
             <span>
@@ -190,7 +190,7 @@ export const MoreScreen: React.FC = () => {
               haptic.tab();
               openGallery(0);
             }}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right focus:outline-none cursor-pointer"
+            className="w-full min-h-[48px] p-4 flex items-center justify-between hover:bg-white/5 transition-all duration-150 text-left rtl:text-right focus:outline-none cursor-pointer active:scale-[0.98] active:opacity-80 touch-press"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/15">
@@ -222,7 +222,7 @@ export const MoreScreen: React.FC = () => {
               haptic.tab();
               setIsReservationOpen(true);
             }}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right focus:outline-none cursor-pointer"
+            className="w-full min-h-[48px] p-4 flex items-center justify-between hover:bg-white/5 transition-all duration-150 text-left rtl:text-right focus:outline-none cursor-pointer active:scale-[0.98] active:opacity-80 touch-press"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center border border-white/15">
@@ -253,7 +253,7 @@ export const MoreScreen: React.FC = () => {
               haptic.tab();
               setActiveTab('menu');
             }}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right focus:outline-none cursor-pointer"
+            className="w-full min-h-[48px] p-4 flex items-center justify-between hover:bg-white/5 transition-all duration-150 text-left rtl:text-right focus:outline-none cursor-pointer active:scale-[0.98] active:opacity-80 touch-press"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/5 text-white flex items-center justify-center">
@@ -272,7 +272,7 @@ export const MoreScreen: React.FC = () => {
           {/* Contact Hotline */}
           <a
             href={restaurantInfo.phoneCall}
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right"
+            className="w-full min-h-[48px] p-4 flex items-center justify-between hover:bg-white/5 transition-all duration-150 text-left rtl:text-right active:scale-[0.98] active:opacity-80 touch-press"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/5 text-white flex items-center justify-center">
@@ -293,7 +293,7 @@ export const MoreScreen: React.FC = () => {
             href={restaurantInfo.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full p-4 flex items-center justify-between hover:bg-white/5 transition-colors text-left rtl:text-right"
+            className="w-full min-h-[48px] p-4 flex items-center justify-between hover:bg-white/5 transition-all duration-150 text-left rtl:text-right active:scale-[0.98] active:opacity-80 touch-press"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl bg-white/5 text-white flex items-center justify-center">
@@ -317,12 +317,12 @@ export const MoreScreen: React.FC = () => {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-400 px-1">
             {t('follow_us')}
           </h3>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2.5">
             <a
               href={restaurantInfo.facebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 rounded-xl bg-[#0e0e0e] border border-white/10 text-center hover:border-white/30 transition-colors"
+              className="min-h-[48px] p-3 rounded-xl bg-[#0e0e0e] border border-white/10 text-center hover:border-white/30 transition-all duration-150 active:scale-95 active:opacity-80 touch-press flex flex-col justify-center items-center"
             >
               <span className="text-xs font-bold text-white block">Facebook</span>
               <span className="text-[10px] text-neutral-500">@bokharestblackeg</span>
@@ -331,7 +331,7 @@ export const MoreScreen: React.FC = () => {
               href={restaurantInfo.instagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 rounded-xl bg-[#0e0e0e] border border-white/10 text-center hover:border-white/30 transition-colors"
+              className="min-h-[48px] p-3 rounded-xl bg-[#0e0e0e] border border-white/10 text-center hover:border-white/30 transition-all duration-150 active:scale-95 active:opacity-80 touch-press flex flex-col justify-center items-center"
             >
               <span className="text-xs font-bold text-white block">Instagram</span>
               <span className="text-[10px] text-neutral-500">@bokharestblackeg</span>
@@ -340,7 +340,7 @@ export const MoreScreen: React.FC = () => {
               href={restaurantInfo.tiktokUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-3 rounded-xl bg-[#0e0e0e] border border-white/10 text-center hover:border-white/30 transition-colors"
+              className="min-h-[48px] p-3 rounded-xl bg-[#0e0e0e] border border-white/10 text-center hover:border-white/30 transition-all duration-150 active:scale-95 active:opacity-80 touch-press flex flex-col justify-center items-center"
             >
               <span className="text-xs font-bold text-white block">TikTok</span>
               <span className="text-[10px] text-neutral-500">@bokharestblackeg</span>

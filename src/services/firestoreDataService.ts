@@ -13,9 +13,10 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { firestoreDb } from './firebase';
-import { Category, MenuItem, OrderRecord, ReservationRecord, CustomerFeedback, RestaurantInfo, AdvertisementItem } from '../types';
+import { Category, MenuItem, OrderRecord, ReservationRecord, CustomerFeedback, RestaurantInfo, AdvertisementItem, GalleryImage } from '../types';
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO } from '../data/restaurantData';
 import { INITIAL_ADVERTISEMENTS } from '../data/ads';
+import { GALLERY_IMAGES } from '../data/galleryData';
 
 export const COLLECTIONS = {
   CATEGORIES: 'categories',
@@ -25,6 +26,7 @@ export const COLLECTIONS = {
   FEEDBACKS: 'feedbacks',
   RESTAURANT_INFO: 'restaurant_info',
   ADVERTISEMENTS: 'advertisements',
+  GALLERY: 'gallery',
 };
 
 /**
@@ -124,6 +126,22 @@ export async function seedFirestoreIfEmpty(): Promise<{ seeded: boolean; categor
       }
       await batch.commit();
       console.log(`[FirestoreData] ✅ تم بنجاح نقل البنرات الإعلانية إلى Cloud Firestore.`);
+    }
+
+    // تهيئة صور المعرض (Gallery) إذا كانت فارغة
+    const gallerySnapshot = await getDocs(collection(firestoreDb, COLLECTIONS.GALLERY));
+    if (gallerySnapshot.empty && GALLERY_IMAGES.length > 0) {
+      console.log(`[FirestoreData] جارٍ رفع وتأسيس ${GALLERY_IMAGES.length} صور للمعرض في Cloud Firestore...`);
+      const batch = writeBatch(firestoreDb);
+      for (const img of GALLERY_IMAGES) {
+        const ref = doc(firestoreDb, COLLECTIONS.GALLERY, img.id);
+        batch.set(ref, {
+          ...cleanDataForFirestore(img),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      console.log(`[FirestoreData] ✅ تم بنجاح نقل صور المعرض إلى Cloud Firestore.`);
     }
 
     return {
@@ -284,6 +302,43 @@ export async function saveOrderToFirestore(order: OrderRecord): Promise<boolean>
 }
 
 /**
+ * تحديث حالة طلب طعام في Cloud Firestore
+ */
+export async function updateOrderStatusInFirestore(
+  orderId: string,
+  newStatus: OrderRecord['status']
+): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.ORDERS, orderId);
+    await setDoc(ref, {
+      status: newStatus,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    console.log(`[FirestoreData] ✅ تم تحديث حالة الطلب (${orderId}) إلى ${newStatus}`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Failed to update order status in Firestore:', error);
+    return false;
+  }
+}
+
+/**
+ * حذف طلب من Cloud Firestore
+ */
+export async function deleteOrderFromFirestore(orderId: string): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.ORDERS, orderId);
+    await deleteDoc(ref);
+    console.log(`[FirestoreData] 🗑️ تم حذف الطلب (${orderId}) من Cloud Firestore`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Failed to delete order from Firestore:', error);
+    return false;
+  }
+}
+
+
+/**
  * الاستماع لسجل الطلبات من Firestore
  */
 export function subscribeToOrders(
@@ -330,6 +385,42 @@ export async function saveReservationToFirestore(reservation: ReservationRecord)
 }
 
 /**
+ * تحديث حالة حجز طاولة في Cloud Firestore
+ */
+export async function updateReservationStatusInFirestore(
+  reservationId: string,
+  newStatus: ReservationRecord['status']
+): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, reservationId);
+    await setDoc(ref, {
+      status: newStatus,
+      updatedAt: serverTimestamp(),
+    }, { merge: true });
+    console.log(`[FirestoreData] ✅ تم تحديث حالة الحجز (${reservationId}) إلى ${newStatus}`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Failed to update reservation status in Firestore:', error);
+    return false;
+  }
+}
+
+/**
+ * حذف حجز طاولة من Cloud Firestore
+ */
+export async function deleteReservationFromFirestore(reservationId: string): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, reservationId);
+    await deleteDoc(ref);
+    console.log(`[FirestoreData] 🗑️ تم حذف حجز الطاولة (${reservationId}) من Cloud Firestore`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Failed to delete reservation from Firestore:', error);
+    return false;
+  }
+}
+
+/**
  * الاستماع لسجل حجوزات الطاولات من Firestore
  */
 export function subscribeToReservations(
@@ -352,70 +443,6 @@ export function subscribeToReservations(
     );
   } catch {
     return () => {};
-  }
-}
-
-/**
- * تحديث حالة الطلب في Firestore
- */
-export async function updateOrderStatusInFirestore(
-  orderId: string,
-  newStatus: OrderRecord['status']
-): Promise<boolean> {
-  try {
-    const ref = doc(firestoreDb, COLLECTIONS.ORDERS, orderId);
-    await setDoc(ref, { status: newStatus, updatedAt: serverTimestamp() }, { merge: true });
-    return true;
-  } catch (error) {
-    console.error('[FirestoreData] Error updating order status:', error);
-    return false;
-  }
-}
-
-/**
- * تحديث حالة حجز طاولة في Firestore
- */
-export async function updateReservationStatusInFirestore(
-  resId: string,
-  newStatus: ReservationRecord['status']
-): Promise<boolean> {
-  try {
-    const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, resId);
-    await setDoc(ref, { status: newStatus, updatedAt: serverTimestamp() }, { merge: true });
-    return true;
-  } catch (error) {
-    console.error('[FirestoreData] Error updating reservation status:', error);
-    return false;
-  }
-}
-
-/**
- * حذف طلب من Cloud Firestore
- */
-export async function deleteOrderFromFirestore(orderId: string): Promise<boolean> {
-  try {
-    const ref = doc(firestoreDb, COLLECTIONS.ORDERS, orderId);
-    await deleteDoc(ref);
-    console.log(`[FirestoreData] 🗑️ تم حذف الطلب (${orderId}) من Cloud Firestore`);
-    return true;
-  } catch (error) {
-    console.error('[FirestoreData] Error deleting order from Firestore:', error);
-    return false;
-  }
-}
-
-/**
- * حذف حجز طاولة من Cloud Firestore
- */
-export async function deleteReservationFromFirestore(resId: string): Promise<boolean> {
-  try {
-    const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, resId);
-    await deleteDoc(ref);
-    console.log(`[FirestoreData] 🗑️ تم حذف حجز الطاولة (${resId}) من Cloud Firestore`);
-    return true;
-  } catch (error) {
-    console.error('[FirestoreData] Error deleting reservation from Firestore:', error);
-    return false;
   }
 }
 
@@ -689,6 +716,76 @@ export function subscribeToRestaurantInfo(
     return () => {};
   }
 }
+
+/**
+ * الاستماع اللحظي لصور المعرض في Cloud Firestore
+ */
+export function subscribeToGallery(
+  onUpdate: (images: GalleryImage[]) => void,
+  onError?: (error: any) => void
+): () => void {
+  try {
+    const q = query(collection(firestoreDb, COLLECTIONS.GALLERY));
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const list: GalleryImage[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push(docSnap.data() as GalleryImage);
+        });
+        if (list.length > 0) {
+          onUpdate(list);
+        }
+      },
+      (error) => {
+        console.warn('[FirestoreData] Gallery listener note:', error);
+        if (onError) onError(error);
+      }
+    );
+  } catch (err) {
+    console.warn('[FirestoreData] Error setting up gallery listener:', err);
+    return () => {};
+  }
+}
+
+/**
+ * حفظ أو تعديل صورة في المعرض في Cloud Firestore
+ */
+export async function saveGalleryImageToFirestore(image: GalleryImage): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.GALLERY, image.id);
+    const cleaned = cleanDataForFirestore(image);
+    await setDoc(
+      ref,
+      {
+        ...cleaned,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+    console.log(`[FirestoreData] ✅ تم حفظ صورة المعرض (${image.id}) في Cloud Firestore`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Failed to save gallery image:', error);
+    return false;
+  }
+}
+
+/**
+ * حذف صورة من المعرض في Cloud Firestore
+ */
+export async function deleteGalleryImageFromFirestore(imageId: string): Promise<boolean> {
+  try {
+    const ref = doc(firestoreDb, COLLECTIONS.GALLERY, imageId);
+    await deleteDoc(ref);
+    console.log(`[FirestoreData] 🗑️ تم حذف صورة المعرض (${imageId}) من Cloud Firestore`);
+    return true;
+  } catch (error) {
+    console.error('[FirestoreData] Failed to delete gallery image:', error);
+    return false;
+  }
+}
+
 
 
 

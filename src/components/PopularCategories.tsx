@@ -62,7 +62,7 @@ export const PopularCategories: React.FC = () => {
             <button
               key={cat.id}
               onClick={() => handleSelectCategory(cat.id)}
-              className="p-4 rounded-2xl bg-[#0e0e0e] border border-white/10 hover:border-white/30 text-left rtl:text-right transition-all duration-200 group focus:outline-none active:scale-[0.98]"
+              className="min-h-[48px] p-4 rounded-2xl bg-[#0e0e0e] border border-white/10 hover:border-white/30 text-left rtl:text-right transition-all duration-150 group focus:outline-none active:scale-95 active:opacity-80 touch-press cursor-pointer"
             >
               <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-neutral-300 group-hover:text-white group-hover:bg-white/10 transition-colors mb-3">
                 <Icon className="w-5 h-5 stroke-[1.8]" />

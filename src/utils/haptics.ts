@@ -146,6 +146,13 @@ class HapticsManager {
   }
 
   /**
+   * Chip or option selection
+   */
+  public selection() {
+    this.toggle();
+  }
+
+  /**
    * Pull-to-refresh activation or completion
    */
   public refresh() {

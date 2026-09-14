@@ -40,13 +40,13 @@ export const BottomNavigation: React.FC = () => {
                 }
                 setActiveTab(item.id);
               }}
-              className={`relative flex-1 flex flex-col items-center justify-center h-full py-1 transition-all duration-200 focus:outline-none ${
+              className={`relative flex-1 flex flex-col items-center justify-center min-h-[48px] min-w-[48px] h-full py-1.5 transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press ${
                 isActive ? 'text-white' : 'text-neutral-500 hover:text-neutral-300'
               }`}
             >
-              <div className="relative">
+              <div className="relative flex items-center justify-center">
                 <Icon 
-                  className={`w-5 h-5 transition-transform duration-200 ${
+                  className={`w-5 h-5 transition-transform duration-150 ${
                     isActive ? 'scale-110 stroke-[2.2]' : 'stroke-[1.6]'
                   }`} 
                 />
@@ -57,7 +57,7 @@ export const BottomNavigation: React.FC = () => {
                 )}
               </div>
 
-              <span className={`text-[11px] mt-1 font-medium tracking-wide transition-colors duration-200 ${
+              <span className={`text-[11px] mt-1 font-medium tracking-wide transition-colors duration-150 ${
                 isActive ? 'text-white font-semibold' : 'text-neutral-500'
               }`}>
                 {item.label}

@@ -103,7 +103,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           <button
             onClick={handleFavorite}
             aria-label="Toggle favorite"
-            className="absolute top-2.5 right-2.5 rtl:right-auto rtl:left-2.5 p-2 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-black/80 transition-colors focus:outline-none z-10"
+            className="absolute top-2 right-2 rtl:right-auto rtl:left-2 min-h-[44px] min-w-[44px] p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-black/80 transition-all duration-150 focus:outline-none z-10 flex items-center justify-center active:scale-95 active:opacity-80 touch-press cursor-pointer"
           >
             <Heart
               className={`w-4 h-4 transition-colors ${
@@ -163,14 +163,14 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
           </span>
 
           {!isAvailable ? (
-            <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-neutral-900 border border-white/10 text-neutral-500 cursor-not-allowed">
+            <span className="px-3.5 py-2 rounded-full text-xs font-semibold bg-neutral-900 border border-white/10 text-neutral-500 cursor-not-allowed">
               {language === 'ar' ? 'غير متاح' : 'Unavailable'}
             </span>
           ) : quantityInCart === 0 ? (
             <button
               id={`add-btn-${item.id}`}
               onClick={handleAdd}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 focus:outline-none min-h-[34px] ${
+              className={`flex items-center gap-1.5 min-h-[44px] px-4 py-2.5 rounded-full text-xs font-semibold tracking-wider transition-all duration-150 focus:outline-none active:scale-95 active:opacity-80 touch-press ${
                 justAdded
                   ? 'bg-white text-black'
                   : 'bg-white/10 hover:bg-white hover:text-black text-white border border-white/20 cursor-pointer'
@@ -178,34 +178,34 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
             >
               {justAdded ? (
                 <>
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4" />
                   <span>{t('added_to_cart')}</span>
                 </>
               ) : (
                 <>
-                  <Plus className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                   <span>{t('add_to_order')}</span>
                 </>
               )}
             </button>
           ) : (
-            <div className="flex items-center gap-2 bg-neutral-900 border border-white/25 rounded-full px-2 py-1">
+            <div className="flex items-center gap-2 bg-neutral-900 border border-white/25 rounded-full p-1 min-h-[44px]">
               <button
                 onClick={handleDecrement}
                 aria-label="Decrease quantity"
-                className="w-6 h-6 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
               >
-                <Minus className="w-3 h-3" />
+                <Minus className="w-3.5 h-3.5" />
               </button>
-              <span className="text-xs font-bold text-white min-w-4 text-center">
+              <span className="text-xs font-bold text-white min-w-5 text-center">
                 {quantityInCart}
               </span>
               <button
                 onClick={handleIncrement}
                 aria-label="Increase quantity"
-                className="w-6 h-6 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
+                className="w-8 h-8 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
           )}

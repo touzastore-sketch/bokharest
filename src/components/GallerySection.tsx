@@ -1,10 +1,9 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { GALLERY_IMAGES } from '../data/galleryData';
 import { Camera, Maximize2 } from 'lucide-react';
 
 export const GallerySection: React.FC = () => {
-  const { language, openGallery } = useApp();
+  const { language, openGallery, galleryImages } = useApp();
 
   return (
     <section className="px-4 py-8 select-none">
@@ -30,7 +29,7 @@ export const GallerySection: React.FC = () => {
 
       {/* Pure Luxury Photo Grid - No categories, no text clutter */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5">
-        {GALLERY_IMAGES.map((image, index) => {
+        {galleryImages.map((image, index) => {
           const isSpanTwo = index === 0;
 
           return (
@@ -44,11 +43,13 @@ export const GallerySection: React.FC = () => {
             >
               {/* Pure Photo */}
               <img
-                src={image.localUrl}
+                src={image.url || image.localUrl}
                 onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src = image.url;
+                  if (image.localUrl) {
+                    (e.currentTarget as HTMLImageElement).src = image.localUrl;
+                  }
                 }}
-                alt="Bokharest"
+                alt={language === 'ar' ? image.title_ar : image.title_en}
                 className="w-full h-full object-cover object-center transform transition-transform duration-700 ease-out group-hover:scale-106 filter brightness-95 group-hover:brightness-105"
                 loading="lazy"
               />

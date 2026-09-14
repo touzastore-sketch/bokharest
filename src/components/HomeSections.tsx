@@ -47,7 +47,7 @@ export const TableReservationSection: React.FC = () => {
           <button
             id="home-banner-book-table-btn"
             onClick={() => setIsReservationOpen(true)}
-            className="w-full sm:w-auto py-3.5 px-7 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 shadow-xl shadow-white/10 focus:outline-none"
+            className="w-full sm:w-auto min-h-[48px] min-w-[48px] py-3.5 px-7 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 active:scale-95 active:opacity-80 transition-all duration-150 flex items-center justify-center gap-2.5 shadow-xl shadow-white/10 focus:outline-none cursor-pointer touch-press"
           >
             <Calendar className="w-4 h-4" />
             <span>{t('book_table')}</span>
@@ -89,7 +89,7 @@ export const OrderBannerSection: React.FC = () => {
               setActiveTab('menu');
               setIsCartOpen(true);
             }}
-            className="py-3 px-6 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 shadow-lg"
+            className="min-h-[48px] min-w-[48px] py-3.5 px-6 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-all duration-150 flex items-center justify-center gap-2 shadow-lg active:scale-95 active:opacity-80 cursor-pointer touch-press"
           >
             <MessageSquare className="w-4 h-4" />
             <span>{t('order_now')}</span>
@@ -98,7 +98,7 @@ export const OrderBannerSection: React.FC = () => {
           <a
             href={restaurantInfo.phoneCall}
             dir="ltr"
-            className="py-3 px-5 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-xs transition-colors flex items-center justify-center gap-2 font-mono"
+            className="min-h-[48px] min-w-[48px] py-3.5 px-5 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-xs transition-all duration-150 flex items-center justify-center gap-2 font-mono active:scale-95 active:opacity-80 touch-press"
           >
             <Phone className="w-3.5 h-3.5 shrink-0" />
             <bdi dir="ltr" className="font-mono tracking-wider font-bold">
@@ -186,9 +186,9 @@ export const LocationSection: React.FC = () => {
             href={restaurantInfo.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 py-3 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+            className="flex-1 min-h-[48px] py-3.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer"
           >
-            <ExternalLink className="w-3.5 h-3.5" />
+            <ExternalLink className="w-4 h-4" />
             <span>{t('open_maps')}</span>
           </a>
 
@@ -196,9 +196,9 @@ export const LocationSection: React.FC = () => {
             href={restaurantInfo.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors"
+            className="flex-1 min-h-[48px] py-3.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer"
           >
-            <Navigation className="w-3.5 h-3.5" />
+            <Navigation className="w-4 h-4" />
             <span>{t('get_directions')}</span>
           </a>
         </div>
@@ -262,7 +262,7 @@ export const SocialMediaSection: React.FC = () => {
             href={channel.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-4 rounded-2xl bg-[#0d0d0d] border border-white/15 hover:border-white/40 flex items-center justify-between transition-all duration-200 group focus:outline-none"
+            className="min-h-[48px] p-4 rounded-2xl bg-[#0d0d0d] border border-white/15 hover:border-white/40 flex items-center justify-between transition-all duration-150 group focus:outline-none active:scale-95 active:opacity-80 touch-press cursor-pointer"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center group-hover:bg-white group-hover:text-black transition-colors">

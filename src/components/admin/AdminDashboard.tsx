@@ -34,6 +34,7 @@ import {
   ArrowRight,
   TrendingUp,
   Image as ImageIcon,
+  Camera,
   Share2,
   MapPin,
   Globe
@@ -71,6 +72,7 @@ import {
   APP_DEFAULT_IMAGES,
 } from '../../services/firebaseStorageService';
 import { AdvertisementsManager } from './AdvertisementsManager';
+import { GalleryManager } from './GalleryManager';
 
 type AdminTab =
   | 'overview'
@@ -79,6 +81,7 @@ type AdminTab =
   | 'reservations'
   | 'ads'
   | 'categories'
+  | 'gallery'
   | 'settings';
 
 interface AdminDashboardProps {
@@ -91,6 +94,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     categories,
     restaurantInfo,
     advertisements,
+    galleryImages,
     language,
     saveMenuItem,
     deleteMenuItem,
@@ -548,6 +552,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               badge: advertisements.length,
             },
             { id: 'categories', label: 'إدارة الأقسام', icon: Layers, badge: categories.length },
+            { id: 'gallery', label: 'إدارة المعرض والأنشطة', icon: Camera, badge: galleryImages.length },
             { id: 'settings', label: 'الواتساب والتواصل الاجتماعي', icon: MessageCircle },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -1669,6 +1674,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 })}
               </div>
             </div>
+          )}
+
+          {/* ==========================================
+              TAB: GALLERY MANAGEMENT
+          ========================================== */}
+          {activeTab === 'gallery' && (
+            <GalleryManager onNotify={showNotification} />
           )}
 
           {/* ==========================================

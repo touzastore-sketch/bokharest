@@ -103,10 +103,10 @@ export const CartDrawer: React.FC = () => {
                   haptic.stepper();
                   clearCart();
                 }}
-                className="text-xs text-neutral-400 hover:text-red-400 transition-colors flex items-center gap-1 focus:outline-none cursor-pointer"
+                className="min-h-[44px] px-2 text-xs text-neutral-400 hover:text-red-400 transition-all duration-150 flex items-center gap-1.5 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
                 title={t('clear_order')}
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('clear_order')}</span>
               </button>
             )}
@@ -117,7 +117,7 @@ export const CartDrawer: React.FC = () => {
                 handleClose();
               }}
               aria-label="Close cart"
-              className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors focus:outline-none cursor-pointer"
+              className="min-h-[44px] min-w-[44px] p-2.5 rounded-full bg-white/5 hover:bg-white/10 text-white transition-all duration-150 focus:outline-none cursor-pointer flex items-center justify-center active:scale-95 active:opacity-80 touch-press"
             >
               <X className="w-5 h-5" />
             </button>
@@ -217,10 +217,10 @@ export const CartDrawer: React.FC = () => {
                   handleClose();
                   setActiveTab('menu');
                 }}
-                className="px-6 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors flex items-center gap-2"
+                className="min-h-[48px] px-7 py-3.5 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-all duration-150 flex items-center gap-2 active:scale-95 active:opacity-80 touch-press cursor-pointer"
               >
                 <span>{t('view_menu')}</span>
-                <ArrowIcon className="w-3.5 h-3.5" />
+                <ArrowIcon className="w-4 h-4" />
               </button>
             </div>
           ) : (
@@ -267,17 +267,17 @@ export const CartDrawer: React.FC = () => {
                     </div>
 
                     {/* Quantity Selector */}
-                    <div className="flex items-center gap-2 bg-black border border-white/20 rounded-full px-2 py-1 shrink-0">
+                    <div className="flex items-center gap-2 bg-black border border-white/20 rounded-full p-1 shrink-0 min-h-[44px]">
                       <button
                         onClick={() => {
                           haptic.stepper();
                           updateQuantity(item.id, quantity - 1);
                         }}
-                        className="w-5 h-5 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
+                        className="w-7 h-7 rounded-full bg-white/10 hover:bg-white hover:text-black text-white flex items-center justify-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
                       >
-                        <Minus className="w-3 h-3" />
+                        <Minus className="w-3.5 h-3.5" />
                       </button>
-                      <span className="text-xs font-bold text-white min-w-4 text-center">
+                      <span className="text-xs font-bold text-white min-w-5 text-center">
                         {quantity}
                       </span>
                       <button
@@ -285,9 +285,9 @@ export const CartDrawer: React.FC = () => {
                           haptic.stepper();
                           updateQuantity(item.id, quantity + 1);
                         }}
-                        className="w-5 h-5 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-colors focus:outline-none cursor-pointer"
+                        className="w-7 h-7 rounded-full bg-white text-black hover:bg-neutral-200 flex items-center justify-center transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -420,7 +420,7 @@ export const CartDrawer: React.FC = () => {
             <button
               id="cart-checkout-whatsapp-btn"
               onClick={handleCheckout}
-              className="w-full py-3.5 px-6 rounded-2xl bg-white text-black hover:bg-neutral-200 active:scale-[0.99] font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-white/10 focus:outline-none"
+              className="w-full min-h-[48px] py-3.5 px-6 rounded-2xl bg-white text-black hover:bg-neutral-200 active:scale-95 active:opacity-80 font-bold text-sm tracking-wider uppercase flex items-center justify-center gap-3 transition-all duration-150 shadow-xl shadow-white/10 focus:outline-none cursor-pointer touch-press"
             >
               {/* WhatsApp stylized monochrome icon */}
               <Send className="w-4 h-4 stroke-[2.2]" />

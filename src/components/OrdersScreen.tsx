@@ -82,13 +82,13 @@ export const OrdersScreen: React.FC = () => {
           <button
             id="orders-tab-toggle-orders"
             onClick={() => setActiveSubTab('orders')}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer active:scale-95 active:opacity-80 touch-press ${
               activeSubTab === 'orders'
                 ? 'bg-white text-black shadow-md'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <ShoppingBag className="w-4 h-4" />
             <span>{language === 'ar' ? 'طلبات الطعام' : 'Food Orders'}</span>
             {orderHistory.length > 0 && (
               <span
@@ -104,13 +104,13 @@ export const OrdersScreen: React.FC = () => {
           <button
             id="orders-tab-toggle-reservations"
             onClick={() => setActiveSubTab('reservations')}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            className={`flex-1 min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-center gap-2 cursor-pointer active:scale-95 active:opacity-80 touch-press ${
               activeSubTab === 'reservations'
                 ? 'bg-white text-black shadow-md'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5" />
+            <Calendar className="w-4 h-4" />
             <span>{t('reservations')}</span>
             {reservationHistory.length > 0 && (
               <span
@@ -189,10 +189,21 @@ export const OrdersScreen: React.FC = () => {
                 >
                   <div className="flex items-center justify-between text-xs pb-2 border-b border-white/5">
                     <span className="font-mono text-neutral-400">{res.id}</span>
-                    <div className="flex items-center gap-1 text-emerald-400 font-semibold text-[11px]">
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{language === 'ar' ? 'تم الإرسال لواتساب' : 'Sent to WhatsApp'}</span>
-                    </div>
+                    {res.status === 'confirmed' ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{language === 'ar' ? 'تم تأكيد الحجز' : 'Reservation Confirmed'}</span>
+                      </div>
+                    ) : res.status === 'cancelled' ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-bold">
+                        <span>{language === 'ar' ? 'حجز ملغي' : 'Cancelled'}</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                        <Clock className="w-3.5 h-3.5 animate-pulse" />
+                        <span>{language === 'ar' ? 'قيد المراجعة والتأكيد' : 'Pending Confirmation'}</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-xs">
@@ -348,7 +359,7 @@ export const OrdersScreen: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setActiveTab('menu')}
-                  className="mt-5 px-6 py-2.5 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors"
+                  className="mt-5 min-h-[48px] px-7 py-3 rounded-full bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer"
                 >
                   {t('view_menu')}
                 </button>
@@ -372,10 +383,25 @@ export const OrdersScreen: React.FC = () => {
                           <span>{formattedDate}</span>
                         </div>
 
-                        <div className="flex items-center gap-1 text-emerald-400 font-medium">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>{language === 'ar' ? 'تم إرسالها لواتساب' : 'Sent to WhatsApp'}</span>
-                        </div>
+                        {order.status === 'completed' ? (
+                          <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[11px] font-bold">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>{language === 'ar' ? 'اكتمل واستلم' : 'Completed'}</span>
+                          </div>
+                        ) : order.status === 'preparing' ? (
+                          <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[11px] font-bold animate-pulse">
+                            <span>👨‍🍳 {language === 'ar' ? 'جاري التحضير في المطبخ' : 'Preparing'}</span>
+                          </div>
+                        ) : order.status === 'cancelled' ? (
+                          <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[11px] font-bold">
+                            <span>{language === 'ar' ? 'طلب ملغي' : 'Cancelled'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold">
+                            <Clock className="w-3.5 h-3.5" />
+                            <span>{language === 'ar' ? 'تم الإرسال / قيد الاستلام' : 'Order Received'}</span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Items summary */}
@@ -405,16 +431,16 @@ export const OrdersScreen: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleDeleteOrder(order.id)}
-                            className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                            className="min-h-[44px] min-w-[44px] p-2 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all duration-150 cursor-pointer flex items-center justify-center active:scale-95 active:opacity-80 touch-press"
                             title={language === 'ar' ? 'حذف من السجل' : 'Delete from history'}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleRepeatOrder(order)}
-                            className="px-3 py-1.5 rounded-full bg-white/10 hover:bg-white hover:text-black text-white text-xs font-semibold flex items-center gap-1.5 transition-colors focus:outline-none cursor-pointer"
+                            className="min-h-[44px] px-4 py-2 rounded-full bg-white/10 hover:bg-white hover:text-black text-white text-xs font-semibold flex items-center gap-1.5 transition-all duration-150 focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press"
                           >
-                            <RotateCcw className="w-3 h-3" />
+                            <RotateCcw className="w-3.5 h-3.5" />
                             <span>{language === 'ar' ? 'إعادة الطلب' : 'Reorder'}</span>
                           </button>
                         </div>

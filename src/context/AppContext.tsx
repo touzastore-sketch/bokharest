@@ -1,13 +1,19 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, MenuItem, CartItem, OrderRecord, ReservationRecord, ReservationData, RestaurantInfo, Language, CustomerFeedback, AdvertisementItem } from '../types';
+import { Category, MenuItem, CartItem, OrderRecord, ReservationRecord, ReservationData, RestaurantInfo, Language, CustomerFeedback, AdvertisementItem, GalleryImage } from '../types';
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO, MENU_PRICING_POLICY, UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { INITIAL_ADVERTISEMENTS } from '../data/ads';
+import { GALLERY_IMAGES } from '../data/galleryData';
 import {
   seedFirestoreIfEmpty,
   subscribeToCategories,
   subscribeToMenuItems,
   subscribeToAdvertisements,
   subscribeToRestaurantInfo,
+  subscribeToOrders,
+  subscribeToReservations,
+  subscribeToGallery,
+  saveGalleryImageToFirestore,
+  deleteGalleryImageFromFirestore,
   saveMenuItemToFirestore,
   deleteMenuItemFromFirestore,
   saveCategoryToFirestore,
@@ -107,12 +113,15 @@ interface AppContextType {
   generateWhatsAppReservationMessage: (data: ReservationData) => string;
   sendWhatsAppReservation: (data: ReservationData) => { success: boolean; url: string; message: string };
 
-  // Gallery Modal
+  // Gallery Modal & Cloud Data
   isGalleryOpen: boolean;
   setIsGalleryOpen: (open: boolean) => void;
   selectedGalleryIndex: number;
   setSelectedGalleryIndex: (index: number) => void;
   openGallery: (initialIndex?: number) => void;
+  galleryImages: GalleryImage[];
+  saveGalleryImage: (image: GalleryImage) => Promise<boolean>;
+  deleteGalleryImage: (imageId: string) => Promise<boolean>;
 
   // Orders history
   orderHistory: OrderRecord[];
@@ -164,6 +173,7 @@ const STORAGE_KEYS = {
   CUSTOMER: 'bokharest_customer_info',
   RESERVATIONS: 'bokharest_reservations',
   FEEDBACK: 'bokharest_feedbacks',
+  GALLERY: 'bokharest_gallery_v1',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -247,6 +257,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const openGallery = (initialIndex: number = 0) => {
     setSelectedGalleryIndex(initialIndex);
     setIsGalleryOpen(true);
+  };
+
+  // Gallery Images state backed by Firestore and local storage
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.GALLERY);
+      return saved ? JSON.parse(saved) : GALLERY_IMAGES;
+    } catch {
+      return GALLERY_IMAGES;
+    }
+  });
+
+  const saveGalleryImage = async (image: GalleryImage): Promise<boolean> => {
+    setGalleryImages(prev => {
+      const existingIdx = prev.findIndex(img => img.id === image.id);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = image;
+        return updated;
+      }
+      return [image, ...prev];
+    });
+    return await saveGalleryImageToFirestore(image);
+  };
+
+  const deleteGalleryImage = async (imageId: string): Promise<boolean> => {
+    setGalleryImages(prev => prev.filter(img => img.id !== imageId));
+    return await deleteGalleryImageFromFirestore(imageId);
   };
 
   // Synchronize document dir and lang attributes
@@ -395,11 +433,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
+    // 6. Real-time subscription to Gallery Images in Cloud Firestore
+    const unsubGallery = subscribeToGallery((remoteGallery) => {
+      if (remoteGallery && remoteGallery.length > 0) {
+        setGalleryImages(remoteGallery);
+        try {
+          localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(remoteGallery));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    // 7. Real-time subscription to Orders in Cloud Firestore (for live status updates)
+    const unsubOrders = subscribeToOrders((remoteOrders) => {
+      if (remoteOrders && remoteOrders.length > 0) {
+        setOrderHistory(remoteOrders);
+        try {
+          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(remoteOrders));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
+    // 8. Real-time subscription to Reservations in Cloud Firestore (for live status updates)
+    const unsubReservations = subscribeToReservations((remoteReservations) => {
+      if (remoteReservations && remoteReservations.length > 0) {
+        setReservationHistory(remoteReservations);
+        try {
+          localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(remoteReservations));
+        } catch {
+          // ignore
+        }
+      }
+    });
+
     return () => {
       unsubCategories();
       unsubMenuItems();
       unsubAdvertisements();
       unsubRestaurantInfo();
+      unsubGallery();
+      unsubOrders();
+      unsubReservations();
     };
   }, []);
 
@@ -1124,6 +1201,9 @@ _Sent via official Bokharest Black mobile application_`;
         selectedGalleryIndex,
         setSelectedGalleryIndex,
         openGallery,
+        galleryImages,
+        saveGalleryImage,
+        deleteGalleryImage,
         orderHistory,
         deleteOrder,
         clearAllOrders,
