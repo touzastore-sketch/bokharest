@@ -93,6 +93,17 @@ export interface ReservationData {
   specialRequests?: string;
 }
 
+export interface PricingPolicy {
+  currency_ar: string;
+  currency_en: string;
+  serviceChargeRate: number; // e.g. 0.12 for 12%
+  serviceChargeEnabled: boolean; // toggle service charge on/off
+  vatRate: number; // e.g. 0.14 for 14%
+  vatEnabled: boolean; // toggle VAT on/off
+  taxNotice_ar: string;
+  taxNotice_en: string;
+}
+
 export interface RestaurantInfo {
   name_en: string;
   name_ar: string;
@@ -113,6 +124,13 @@ export interface RestaurantInfo {
   address_ar: string;
   openingHours_en: string;
   openingHours_ar: string;
+  pricingPolicy?: PricingPolicy;
+  vatEnabled?: boolean;
+  vatRate?: number;
+  serviceChargeEnabled?: boolean;
+  serviceChargeRate?: number;
+  taxNotice_ar?: string;
+  taxNotice_en?: string;
 }
 
 export interface GalleryImage {

@@ -8,6 +8,7 @@ import {
   getActiveAdvertisements,
 } from '../data/ads';
 import { ChevronRight, ChevronLeft, MessageSquare, ExternalLink } from 'lucide-react';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 import { haptic } from '../utils/haptics';
 
 interface AdvertisementSliderProps {
@@ -290,7 +291,7 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                 >
                   {/* High Quality Ad Image */}
                   <img
-                    src={ad.image}
+                    src={getOptimizedImageUrl(ad.image)}
                     alt={language === 'ar' ? ad.title_ar || 'إعلان بوخارست بلاك' : ad.title_en || 'Bokharest Black Advertisement'}
                     loading={idx === 0 ? 'eager' : 'lazy'}
                     fetchPriority={idx === 0 ? 'high' : 'auto'}
@@ -298,7 +299,7 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                     referrerPolicy="no-referrer"
                     onError={(e) => {
                       if (ad.fallbackImage) {
-                        (e.currentTarget as HTMLImageElement).src = ad.fallbackImage;
+                        (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(ad.fallbackImage);
                       }
                     }}
                     className="w-full h-full object-cover object-center pointer-events-none select-none transition-transform duration-700"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 import { X, Heart, Plus, Minus, Check, Clock, Flame } from 'lucide-react';
 import { CategoryServingNote } from './CategoryServingNote';
 import { haptic } from '../utils/haptics';
@@ -61,9 +62,9 @@ export const ItemDetailModal: React.FC = () => {
     }, 900);
   };
 
-  const imageSrc = !imgError && item.image
-    ? item.image
-    : UNIFIED_MENU_ITEM_IMAGE;
+  const imageSrc = getOptimizedImageUrl(
+    !imgError && item.image ? item.image : UNIFIED_MENU_ITEM_IMAGE
+  );
 
   const totalPrice = item.price * quantity;
 

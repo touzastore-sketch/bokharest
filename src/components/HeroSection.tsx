@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { BrandLogo } from './BrandLogo';
+import { CLOUDINARY_ASSETS, getOptimizedImageUrl } from '../services/cloudinaryService';
 import { ArrowRight, ArrowLeft, MessageSquare, Calendar } from 'lucide-react';
 import { motion } from 'motion/react';
 import { haptic } from '../utils/haptics';
@@ -46,9 +47,9 @@ export const HeroSection: React.FC = () => {
         className="absolute inset-0 overflow-hidden pointer-events-none will-change-transform z-0"
       >
         <img
-          src="/cafe_hero.png"
+          src={getOptimizedImageUrl(CLOUDINARY_ASSETS.cafeHero)}
           onError={(e) => {
-            (e.currentTarget as HTMLImageElement).src = 'https://i.ibb.co/wr3SP576/image.png';
+            (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(CLOUDINARY_ASSETS.cafeHero);
           }}
           alt="Bokharest Cafe Ambiance"
           className="w-full h-full object-cover object-center opacity-35 scale-105 filter brightness-95 contrast-105 transition-transform duration-1000"

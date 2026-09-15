@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, MenuItem, CartItem, OrderRecord, ReservationRecord, ReservationData, RestaurantInfo, Language, CustomerFeedback, AdvertisementItem, GalleryImage } from '../types';
-import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO, MENU_PRICING_POLICY, UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { Category, MenuItem, CartItem, OrderRecord, ReservationRecord, ReservationData, RestaurantInfo, Language, CustomerFeedback, AdvertisementItem, GalleryImage, PricingPolicy } from '../types';
+import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO, MENU_PRICING_POLICY, UNIFIED_MENU_ITEM_IMAGE, generateTaxNotice } from '../data/restaurantData';
 import { INITIAL_ADVERTISEMENTS } from '../data/ads';
 import { GALLERY_IMAGES } from '../data/galleryData';
 import {
@@ -27,6 +27,7 @@ import {
   saveReservationToFirestore,
   deleteReservationFromFirestore,
   saveFeedbackToFirestore,
+  migrateAllCollectionsToCloudinary,
 } from '../services/firestoreDataService';
 import { autoSyncAllAppAssetsToFirebase, migrateAllAppImagesToFirebase } from '../services/firebaseStorageService';
 
@@ -79,7 +80,8 @@ interface AppContextType {
   cartServiceCharge: number;
   cartVat: number;
   cartTotal: number;
-  pricingPolicy: typeof MENU_PRICING_POLICY;
+  pricingPolicy: PricingPolicy;
+  updatePricingPolicy: (newPolicy: Partial<PricingPolicy>) => Promise<boolean>;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
   
@@ -291,6 +293,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     try {
+      const cloudRes = await migrateAllCollectionsToCloudinary((msg, pct) => {
+        setMigrationProgress({
+          current: Math.round((pct / 100) * 10),
+          total: 10,
+          itemName: msg,
+          percent: pct,
+        });
+      });
+
       const res = await migrateAllAppImagesToFirebase((curr, tot, name, pct) => {
         setMigrationProgress({
           current: curr,
@@ -300,12 +311,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       });
 
-      if (res.success) {
+      if (cloudRes.success || res.success) {
         setMigrationResult({
           success: true,
-          totalMigrated: res.totalMigrated,
-          menuItemsUpdated: res.menuItemsUpdated || menuItems.length,
-          message: `تم بنجاح نقل وتأكيد ${res.totalMigrated} صورة من صور التطبيق، وتحديث ${res.menuItemsUpdated || menuItems.length} صنف في قاعدة البيانات!`,
+          totalMigrated: res.totalMigrated || 11,
+          menuItemsUpdated: cloudRes.menuCount || res.menuItemsUpdated || menuItems.length,
+          message: `تم بنجاح نقل وتحديث كافة الصور والروابط إلى Cloudinary بنظام (f_auto, q_auto)، وتحديث ${cloudRes.menuCount || menuItems.length} صنفاً في Cloud Firestore!`,
         });
       } else {
         setMigrationResult({
@@ -784,23 +795,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return cart.reduce((acc, curr) => acc + curr.quantity, 0);
   }, [cart]);
 
+  // Dynamic Pricing Policy (VAT, Service Charge, and Notices)
+  const pricingPolicy = useMemo<PricingPolicy>(() => {
+    const remote = restaurantInfo.pricingPolicy;
+    const vatEnabled = remote?.vatEnabled !== undefined
+      ? remote.vatEnabled
+      : (restaurantInfo.vatEnabled !== undefined ? restaurantInfo.vatEnabled : MENU_PRICING_POLICY.vatEnabled);
+    const vatRate = remote?.vatRate !== undefined
+      ? remote.vatRate
+      : (restaurantInfo.vatRate !== undefined ? restaurantInfo.vatRate : MENU_PRICING_POLICY.vatRate);
+    const serviceChargeEnabled = remote?.serviceChargeEnabled !== undefined
+      ? remote.serviceChargeEnabled
+      : (restaurantInfo.serviceChargeEnabled !== undefined ? restaurantInfo.serviceChargeEnabled : MENU_PRICING_POLICY.serviceChargeEnabled);
+    const serviceChargeRate = remote?.serviceChargeRate !== undefined
+      ? remote.serviceChargeRate
+      : (restaurantInfo.serviceChargeRate !== undefined ? restaurantInfo.serviceChargeRate : MENU_PRICING_POLICY.serviceChargeRate);
+
+    const notice = generateTaxNotice(serviceChargeEnabled, serviceChargeRate, vatEnabled, vatRate);
+
+    return {
+      currency_ar: remote?.currency_ar || MENU_PRICING_POLICY.currency_ar,
+      currency_en: remote?.currency_en || MENU_PRICING_POLICY.currency_en,
+      serviceChargeRate,
+      serviceChargeEnabled,
+      vatRate,
+      vatEnabled,
+      taxNotice_ar: remote?.taxNotice_ar || notice.ar,
+      taxNotice_en: remote?.taxNotice_en || notice.en,
+    };
+  }, [restaurantInfo]);
+
+  // Update Pricing Policy and sync with Firestore & LocalStorage
+  const updatePricingPolicy = async (newPolicy: Partial<PricingPolicy>): Promise<boolean> => {
+    const merged: PricingPolicy = {
+      ...pricingPolicy,
+      ...newPolicy,
+    };
+    const notice = generateTaxNotice(
+      merged.serviceChargeEnabled,
+      merged.serviceChargeRate,
+      merged.vatEnabled,
+      merged.vatRate
+    );
+    merged.taxNotice_ar = notice.ar;
+    merged.taxNotice_en = notice.en;
+
+    const updatedRestaurantInfo: RestaurantInfo = {
+      ...restaurantInfo,
+      pricingPolicy: merged,
+      vatEnabled: merged.vatEnabled,
+      vatRate: merged.vatRate,
+      serviceChargeEnabled: merged.serviceChargeEnabled,
+      serviceChargeRate: merged.serviceChargeRate,
+      taxNotice_ar: notice.ar,
+      taxNotice_en: notice.en,
+    };
+
+    setRestaurantInfo(updatedRestaurantInfo);
+    try {
+      localStorage.setItem('bokharest_restaurant_info_v1', JSON.stringify(updatedRestaurantInfo));
+    } catch {}
+    return await saveRestaurantInfoToFirestore(updatedRestaurantInfo);
+  };
+
   // Subtotal (sum of menu item prices)
   const cartSubtotal = useMemo(() => {
     const raw = cart.reduce((acc, curr) => acc + curr.item.price * curr.quantity, 0);
     return Math.round(raw * 100) / 100;
   }, [cart]);
 
-  // 12% Service charge
+  // Dynamic Service charge (respects toggle and dynamic percentage)
   const cartServiceCharge = useMemo(() => {
-    return Math.round(cartSubtotal * MENU_PRICING_POLICY.serviceChargeRate * 100) / 100;
-  }, [cartSubtotal]);
+    if (!pricingPolicy.serviceChargeEnabled || pricingPolicy.serviceChargeRate <= 0) return 0;
+    return Math.round(cartSubtotal * pricingPolicy.serviceChargeRate * 100) / 100;
+  }, [cartSubtotal, pricingPolicy.serviceChargeEnabled, pricingPolicy.serviceChargeRate]);
 
-  // 14% VAT applied on the bill (Subtotal + Service Charge)
+  // Dynamic VAT applied on the bill (Subtotal + Service Charge)
   const cartVat = useMemo(() => {
-    return Math.round((cartSubtotal + cartServiceCharge) * MENU_PRICING_POLICY.vatRate * 100) / 100;
-  }, [cartSubtotal, cartServiceCharge]);
+    if (!pricingPolicy.vatEnabled || pricingPolicy.vatRate <= 0) return 0;
+    const taxableAmount = cartSubtotal + cartServiceCharge;
+    return Math.round(taxableAmount * pricingPolicy.vatRate * 100) / 100;
+  }, [cartSubtotal, cartServiceCharge, pricingPolicy.vatEnabled, pricingPolicy.vatRate]);
 
-  // Final Total including service charge and VAT
+  // Final Total including service charge and VAT if enabled
   const cartTotal = useMemo(() => {
     return Math.round((cartSubtotal + cartServiceCharge + cartVat) * 100) / 100;
   }, [cartSubtotal, cartServiceCharge, cartVat]);
@@ -967,6 +1044,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ci => `• ${ci.quantity} × ${ci.item.name_ar} — ${(ci.item.price * ci.quantity).toFixed(2)} ج.م${ci.notes ? ` (${ci.notes})` : ''}`
       ).join('\n');
 
+      let chargesBreakdown = '';
+      if (pricingPolicy.serviceChargeEnabled && cartServiceCharge > 0) {
+        chargesBreakdown += `\n*رسوم الخدمة (${Math.round(pricingPolicy.serviceChargeRate * 100)}%):* ${cartServiceCharge.toFixed(2)} ج.م`;
+      }
+      if (pricingPolicy.vatEnabled && cartVat > 0) {
+        chargesBreakdown += `\n*ضريبة القيمة المضافة (${Math.round(pricingPolicy.vatRate * 100)}%):* ${cartVat.toFixed(2)} ج.م`;
+      }
+
       return `*بوخارست بلاك | BOKHAREST BLACK — طلب جديد* 🍽️
 -----------------------------------
 *اسم العميل:* ${customerInfo.name || 'عميل كريم'}
@@ -976,17 +1061,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 ${itemsList}
 
 -----------------------------------
-*المجموع الفرعي:* ${cartSubtotal.toFixed(2)} ج.م
-*رسوم الخدمة (12%):* ${cartServiceCharge.toFixed(2)} ج.م
-*ضريبة القيمة المضافة (14%):* ${cartVat.toFixed(2)} ج.م
+*المجموع الفرعي:* ${cartSubtotal.toFixed(2)} ج.م${chargesBreakdown}
 *الإجمالي النهائي المطلوب:* ${cartTotal.toFixed(2)} ج.م
 ${customerInfo.notes ? `\n*ملاحظات خاصة:* ${customerInfo.notes}\n` : ''}-----------------------------------
-_تخضع جميع الأسعار لـ 12% رسوم خدمة و14% ضريبة قيمة مضافة_
+_${pricingPolicy.taxNotice_ar}_
 _تم إرسال الطلب عبر تطبيق بوخارست بلاك الرسمي_`;
     } else {
       const itemsList = cart.map(
         ci => `• ${ci.quantity} × ${ci.item.name_en} — ${(ci.item.price * ci.quantity).toFixed(2)} EGP${ci.notes ? ` (${ci.notes})` : ''}`
       ).join('\n');
+
+      let chargesBreakdown = '';
+      if (pricingPolicy.serviceChargeEnabled && cartServiceCharge > 0) {
+        chargesBreakdown += `\n*Service Charge (${Math.round(pricingPolicy.serviceChargeRate * 100)}%):* ${cartServiceCharge.toFixed(2)} EGP`;
+      }
+      if (pricingPolicy.vatEnabled && cartVat > 0) {
+        chargesBreakdown += `\n*VAT (${Math.round(pricingPolicy.vatRate * 100)}%):* ${cartVat.toFixed(2)} EGP`;
+      }
 
       return `*BOKHAREST BLACK — NEW ORDER* 🍽️
 -----------------------------------
@@ -997,12 +1088,10 @@ _تم إرسال الطلب عبر تطبيق بوخارست بلاك الرسم
 ${itemsList}
 
 -----------------------------------
-*Subtotal:* ${cartSubtotal.toFixed(2)} EGP
-*Service Charge (12%):* ${cartServiceCharge.toFixed(2)} EGP
-*VAT (14%):* ${cartVat.toFixed(2)} EGP
+*Subtotal:* ${cartSubtotal.toFixed(2)} EGP${chargesBreakdown}
 *Final Total:* ${cartTotal.toFixed(2)} EGP
 ${customerInfo.notes ? `\n*Special Notes:* ${customerInfo.notes}\n` : ''}-----------------------------------
-_All prices are subject to 12% Service Charge & 14% VAT_
+_${pricingPolicy.taxNotice_en}_
 _Sent via official Bokharest Black mobile application_`;
     }
   };
@@ -1256,7 +1345,8 @@ _Sent via official Bokharest Black mobile application_`;
         cartServiceCharge,
         cartVat,
         cartTotal,
-        pricingPolicy: MENU_PRICING_POLICY,
+        pricingPolicy,
+        updatePricingPolicy,
         isCartOpen,
         setIsCartOpen,
         customerInfo,

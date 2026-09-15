@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { X, ChevronLeft, ChevronRight, Maximize2, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 
 export const GalleryModal: React.FC = () => {
   const {
@@ -114,10 +115,10 @@ export const GalleryModal: React.FC = () => {
 
           <img
             key={currentImage.id}
-            src={currentImage.url || currentImage.localUrl}
+            src={getOptimizedImageUrl(currentImage.url || currentImage.localUrl)}
             onError={(e) => {
               if (currentImage.localUrl) {
-                (e.currentTarget as HTMLImageElement).src = currentImage.localUrl;
+                (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(currentImage.localUrl);
               }
             }}
             alt={language === 'ar' ? currentImage.title_ar : currentImage.title_en}
@@ -153,10 +154,10 @@ export const GalleryModal: React.FC = () => {
                 }`}
               >
                 <img
-                  src={img.url || img.localUrl}
+                  src={getOptimizedImageUrl(img.url || img.localUrl)}
                   onError={(e) => {
                     if (img.localUrl) {
-                      (e.currentTarget as HTMLImageElement).src = img.localUrl;
+                      (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(img.localUrl);
                     }
                   }}
                   alt=""

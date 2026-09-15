@@ -3,8 +3,8 @@ import { GalleryImage } from '../types';
 export const GALLERY_IMAGES: GalleryImage[] = [
   {
     id: 'gal-1',
-    url: 'https://i.ibb.co/LdmZzLjc/image.png',
-    localUrl: '/gallery/gallery_1.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476547/tcgeqscofilg03biplfe.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476547/tcgeqscofilg03biplfe.png',
     title_ar: 'أجواء بوخارست الملكية',
     title_en: 'Royal Bokharest Ambiance',
     description_ar: 'تصميم داخلي راقٍ بإضاءات ساحرة وهدوء استثنائي يجمع بين الفخامة والراحة',
@@ -16,8 +16,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-2',
-    url: 'https://i.ibb.co/dJkWccnb/image.png',
-    localUrl: '/gallery/gallery_2.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476548/glcopyha5jwswjatqikd.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476548/glcopyha5jwswjatqikd.png',
     title_ar: 'الركن الكلاسيكي الهادئ',
     title_en: 'Classic Lounge Seating',
     description_ar: 'جلسات مريحة وتفاصيل معمارية مستوحاة من الطراز الكلاسيكي الفخم',
@@ -29,8 +29,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-3',
-    url: 'https://i.ibb.co/GvmLTzSp/image.png',
-    localUrl: '/gallery/gallery_3.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476549/aiohakwg2jv2ubtqkxgk.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476549/aiohakwg2jv2ubtqkxgk.png',
     title_ar: 'مشروبات بوخارست الخاصة',
     title_en: 'Signature Bokharest Drink',
     description_ar: 'مشروب منعش محضر بأجود المكونات الطبيعية ولمسة بوخارست المتميزة',
@@ -42,8 +42,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-4',
-    url: 'https://i.ibb.co/TDfxtcL6/image.png',
-    localUrl: '/gallery/gallery_4.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476551/azb8qayusxf4izuzlcvi.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476551/azb8qayusxf4izuzlcvi.png',
     title_ar: 'فن تحضير القهوة المختصة',
     title_en: 'Artisan Specialty Coffee',
     description_ar: 'نكهات بن مختارة بعناية وطرق تحضير احترافية ترضي أذواق عشاق القهوة',
@@ -55,8 +55,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-5',
-    url: 'https://i.ibb.co/V6HpYkk/image.png',
-    localUrl: '/gallery/gallery_5.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476552/leycyk1dtmvq5dvgacoh.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476552/leycyk1dtmvq5dvgacoh.png',
     title_ar: 'أطباق الشيف الفاخرة',
     title_en: 'Gourmet Chef Creation',
     description_ar: 'تجربة تذوق استثنائية تجمع بين التقديم الفني والنكهات الغنية',
@@ -68,8 +68,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-6',
-    url: 'https://i.ibb.co/5W1bW2gY/image.png',
-    localUrl: '/gallery/gallery_6.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476553/hskvg94l7wrqhjxqy7ye.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476553/hskvg94l7wrqhjxqy7ye.png',
     title_ar: 'حلويات بوخارست المبتكرة',
     title_en: 'Delicate Bokharest Dessert',
     description_ar: 'حلوى فاخرة مصنوعة بشغف لتختم بها زيارتك بمذاق لا يُنسى',
@@ -81,8 +81,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-7',
-    url: 'https://i.ibb.co/HDWxBYvY/image.png',
-    localUrl: '/gallery/gallery_7.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476555/ciu7wakkphzmxx6mburx.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476555/ciu7wakkphzmxx6mburx.png',
     title_ar: 'سحر الإضاءة المسائية',
     title_en: 'Evening Glow & Details',
     description_ar: 'تفاصيل تعكس الذوق الرفيع وأمسيات لا تضاهى في قلب بوخارست',
@@ -94,8 +94,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-8',
-    url: 'https://i.ibb.co/3YSghvpf/image.png',
-    localUrl: '/gallery/gallery_8.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476556/dwtfpuo3tvgziapvyxts.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476556/dwtfpuo3tvgziapvyxts.png',
     title_ar: 'جلسات الـ VIP الخاصة',
     title_en: 'Private VIP Lounge',
     description_ar: 'خصوصية تامة وخدمة ممتازة للاجتماعات واللقاءات الخاصة الهادئة',
@@ -107,8 +107,8 @@ export const GALLERY_IMAGES: GalleryImage[] = [
   },
   {
     id: 'gal-9',
-    url: 'https://i.ibb.co/3yVpXKYQ/image.png',
-    localUrl: '/gallery/gallery_9.png',
+    url: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476557/dob5tym7zivjxaqj41ma.png',
+    localUrl: 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476557/dob5tym7zivjxaqj41ma.png',
     title_ar: 'كلاسيكية المكان ودفء الضيافة',
     title_en: 'Timeless Warm Hospitality',
     description_ar: 'كرم ضيافة بوخارست في كل ركن من أركان المكان مع أرقى مستويات الخدمة',

@@ -15,6 +15,7 @@ import { FloatingCartBar } from './components/FloatingCartBar';
 import { ImageUploadCenterModal } from './components/ImageUploadCenterModal';
 import { ImageMigrationModal } from './components/ImageMigrationModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { CLOUDINARY_ASSETS, getOptimizedImageUrl } from './services/cloudinaryService';
 
 const AppContent: React.FC = () => {
   const {
@@ -124,9 +125,9 @@ const AppContent: React.FC = () => {
           className="w-[90vw] max-w-[620px] aspect-square opacity-[0.11] select-none pointer-events-none flex items-center justify-center"
         >
           <img
-            src="/logo.png"
+            src={getOptimizedImageUrl(CLOUDINARY_ASSETS.logo)}
             onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = 'https://i.ibb.co/zW3dhGmG/image.png';
+              (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(CLOUDINARY_ASSETS.logoFallback);
             }}
             alt=""
             className="w-full h-full object-contain filter drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] pointer-events-none"

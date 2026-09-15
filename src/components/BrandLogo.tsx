@@ -1,7 +1,8 @@
 import React from 'react';
+import { CLOUDINARY_ASSETS, getOptimizedImageUrl } from '../services/cloudinaryService';
 
-const LOGO_SRC = '/logo.png';
-const LOGO_FALLBACK = 'https://i.ibb.co/zW3dhGmG/image.png';
+const LOGO_SRC = getOptimizedImageUrl(CLOUDINARY_ASSETS.logo);
+const LOGO_FALLBACK = getOptimizedImageUrl(CLOUDINARY_ASSETS.logoFallback);
 
 interface BrandLogoProps {
   variant?: 'hero' | 'header' | 'icon' | 'splash';

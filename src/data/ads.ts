@@ -52,12 +52,14 @@ export const OFFICIAL_BANNER_BOOK_HOTSPOT: AdvertisementHotspot = {
  * Initial / Default Advertisements List
  * Decoupled data model ready for CMS, Firebase Firestore, or local fallback.
  */
+export const OFFICIAL_CLOUDINARY_BANNER_IMAGE = 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476558/mecc5eyptfz7cxrrqblo.png';
+
 export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
   {
     id: 'ad-bokharest-official-banner-1',
     title_ar: 'بوخارست بلاك — تجربة الفخامة والضيافة الراقية',
     title_en: 'Bokharest Black — Luxury Dining Experience',
-    image: 'https://i.ibb.co/Xr1tZhqQ/image.png',
+    image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
     action: 'whatsapp',
     link: 'https://wa.me/201214444108',
@@ -77,7 +79,7 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     id: 'ad-bokharest-official-banner-2',
     title_ar: 'بوخارست بلاك — أشهى الأطباق والمشويات الفاخرة',
     title_en: 'Bokharest Black — Exquisite Cuts & Fine Grills',
-    image: 'https://i.ibb.co/Xr1tZhqQ/image.png',
+    image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
     action: 'whatsapp',
     link: 'https://wa.me/201214444108',
@@ -97,7 +99,7 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     id: 'ad-bokharest-official-banner-3',
     title_ar: 'بوخارست بلاك — أمسيات ساحرة وجلسات تراس مميزة',
     title_en: 'Bokharest Black — Outdoor Terrace & Dining',
-    image: 'https://i.ibb.co/Xr1tZhqQ/image.png',
+    image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
     action: 'whatsapp',
     link: 'https://wa.me/201214444108',
@@ -117,7 +119,7 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     id: 'ad-bokharest-official-banner-4',
     title_ar: 'بوخارست بلاك — المشروبات والحلويات الفاخرة',
     title_en: 'Bokharest Black — Signature Drinks & Desserts',
-    image: 'https://i.ibb.co/Xr1tZhqQ/image.png',
+    image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
     action: 'whatsapp',
     link: 'https://wa.me/201214444108',

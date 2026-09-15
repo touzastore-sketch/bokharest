@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 import {
   X,
   Trash2,
@@ -18,6 +19,8 @@ import {
   ClipboardList,
   Receipt,
   FileText,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -48,6 +51,7 @@ export const CartDrawer: React.FC = () => {
   const [orderMessage, setOrderMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
+  const [showBillDetails, setShowBillDetails] = useState(false);
 
   if (!isCartOpen) return null;
 
@@ -200,8 +204,8 @@ export const CartDrawer: React.FC = () => {
 
         {/* Scrollable Content Area */}
         <div
-          className={`flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 scroll-smooth ${
-            activeStep === 'details' ? 'pb-36 sm:pb-40' : 'pb-24 sm:pb-28'
+          className={`flex-1 min-h-0 overflow-y-auto overscroll-contain p-3.5 sm:p-5 space-y-4 scroll-smooth ${
+            activeStep === 'details' ? 'pb-48 sm:pb-52' : 'pb-28 sm:pb-32'
           }`}
         >
           {/* If an order was just placed, show confirmation card */}
@@ -325,7 +329,7 @@ export const CartDrawer: React.FC = () => {
                   >
                     {/* Thumbnail */}
                     <img
-                      src={item.image || UNIFIED_MENU_ITEM_IMAGE}
+                      src={getOptimizedImageUrl(item.image || UNIFIED_MENU_ITEM_IMAGE)}
                       alt={name}
                       referrerPolicy="no-referrer"
                       className="w-16 h-16 rounded-xl object-cover bg-neutral-900 shrink-0 border border-white/5"
@@ -414,60 +418,61 @@ export const CartDrawer: React.FC = () => {
             </div>
           ) : (
             /* STEP 2: Customer Information & Final Invoice Details */
-            <div className="space-y-4">
-              {/* Selected Items Quick Recap */}
-              <div className="p-3 bg-neutral-950/80 border border-white/10 rounded-2xl flex items-center justify-between text-xs">
+            <div className="flex flex-col gap-4">
+              {/* Selected Items Quick Recap Header */}
+              <div className="p-3 bg-[#141414] border border-white/10 rounded-2xl flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 text-neutral-300">
-                  <ClipboardList className="w-4 h-4 text-amber-400" />
+                  <ClipboardList className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>
                     {language === 'ar'
-                      ? `تم اختيار ${totalItemsCount} أصناف`
-                      : `${totalItemsCount} items selected`}
+                      ? `تم اختيار ${totalItemsCount} أصناف في السلة`
+                      : `${totalItemsCount} items selected in cart`}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => setActiveStep('items')}
-                  className="text-amber-400 hover:text-amber-300 text-xs font-bold underline cursor-pointer"
+                  className="text-amber-400 hover:text-amber-300 text-xs font-bold underline cursor-pointer shrink-0"
                 >
                   {language === 'ar' ? 'تعديل الأصناف ←' : 'Edit items →'}
                 </button>
               </div>
 
-              {/* Customer Information Card (Organized, spacious with Flexbox/Grid) */}
-              <div className="p-4 sm:p-5 bg-[#121212] border-2 border-amber-500/35 rounded-3xl space-y-4 sm:space-y-5 shadow-xl">
+              {/* Customer Information Card (Spacious, flexible layout with full keyboard tolerance) */}
+              <div className="p-4 sm:p-5 bg-[#121212] border-2 border-amber-500/40 rounded-3xl flex flex-col gap-4 sm:gap-5 shadow-2xl">
+                {/* Section Header */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0 shadow-sm">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0 shadow-sm">
                       <User className="w-4 h-4" />
                     </div>
                     <div>
                       <h4 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                        <span>{language === 'ar' ? 'بيانات التواصل والتأكيد' : 'Customer & Contact Info'}</span>
-                        <span className="text-[10px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                          {language === 'ar' ? 'الخطوة الأخيرة' : 'Final Step'}
+                        <span>{language === 'ar' ? 'بيانات العميل والتوصيل' : 'Customer & Delivery Info'}</span>
+                        <span className="text-[10px] bg-amber-400/25 text-amber-300 px-2 py-0.5 rounded-full font-bold">
+                          {language === 'ar' ? 'تأكيد الطلب' : 'Checkout'}
                         </span>
                       </h4>
                       <p className="text-[11px] text-neutral-400 mt-0.5">
                         {language === 'ar'
-                          ? 'لتسجيل الطلب باسمك وتأكيد التواصل عبر الواتساب'
-                          : 'Used to link your official order and confirm via WhatsApp'}
+                          ? 'أدخل بياناتك وسيتم إرسال الطلب مباشرة إلى واتساب بوخارست بلاك'
+                          : 'Enter your details to confirm your order directly on WhatsApp'}
                       </p>
                     </div>
                   </div>
                 </div>
 
-                {/* Form Fields: Structured via Flexbox / Grid */}
-                <div className="grid grid-cols-1 gap-4">
-                  {/* Customer Name */}
-                  <div className="flex flex-col gap-1.5">
+                {/* Form Fields Container using CSS Grid / Flexbox */}
+                <div className="flex flex-col gap-4 sm:gap-5">
+                  {/* Field 1: Customer Name */}
+                  <div className="flex flex-col gap-1.5 scroll-mt-28">
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <label htmlFor="customer-name-field" className="flex items-center gap-1.5 text-neutral-200">
                         <User className="w-3.5 h-3.5 text-amber-400" />
                         <span>{t('customer_name')}</span>
                       </label>
                       <span className="text-[10px] text-neutral-400">
-                        {language === 'ar' ? 'اسمك الكريم' : 'Full Name'}
+                        {language === 'ar' ? 'الاسم الكريم' : 'Full Name'}
                       </span>
                     </div>
                     <div className="relative flex items-center">
@@ -476,24 +481,29 @@ export const CartDrawer: React.FC = () => {
                         type="text"
                         autoComplete="name"
                         value={customerInfo.name}
+                        onFocus={(e) => {
+                          setTimeout(() => {
+                            e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 150);
+                        }}
                         onChange={(e) =>
                           setCustomerInfo((prev) => ({ ...prev, name: e.target.value }))
                         }
-                        placeholder={language === 'ar' ? 'مثال: أحمد محمد' : 'e.g. Ahmed Mohamed'}
-                        className="w-full min-h-[48px] bg-black/80 border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all scroll-mt-24 shadow-inner"
+                        placeholder={language === 'ar' ? 'اكتب اسمك هنا (مثال: أحمد محمد)' : 'e.g. Ahmed Mohamed'}
+                        className="w-full min-h-[50px] sm:min-h-[46px] bg-black/90 border border-white/20 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/25 transition-all shadow-inner"
                       />
                     </div>
                   </div>
 
-                  {/* Customer Phone */}
-                  <div className="flex flex-col gap-1.5">
+                  {/* Field 2: Customer Phone */}
+                  <div className="flex flex-col gap-1.5 scroll-mt-28">
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <label htmlFor="customer-phone-field" className="flex items-center gap-1.5 text-neutral-200">
                         <Phone className="w-3.5 h-3.5 text-amber-400" />
                         <span>{t('customer_phone')}</span>
                       </label>
                       <span className="text-[10px] text-amber-400 font-medium">
-                        {language === 'ar' ? 'مطلوب للتأكيد' : 'Required'}
+                        {language === 'ar' ? 'مطلوب للتواصل والتأكيد' : 'Required'}
                       </span>
                     </div>
                     <div className="relative flex items-center">
@@ -504,15 +514,20 @@ export const CartDrawer: React.FC = () => {
                         autoComplete="tel"
                         dir="ltr"
                         value={customerInfo.phone}
+                        onFocus={(e) => {
+                          setTimeout(() => {
+                            e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 150);
+                        }}
                         onChange={(e) => {
                           setCustomerInfo((prev) => ({ ...prev, phone: e.target.value }));
                           if (phoneError) setPhoneError(false);
                         }}
                         placeholder="010XXXXXXXX"
-                        className={`w-full min-h-[48px] bg-black/80 border rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 transition-all font-mono text-left scroll-mt-24 shadow-inner ${
+                        className={`w-full min-h-[50px] sm:min-h-[46px] bg-black/90 border rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:ring-2 transition-all font-mono text-left shadow-inner ${
                           phoneError
                             ? 'border-red-500 focus:border-red-400 focus:ring-red-500/20'
-                            : 'border-white/15 focus:border-amber-400 focus:ring-amber-400/20'
+                            : 'border-white/20 focus:border-amber-400 focus:ring-amber-400/25'
                         }`}
                       />
                     </div>
@@ -525,108 +540,136 @@ export const CartDrawer: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Special Notes / Direct Writing Only */}
-                  <div className="flex flex-col gap-2">
+                  {/* Field 3: Special Notes (Dedicated spacious multiline direct writing only - NO chips/options) */}
+                  <div className="flex flex-col gap-1.5 scroll-mt-28">
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <label htmlFor="customer-notes-field" className="flex items-center gap-1.5 text-neutral-200">
                         <FileText className="w-3.5 h-3.5 text-amber-400" />
                         <span>{t('special_notes')}</span>
                       </label>
                       <span className="text-[10px] text-neutral-400">
-                        {language === 'ar' ? 'اختياري' : 'Optional'}
+                        {language === 'ar' ? 'كتابة مباشرة' : 'Direct writing'}
                       </span>
                     </div>
 
                     <textarea
                       id="customer-notes-field"
-                      rows={3}
+                      rows={4}
                       value={customerInfo.notes}
+                      onFocus={(e) => {
+                        setTimeout(() => {
+                          e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 150);
+                      }}
                       onChange={(e) =>
                         setCustomerInfo((prev) => ({ ...prev, notes: e.target.value }))
                       }
                       placeholder={
                         language === 'ar'
-                          ? 'اكتب أي ملاحظات أو تفضيلات خاصة لتحضير طلبك هنا...'
-                          : 'Write any notes or special requests for your order here...'
+                          ? 'اكتب أي ملاحظات أو تفضيلات خاصة بالطلب أو عنوان التوصيل أو تحضير المأكولات والمشروبات...'
+                          : 'Write any special notes, order preferences, delivery instructions, or food preparation details...'
                       }
-                      className="w-full min-h-[96px] bg-black/80 border border-white/15 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/20 transition-all resize-none scroll-mt-24 shadow-inner leading-relaxed"
+                      className="w-full min-h-[110px] bg-black/90 border border-white/20 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/25 transition-all resize-y shadow-inner leading-relaxed"
                     />
 
                     <p className="text-[11px] text-neutral-400 leading-normal">
                       {language === 'ar'
-                        ? '💡 يمكنك كتابة اختيار الطبق الجانبي أو أي تفاصيل خاصة بالتوصيل أو التجهيز.'
-                        : '💡 You can write your side dish choice or any special delivery/preparation details.'}
+                        ? '✍️ الملاحظات ستصل مع رسالة الطلب على الواتساب ليتم تنفيذها في المطبخ/البار.'
+                        : '✍️ Notes will be attached to your WhatsApp order message for our kitchen/bar team.'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Invoice Breakdown Card */}
-              <div className="p-4 bg-[#121212] border border-white/10 rounded-2xl space-y-2.5">
-                <div className="flex items-center gap-2 border-b border-white/10 pb-2 text-xs font-bold text-neutral-300">
-                  <Receipt className="w-4 h-4 text-amber-400" />
-                  <span>{language === 'ar' ? 'تفاصيل الحساب والفاتورة' : 'Bill Breakdown'}</span>
-                </div>
-
-                {/* Subtotal */}
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-400">
-                    {language === 'ar' ? 'المجموع الفرعي للأصناف' : 'Items Subtotal'}
-                  </span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-serif-luxury text-sm font-medium text-white">
-                      {cartSubtotal.toFixed(2)}
-                    </span>
-                    <span className="text-[10px] text-neutral-400">{t('egp')}</span>
+              {/* Invoice Summary Card with Collapsible Tax/Fee Breakdown */}
+              <div className="p-4 bg-[#121212] border border-white/10 rounded-2xl flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-200">
+                    <Receipt className="w-4 h-4 text-amber-400" />
+                    <span>{language === 'ar' ? 'ملخص الحساب' : 'Bill Summary'}</span>
                   </div>
-                </div>
 
-                {/* Service Charge 12% */}
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-400">
-                    {language === 'ar' ? 'رسوم الخدمة (12%)' : 'Service Charge (12%)'}
-                  </span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-mono text-xs text-neutral-300">
-                      +{cartServiceCharge.toFixed(2)}
+                  {/* Toggle breakdown details */}
+                  <button
+                    type="button"
+                    onClick={() => setShowBillDetails((prev) => !prev)}
+                    className="text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 font-semibold cursor-pointer"
+                  >
+                    <span>
+                      {showBillDetails
+                        ? language === 'ar'
+                          ? 'إخفاء التفاصيل'
+                          : 'Hide details'
+                        : language === 'ar'
+                        ? 'عرض تفاصيل الخدمة والضريبة'
+                        : 'Show fee breakdown'}
                     </span>
-                    <span className="text-[10px] text-neutral-400">{t('egp')}</span>
-                  </div>
+                    {showBillDetails ? (
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    )}
+                  </button>
                 </div>
 
-                {/* VAT 14% */}
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-neutral-400">
-                    {language === 'ar' ? 'ضريبة القيمة المضافة (14%)' : 'VAT (14%)'}
-                  </span>
-                  <div className="flex items-baseline gap-1">
-                    <span className="font-mono text-xs text-neutral-300">
-                      +{cartVat.toFixed(2)}
-                    </span>
-                    <span className="text-[10px] text-neutral-400">{t('egp')}</span>
-                  </div>
-                </div>
-
-                {/* Final Total Line */}
-                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-sm font-bold">
+                {/* Main Total Highlight */}
+                <div className="flex items-baseline justify-between pt-1 border-t border-white/10">
                   <div>
-                    <span className="text-white block">{t('total')}</span>
-                    <span className="text-[10px] text-neutral-400 font-normal">
-                      {language === 'ar' ? 'شامل الخدمة والضريبة' : 'Incl. Service & VAT'}
+                    <span className="text-white text-sm font-bold block">{t('total')}</span>
+                    <span className="text-[10px] text-neutral-400">
+                      {language === 'ar' ? 'شامل الخدمة (12%) والضريبة (14%)' : 'Incl. Service (12%) & VAT (14%)'}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="font-serif-luxury text-xl text-amber-400 font-bold">
+                    <span className="font-serif-luxury text-2xl text-amber-400 font-bold">
                       {cartTotal.toFixed(2)}
                     </span>
-                    <span className="text-xs text-amber-300 font-semibold">{t('egp')}</span>
+                    <span className="text-xs text-amber-300 font-bold">{t('egp')}</span>
                   </div>
                 </div>
 
-                {/* Tax Notice */}
-                <div className="py-1 px-2 rounded-lg bg-white/5 text-[10px] text-neutral-400 text-center">
-                  {language === 'ar' ? pricingPolicy.taxNotice_ar : pricingPolicy.taxNotice_en}
-                </div>
+                {/* Collapsible Fee Breakdown (Preserves mobile screen real-estate) */}
+                {showBillDetails && (
+                  <div className="space-y-2 pt-2 border-t border-white/5 text-xs animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between text-neutral-400">
+                      <span>{language === 'ar' ? 'المجموع الفرعي للأصناف' : 'Items Subtotal'}</span>
+                      <span className="font-medium text-white">{cartSubtotal.toFixed(2)} {t('egp')}</span>
+                    </div>
+
+                    {pricingPolicy.serviceChargeEnabled && cartServiceCharge > 0 && (
+                      <div className="flex items-center justify-between text-neutral-400">
+                        <span>
+                          {language === 'ar'
+                            ? `رسوم الخدمة (${Math.round(pricingPolicy.serviceChargeRate * 100)}%)`
+                            : `Service Charge (${Math.round(pricingPolicy.serviceChargeRate * 100)}%)`}
+                        </span>
+                        <span className="font-mono text-neutral-300">+{cartServiceCharge.toFixed(2)} {t('egp')}</span>
+                      </div>
+                    )}
+
+                    {pricingPolicy.vatEnabled && cartVat > 0 && (
+                      <div className="flex items-center justify-between text-neutral-400">
+                        <span>
+                          {language === 'ar'
+                            ? `ضريبة القيمة المضافة (${Math.round(pricingPolicy.vatRate * 100)}%)`
+                            : `VAT (${Math.round(pricingPolicy.vatRate * 100)}%)`}
+                        </span>
+                        <span className="font-mono text-neutral-300">+{cartVat.toFixed(2)} {t('egp')}</span>
+                      </div>
+                    )}
+
+                    {!pricingPolicy.serviceChargeEnabled && !pricingPolicy.vatEnabled && (
+                      <div className="flex items-center justify-between text-emerald-400">
+                        <span>{language === 'ar' ? 'الضرائب والرسوم' : 'Taxes & Fees'}</span>
+                        <span className="font-medium">{language === 'ar' ? 'معفية / غير مفعلة (٠ ج.م)' : 'Disabled / 0 EGP'}</span>
+                      </div>
+                    )}
+
+                    <div className="py-1 px-2 rounded-lg bg-white/5 text-[10px] text-neutral-400 text-center">
+                      {language === 'ar' ? pricingPolicy.taxNotice_ar : pricingPolicy.taxNotice_en}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -642,7 +685,21 @@ export const CartDrawer: React.FC = () => {
                   <div className="text-neutral-400">
                     <span>{language === 'ar' ? 'الإجمالي التقديري:' : 'Estimated Total:'}</span>
                     <span className="text-[10px] text-neutral-500 block">
-                      {language === 'ar' ? 'شامل الخدمة 12% والضريبة 14%' : 'Incl. 12% Service & 14% VAT'}
+                      {pricingPolicy.serviceChargeEnabled && pricingPolicy.vatEnabled
+                        ? (language === 'ar'
+                            ? `شامل الخدمة ${Math.round(pricingPolicy.serviceChargeRate * 100)}% والضريبة ${Math.round(pricingPolicy.vatRate * 100)}%`
+                            : `Incl. ${Math.round(pricingPolicy.serviceChargeRate * 100)}% Service & ${Math.round(pricingPolicy.vatRate * 100)}% VAT`)
+                        : pricingPolicy.vatEnabled
+                        ? (language === 'ar'
+                            ? `شامل الضريبة ${Math.round(pricingPolicy.vatRate * 100)}%`
+                            : `Incl. ${Math.round(pricingPolicy.vatRate * 100)}% VAT`)
+                        : pricingPolicy.serviceChargeEnabled
+                        ? (language === 'ar'
+                            ? `شامل الخدمة ${Math.round(pricingPolicy.serviceChargeRate * 100)}%`
+                            : `Incl. ${Math.round(pricingPolicy.serviceChargeRate * 100)}% Service`)
+                        : (language === 'ar'
+                            ? 'الأسعار صافية بدون ضرائب أو رسوم إضافية'
+                            : 'All prices net, no additional taxes or fees')}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-1">

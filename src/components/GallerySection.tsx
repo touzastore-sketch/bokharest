@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Camera, Maximize2 } from 'lucide-react';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 
 export const GallerySection: React.FC = () => {
   const { language, openGallery, galleryImages } = useApp();
@@ -43,10 +44,10 @@ export const GallerySection: React.FC = () => {
             >
               {/* Pure Photo */}
               <img
-                src={image.url || image.localUrl}
+                src={getOptimizedImageUrl(image.url || image.localUrl)}
                 onError={(e) => {
                   if (image.localUrl) {
-                    (e.currentTarget as HTMLImageElement).src = image.localUrl;
+                    (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(image.localUrl);
                   }
                 }}
                 alt={language === 'ar' ? image.title_ar : image.title_en}

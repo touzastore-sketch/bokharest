@@ -84,16 +84,16 @@ export const ImageMigrationModal: React.FC = () => {
               <h3 className="text-xl font-bold font-serif-luxury text-white">
                 {isFinished
                   ? isSuccess
-                    ? 'اكتملت مزامنة ونقل الصور بنجاح!'
+                    ? 'اكتمل نقل كافة الصور إلى Cloudinary بنجاح!'
                     : 'تعذر استكمال النقل'
-                  : 'جاري نقل وتحديث صور التطبيق في Firebase'}
+                  : 'جاري نقل وتحديث صور التطبيق إلى Cloudinary (f_auto, q_auto)'}
               </h3>
               <p className="text-xs text-neutral-400 mt-1 max-w-sm">
                 {isFinished
                   ? isSuccess
-                    ? 'تم حفظ كافة روابط الصور وتعميمها على قاعدة بيانات Cloud Firestore ومعرض بوخارست.'
+                    ? 'تم حفظ كافة روابط الصور المحسنة (f_auto, q_auto) وتعميمها على سحابة Cloud Firestore وبوخارست بلاك.'
                     : 'حدث تعذر أثناء مزامنة بعض الصور، يمكنك إعادة المحاولة الآن.'
-                  : 'مزامنة سحابية مباشرة لصور قائمة الطعام، البانرات الإعلانية، وصور المعرض.'}
+                  : 'ترحيل سريع لصور قائمة الطعام، البانرات الإعلانية، وصور المعرض إلى Cloudinary CDN.'}
               </p>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { firebaseStorage, firestoreDb } from './firebase';
 import { UploadedImageRecord, MenuItem } from '../types';
 import { optimizeFileAutoFQ, optimizeRemoteUrlAutoFQ } from '../utils/imageOptimizer';
 import { updateAllMenuItemsImageInFirestore } from './firestoreDataService';
+import { CLOUDINARY_ASSETS, uploadImageToCloudinary, getOptimizedImageUrl } from './cloudinaryService';
 
 const UPLOADED_IMAGES_COLLECTION = 'uploaded_images';
 const LOCAL_STORAGE_KEY = 'bokharest_uploaded_images_cache';
@@ -21,8 +22,8 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 /**
- * Upload an image to Firebase Storage with Auto F/Q (Auto Format WebP + Auto Quality 0.82)
- * and metadata persistence in Firestore
+ * Upload an image to Cloudinary (cloud: ccnaucox, preset: bokharestblack_img)
+ * with Auto F/Q (f_auto,q_auto) applied and metadata persistence in Firestore
  */
 export async function uploadImageToFirebase(
   file: File,
@@ -30,7 +31,40 @@ export async function uploadImageToFirebase(
   onProgress?: (percentage: number) => void,
   bypassAutoFQ: boolean = false
 ): Promise<{ success: boolean; url: string; record: UploadedImageRecord; fallbackUsed?: boolean }> {
-  // 1. Apply Auto F/Q optimization (WebP conversion + 0.82 smart quality + dimension fitting)
+  // 1. Primary path: Direct unsigned upload to Cloudinary with automatic f_auto,q_auto
+  try {
+    const cloudRes = await uploadImageToCloudinary(file, {
+      folder: `bokharest/${folder}`,
+      onProgress,
+    });
+
+    if (cloudRes.success && cloudRes.url) {
+      const uniqueId = `img_${Date.now()}_${cloudRes.publicId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const record: UploadedImageRecord = {
+        id: uniqueId,
+        name: file.name,
+        url: cloudRes.url,
+        storagePath: cloudRes.publicId,
+        sizeBytes: file.size,
+        folder,
+        createdAt: new Date().toISOString(),
+        contentType: file.type || 'image/webp',
+      };
+
+      try {
+        await setDoc(doc(firestoreDb, UPLOADED_IMAGES_COLLECTION, uniqueId), record);
+      } catch (fsErr) {
+        console.warn('[Cloudinary/Firestore] Note saving metadata:', fsErr);
+      }
+
+      cacheImageLocally(record);
+      return { success: true, url: cloudRes.url, record };
+    }
+  } catch (cloudErr) {
+    console.warn('[Cloudinary] Primary upload failed, falling back to Firebase Storage:', cloudErr);
+  }
+
+  // 2. Secondary fallback: Firebase Storage
   let uploadFile = file;
   let isOptimized = false;
   if (!bypassAutoFQ && file.type.startsWith('image/')) {
@@ -210,91 +244,91 @@ export const APP_DEFAULT_IMAGES: Array<{
   {
     id: 'app_img_menu_unified',
     name: 'صورة قائمة الطعام الموحدة المعتمدة',
-    url: 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png',
+    url: CLOUDINARY_ASSETS.unifiedMenuItem,
     folder: 'menu',
     description: 'الصورة الرسمية المعتمدة لجميع أصناف وقوائم بوخارست بلاك',
   },
   {
     id: 'app_img_ad_banner_official',
     name: 'بانر العروض وحجز الطاولات الرسمي (BOOK)',
-    url: 'https://i.ibb.co/Xr1tZhqQ/image.png',
+    url: CLOUDINARY_ASSETS.adsBanner,
     folder: 'ads',
     description: 'بانر الإعلانات الفاخر المتوافق مع أبعاد 3168x1344',
   },
   {
     id: 'app_img_hero_bg',
     name: 'خلفية الواجهة الرئيسية (Hero Section)',
-    url: '/assets/cafe_hero.png',
+    url: CLOUDINARY_ASSETS.cafeHero,
     folder: 'general',
     description: 'صورة الواجهة الفاخرة لمدخل بوخارست بلاك',
   },
   {
     id: 'app_img_logo_official',
     name: 'شعار بوخارست بلاك الرسمي (Official Logo)',
-    url: '/assets/logo.png',
+    url: CLOUDINARY_ASSETS.logo,
     folder: 'general',
     description: 'لوجو الهوية البصرية الرسمية Bokharest Black',
   },
   {
     id: 'app_img_gallery_1',
     name: 'أجواء التراس الخارجي والمساء (معرض 1)',
-    url: '/gallery/gallery_1.png',
+    url: CLOUDINARY_ASSETS.gallery[0],
     folder: 'gallery',
     description: 'إطلالة التراس الخارجي الأنيق',
   },
   {
     id: 'app_img_gallery_2',
     name: 'ركن القهوة المختصة والتحميص (معرض 2)',
-    url: '/gallery/gallery_2.png',
+    url: CLOUDINARY_ASSETS.gallery[1],
     folder: 'gallery',
     description: 'ركن الباريستا وماكينات القهوة المتطورة',
   },
   {
     id: 'app_img_gallery_3',
     name: 'جلسات الصالة الداخلية الفاخرة (معرض 3)',
-    url: '/gallery/gallery_3.png',
+    url: CLOUDINARY_ASSETS.gallery[2],
     folder: 'gallery',
     description: 'ديكورات الصالة الداخلية الراقية',
   },
   {
     id: 'app_img_gallery_4',
     name: 'المشروبات المنعشة والموكتيلات (معرض 4)',
-    url: '/gallery/gallery_4.png',
+    url: CLOUDINARY_ASSETS.gallery[3],
     folder: 'gallery',
     description: 'تقديمات المشروبات الصيفية والموكتيل الخاص',
   },
   {
     id: 'app_img_gallery_5',
     name: 'المشويات وقطع الستيك الفاخرة (معرض 5)',
-    url: '/gallery/gallery_5.png',
+    url: CLOUDINARY_ASSETS.gallery[4],
     folder: 'gallery',
     description: 'أطباق اللحوم المشوية على الفحم بأعلى جودة',
   },
   {
     id: 'app_img_gallery_6',
     name: 'الحلويات الشرقية والكرواسان (معرض 6)',
-    url: '/gallery/gallery_6.png',
+    url: CLOUDINARY_ASSETS.gallery[5],
     folder: 'gallery',
     description: 'تشكيلة المخبوزات والحلويات الفرنسية والشرقية',
   },
   {
     id: 'app_img_gallery_7',
     name: 'جلسات كبار الشخصيات VIP (معرض 7)',
-    url: '/gallery/gallery_7.png',
+    url: CLOUDINARY_ASSETS.gallery[6],
     folder: 'gallery',
     description: 'أماكن مخصصة للمناسبات والاجتماعات الهادئة',
   },
   {
     id: 'app_img_gallery_8',
     name: 'الإضاءة الليلية الساحرة (معرض 8)',
-    url: '/gallery/gallery_8.png',
+    url: CLOUDINARY_ASSETS.gallery[7],
     folder: 'gallery',
     description: 'سحر الليل في بوخارست بلاك مع الموسيقى الهادئة',
   },
   {
     id: 'app_img_gallery_9',
     name: 'كرم الضيافة والخدمة المميزة (معرض 9)',
-    url: '/gallery/gallery_9.png',
+    url: CLOUDINARY_ASSETS.gallery[8],
     folder: 'gallery',
     description: 'فريق عمل محترف يسعى لراحتكم دائماً',
   },
@@ -405,7 +439,7 @@ export async function migrateAllAppImagesToFirebase(
     if (onProgress) {
       onProgress(total + 1, total + 2, 'جاري تعميم صورة الأطباق على قائمة الطعام في Firestore...', 90);
     }
-    const menuImage = migratedRecords.find((r) => r.folder === 'menu')?.url || 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png';
+    const menuImage = migratedRecords.find((r) => r.folder === 'menu')?.url || CLOUDINARY_ASSETS.unifiedMenuItem;
     const batchResult = await updateAllMenuItemsImageInFirestore(menuImage);
     menuItemsUpdated = batchResult.count || 0;
   } catch (menuErr) {
@@ -417,7 +451,7 @@ export async function migrateAllAppImagesToFirebase(
     if (onProgress) {
       onProgress(total + 2, total + 2, 'جاري تحديث بانرات الإعلانات والعروض في Firestore...', 98);
     }
-    const bannerImage = migratedRecords.find((r) => r.folder === 'ads')?.url || 'https://i.ibb.co/Xr1tZhqQ/image.png';
+    const bannerImage = migratedRecords.find((r) => r.folder === 'ads')?.url || CLOUDINARY_ASSETS.adsBanner;
     const adsSnap = await getDocs(collection(firestoreDb, 'advertisements'));
     if (!adsSnap.empty) {
       for (const adDoc of adsSnap.docs) {
@@ -464,7 +498,7 @@ export async function migrateAllMenuItemsToFirebaseAutoFQ(
   
   // 1. Convert the primary approved high-resolution menu dish image to Auto F/Q WebP
   const sampleItem = menuItems.find((i) => i.image && !i.image.includes('firebasestorage.googleapis.com')) || menuItems[0];
-  const sourceUrl = sampleItem?.image || 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png';
+  const sourceUrl = sampleItem?.image || CLOUDINARY_ASSETS.unifiedMenuItem;
 
   if (onProgress) onProgress(1, total, 'جاري ضغط ومعالجة الصورة بنظام Auto F/Q...', 15);
 
@@ -557,7 +591,7 @@ export async function autoSyncAllAppAssetsToFirebase(): Promise<{
 
   // 1. تحسين ورفع صورة أطباق المنيو الأساسية
   try {
-    const dishSource = 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png';
+    const dishSource = CLOUDINARY_ASSETS.unifiedMenuItem;
     const optDish = await optimizeRemoteUrlAutoFQ(dishSource, 'unified_dish_autofq.webp', {
       maxWidth: 1280,
       maxHeight: 1280,
@@ -581,7 +615,7 @@ export async function autoSyncAllAppAssetsToFirebase(): Promise<{
 
   // 2. تحسين ورفع بانر الإعلانات الرسمي
   try {
-    const bannerSource = 'https://i.ibb.co/Xr1tZhqQ/image.png';
+    const bannerSource = CLOUDINARY_ASSETS.adsBanner;
     const optBanner = await optimizeRemoteUrlAutoFQ(bannerSource, 'official_ad_banner_autofq.webp', {
       maxWidth: 1920,
       maxHeight: 1080,

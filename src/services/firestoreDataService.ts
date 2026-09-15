@@ -17,6 +17,7 @@ import { Category, MenuItem, OrderRecord, ReservationRecord, CustomerFeedback, R
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO } from '../data/restaurantData';
 import { INITIAL_ADVERTISEMENTS } from '../data/ads';
 import { GALLERY_IMAGES } from '../data/galleryData';
+import { CLOUDINARY_ASSETS } from './cloudinaryService';
 
 export const COLLECTIONS = {
   CATEGORIES: 'categories',
@@ -513,6 +514,89 @@ export async function updateAllMenuItemsImageInFirestore(
   } catch (error) {
     console.error('[FirestoreData] Error batch updating menu items image:', error);
     return { success: false, count: 0 };
+  }
+}
+
+/**
+ * ترحيل وتحديث كافة روابط الصور في Cloud Firestore إلى روابط Cloudinary المحسنة (f_auto, q_auto)
+ */
+export async function migrateAllCollectionsToCloudinary(
+  onProgress?: (stepName: string, percent: number) => void
+): Promise<{ success: boolean; menuCount: number; adsCount: number; galleryCount: number }> {
+  try {
+    if (onProgress) onProgress('بدء تحديث صور قائمة الطعام في Cloud Firestore إلى Cloudinary...', 10);
+
+    // 1. Update all menu items to Cloudinary unified item image
+    const menuResult = await updateAllMenuItemsImageInFirestore(
+      CLOUDINARY_ASSETS.unifiedMenuItem,
+      (curr, tot) => {
+        if (onProgress) {
+          const pct = Math.round(10 + (curr / tot) * 45);
+          onProgress(`تحديث أصناف المنيو إلى Cloudinary (${curr}/${tot})...`, pct);
+        }
+      }
+    );
+
+    // 2. Update advertisements to Cloudinary banner
+    if (onProgress) onProgress('تحديث البانرات الإعلانية في Cloud Firestore...', 60);
+    const adsSnap = await getDocs(collection(firestoreDb, COLLECTIONS.ADVERTISEMENTS));
+    let adsCount = 0;
+    if (!adsSnap.empty) {
+      const adsBatch = writeBatch(firestoreDb);
+      adsSnap.forEach((adDoc) => {
+        adsBatch.update(adDoc.ref, {
+          image: CLOUDINARY_ASSETS.adsBanner,
+          updatedAt: serverTimestamp(),
+        });
+        adsCount++;
+      });
+      await adsBatch.commit();
+    }
+
+    // 3. Update Gallery images to Cloudinary gallery assets
+    if (onProgress) onProgress('تحديث صور المعرض في Cloud Firestore...', 75);
+    const gallerySnap = await getDocs(collection(firestoreDb, COLLECTIONS.GALLERY));
+    let galleryCount = 0;
+    if (!gallerySnap.empty) {
+      const galBatch = writeBatch(firestoreDb);
+      const docs = gallerySnap.docs;
+      docs.forEach((docSnap, index) => {
+        const cloudUrl = CLOUDINARY_ASSETS.gallery[index % CLOUDINARY_ASSETS.gallery.length];
+        galBatch.update(docSnap.ref, {
+          url: cloudUrl,
+          localUrl: cloudUrl,
+          image: cloudUrl,
+          updatedAt: serverTimestamp(),
+        });
+        galleryCount++;
+      });
+      await galBatch.commit();
+    }
+
+    // 4. Update Restaurant Info official logo and hero
+    if (onProgress) onProgress('تحديث بيانات المطعم والشعار في Cloud Firestore...', 90);
+    const infoRef = doc(firestoreDb, COLLECTIONS.RESTAURANT_INFO, 'official');
+    await setDoc(
+      infoRef,
+      {
+        logo: CLOUDINARY_ASSETS.logo,
+        cafeHero: CLOUDINARY_ASSETS.cafeHero,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    if (onProgress) onProgress('اكتمل ترحيل كافة الصور إلى Cloudinary بنجاح!', 100);
+
+    return {
+      success: true,
+      menuCount: menuResult.count,
+      adsCount,
+      galleryCount,
+    };
+  } catch (error) {
+    console.error('[FirestoreData] Error migrating collections to Cloudinary:', error);
+    return { success: false, menuCount: 0, adsCount: 0, galleryCount: 0 };
   }
 }
 

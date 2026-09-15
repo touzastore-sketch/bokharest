@@ -37,7 +37,9 @@ import {
   Camera,
   Share2,
   MapPin,
-  Globe
+  Globe,
+  Percent,
+  Receipt
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -48,7 +50,9 @@ import {
   CustomerFeedback,
   UploadedImageRecord,
   RestaurantInfo,
+  PricingPolicy,
 } from '../../types';
+import { CLOUDINARY_ASSETS, CLOUDINARY_CONFIG } from '../../services/cloudinaryService';
 import {
   saveMenuItemToFirestore,
   deleteMenuItemFromFirestore,
@@ -82,6 +86,7 @@ type AdminTab =
   | 'ads'
   | 'categories'
   | 'gallery'
+  | 'pricing'
   | 'settings';
 
 interface AdminDashboardProps {
@@ -103,6 +108,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     updateRestaurantSettings,
     openImageUploadCenter,
     executeImageMigration,
+    isMigratingAppImages,
+    pricingPolicy,
+    updatePricingPolicy,
   } = useApp();
 
   // Authentication State
@@ -114,6 +122,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
   // Current Admin Tab
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+
+  // Pricing & Taxes Management State
+  const [pricingForm, setPricingForm] = useState({
+    vatEnabled: pricingPolicy.vatEnabled,
+    vatRatePercent: Math.round(pricingPolicy.vatRate * 100),
+    serviceChargeEnabled: pricingPolicy.serviceChargeEnabled,
+    serviceChargeRatePercent: Math.round(pricingPolicy.serviceChargeRate * 100),
+  });
+  const [isSavingPricing, setIsSavingPricing] = useState(false);
+  const [testSimulatorAmount, setTestSimulatorAmount] = useState<number>(500);
+
+  // Sync pricingForm when pricingPolicy updates from Firestore
+  useEffect(() => {
+    setPricingForm({
+      vatEnabled: pricingPolicy.vatEnabled,
+      vatRatePercent: Math.round(pricingPolicy.vatRate * 100),
+      serviceChargeEnabled: pricingPolicy.serviceChargeEnabled,
+      serviceChargeRatePercent: Math.round(pricingPolicy.serviceChargeRate * 100),
+    });
+  }, [pricingPolicy]);
+
+  const handleSavePricing = async () => {
+    setIsSavingPricing(true);
+    try {
+      const ok = await updatePricingPolicy({
+        vatEnabled: pricingForm.vatEnabled,
+        vatRate: (Number(pricingForm.vatRatePercent) || 0) / 100,
+        serviceChargeEnabled: pricingForm.serviceChargeEnabled,
+        serviceChargeRate: (Number(pricingForm.serviceChargeRatePercent) || 0) / 100,
+      });
+      if (ok) {
+        showNotification('✅ تم بنجاح حفظ وتحديث سياسة الضرائب ورسوم الخدمة في سحابة Cloud Firestore!');
+      } else {
+        showNotification('⚠️ حدث تعذر أثناء الحفظ، يرجى المحاولة ثانية.');
+      }
+    } catch (e) {
+      showNotification('⚠️ خطأ في الاتصال بقاعدة البيانات.');
+    } finally {
+      setIsSavingPricing(false);
+    }
+  };
 
   // Real-time Firestore States
   const [liveOrders, setLiveOrders] = useState<OrderRecord[]>([]);
@@ -297,7 +346,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       description_ar: itemFormData.description_ar?.trim() || '',
       description_en: itemFormData.description_en?.trim() || '',
       price: Number(itemFormData.price) || 0,
-      image: itemFormData.image?.trim() || APP_DEFAULT_IMAGES[0]?.url || 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png',
+      image: itemFormData.image?.trim() || CLOUDINARY_ASSETS.unifiedMenuItem,
       available: itemFormData.available !== false,
       featured: Boolean(itemFormData.featured),
       calories: itemFormData.calories ? Number(itemFormData.calories) : 250,
@@ -564,6 +613,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             },
             { id: 'categories', label: 'إدارة الأقسام', icon: Layers, badge: categories.length },
             { id: 'gallery', label: 'إدارة المعرض والأنشطة', icon: Camera, badge: galleryImages.length },
+            { id: 'pricing', label: 'الضرائب والخدمة والأسعار', icon: Percent },
             { id: 'settings', label: 'الواتساب والتواصل الاجتماعي', icon: MessageCircle },
           ].map((tab) => {
             const Icon = tab.icon;
@@ -1223,13 +1273,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                               onClick={() =>
                                 setItemFormData({
                                   ...itemFormData,
-                                  image: 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png',
+                                  image: CLOUDINARY_ASSETS.unifiedMenuItem,
                                 })
                               }
                               className="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white text-xs border border-white/10 shrink-0"
                               title="استعادة الصورة الافتراضية"
                             >
-                              الافتراضية
+                              الافتراضية (Cloudinary)
                             </button>
                           </div>
                         </div>
@@ -1716,6 +1766,362 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
           ========================================== */}
           {activeTab === 'gallery' && (
             <GalleryManager onNotify={showNotification} />
+          )}
+
+          {/* ==========================================
+              TAB: PRICING, TAXES & CLOUDINARY CONTROL
+          ========================================== */}
+          {activeTab === 'pricing' && (
+            <div className="space-y-6">
+              {/* Header & Main Save Bar */}
+              <div className="bg-[#111111] p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <Percent className="w-5 h-5 text-amber-400" />
+                    التحكم في الضرائب ورسوم الخدمة وسياسة الفواتير
+                  </h2>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    يمكنك تفعيل أو إيقاف ضريبة القيمة المضافة ورسوم الخدمة في أي وقت، وتحديد نسبتها بدقة مع التحديث الفوري في سحابة Firestore
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSavePricing}
+                  disabled={isSavingPricing}
+                  className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer transition-transform active:scale-95 disabled:opacity-50 shrink-0"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>{isSavingPricing ? 'جاري الحفظ...' : 'حفظ السياسة في Cloud Firestore'}</span>
+                </button>
+              </div>
+
+              {/* Grid: VAT & Service Charge Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {/* 1. VAT Control Card */}
+                <div className="bg-[#141414] p-5 rounded-2xl border border-white/10 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${pricingForm.vatEnabled ? 'bg-amber-400/15 text-amber-400 border border-amber-400/30' : 'bg-white/5 text-neutral-500 border border-white/10'}`}>
+                        <Percent className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-white">ضريبة القيمة المضافة (VAT)</h3>
+                        <p className="text-[11px] text-neutral-400">القيمة الرسمية المضافة على الفاتورة</p>
+                      </div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <button
+                      type="button"
+                      onClick={() => setPricingForm({ ...pricingForm, vatEnabled: !pricingForm.vatEnabled })}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors cursor-pointer ${pricingForm.vatEnabled ? 'bg-amber-400' : 'bg-neutral-700'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${pricingForm.vatEnabled ? 'translate-x-7' : 'translate-x-1'}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300">
+                        نسبة الضريبة المطبقة (%)
+                      </label>
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${pricingForm.vatEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-neutral-800 text-neutral-500'}`}>
+                        {pricingForm.vatEnabled ? `مفعلة (${pricingForm.vatRatePercent}%)` : 'معطلة (٠%)'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          disabled={!pricingForm.vatEnabled}
+                          value={pricingForm.vatRatePercent}
+                          onChange={(e) => setPricingForm({ ...pricingForm, vatRatePercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })}
+                          className={`w-full bg-black/70 border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono ${pricingForm.vatEnabled ? 'border-white/15 focus:border-amber-400' : 'border-white/5 opacity-50 cursor-not-allowed'}`}
+                          placeholder="14"
+                        />
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs font-mono">%</span>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {[0, 5, 10, 14, 15].map((rate) => (
+                          <button
+                            key={rate}
+                            type="button"
+                            disabled={!pricingForm.vatEnabled}
+                            onClick={() => setPricingForm({ ...pricingForm, vatRatePercent: rate })}
+                            className={`px-2 py-1.5 rounded-lg text-xs font-mono transition-colors ${pricingForm.vatRatePercent === rate && pricingForm.vatEnabled ? 'bg-amber-400 text-black font-bold' : 'bg-white/5 hover:bg-white/10 text-neutral-400 border border-white/5'} disabled:opacity-30`}
+                          >
+                            {rate}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      عند التفعيل، تُحسب الضريبة تلقائياً على إجمالي الطلب ومجموع رسوم الخدمة، وتنعكس في سلة المشتريات وفاتورة الواتساب وتنبيهات المنيو.
+                    </p>
+                  </div>
+                </div>
+
+                {/* 2. Service Charge Control Card */}
+                <div className="bg-[#141414] p-5 rounded-2xl border border-white/10 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${pricingForm.serviceChargeEnabled ? 'bg-amber-400/15 text-amber-400 border border-amber-400/30' : 'bg-white/5 text-neutral-500 border border-white/10'}`}>
+                        <Receipt className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-white">رسوم الخدمة (Service Charge)</h3>
+                        <p className="text-[11px] text-neutral-400">رسوم صالة وخدمة الضيافة</p>
+                      </div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <button
+                      type="button"
+                      onClick={() => setPricingForm({ ...pricingForm, serviceChargeEnabled: !pricingForm.serviceChargeEnabled })}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors cursor-pointer ${pricingForm.serviceChargeEnabled ? 'bg-amber-400' : 'bg-neutral-700'}`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-black transition-transform ${pricingForm.serviceChargeEnabled ? 'translate-x-7' : 'translate-x-1'}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-300">
+                        نسبة رسوم الخدمة (%)
+                      </label>
+                      <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${pricingForm.serviceChargeEnabled ? 'bg-amber-400/20 text-amber-300 border border-amber-400/30' : 'bg-neutral-800 text-neutral-500'}`}>
+                        {pricingForm.serviceChargeEnabled ? `مفعلة (${pricingForm.serviceChargeRatePercent}%)` : 'معطلة (٠%)'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="1"
+                          disabled={!pricingForm.serviceChargeEnabled}
+                          value={pricingForm.serviceChargeRatePercent}
+                          onChange={(e) => setPricingForm({ ...pricingForm, serviceChargeRatePercent: Math.max(0, Math.min(100, Number(e.target.value) || 0)) })}
+                          className={`w-full bg-black/70 border rounded-xl px-3.5 py-2.5 text-sm text-white font-mono ${pricingForm.serviceChargeEnabled ? 'border-white/15 focus:border-amber-400' : 'border-white/5 opacity-50 cursor-not-allowed'}`}
+                          placeholder="12"
+                        />
+                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500 text-xs font-mono">%</span>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {[0, 8, 10, 12, 15].map((rate) => (
+                          <button
+                            key={rate}
+                            type="button"
+                            disabled={!pricingForm.serviceChargeEnabled}
+                            onClick={() => setPricingForm({ ...pricingForm, serviceChargeRatePercent: rate })}
+                            className={`px-2 py-1.5 rounded-lg text-xs font-mono transition-colors ${pricingForm.serviceChargeRatePercent === rate && pricingForm.serviceChargeEnabled ? 'bg-amber-400 text-black font-bold' : 'bg-white/5 hover:bg-white/10 text-neutral-400 border border-white/5'} disabled:opacity-30`}
+                          >
+                            {rate}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-neutral-500 leading-relaxed">
+                      عند التفعيل، تُضاف رسوم الخدمة مباشرة على مجموع الأصناف وتخضع لحساب الضريبة القانونية.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Interactive Live Bill Simulator & Policy Preview */}
+              <div className="bg-[#141414] p-5 rounded-2xl border border-white/10 space-y-5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-amber-400" />
+                      محاكي الفاتورة للعميل في الوقت الفعلي (Live Bill Simulator)
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      جرّب إدخال أي قيمة طلب لترى كيف ستظهر الفاتورة للعميل داخل التطبيق ورسالة الواتساب
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10">
+                    <span className="text-xs text-neutral-400">طلب تجريبي:</span>
+                    <input
+                      type="number"
+                      min="10"
+                      step="50"
+                      value={testSimulatorAmount}
+                      onChange={(e) => setTestSimulatorAmount(Math.max(1, Number(e.target.value) || 0))}
+                      className="w-20 bg-transparent text-white font-mono font-bold text-xs text-center border-b border-amber-400/50 focus:outline-none"
+                    />
+                    <span className="text-xs text-amber-400 font-bold">ج.م</span>
+                  </div>
+                </div>
+
+                {/* Calculation breakdown */}
+                {(() => {
+                  const subtotal = testSimulatorAmount;
+                  const service = (pricingForm.serviceChargeEnabled && pricingForm.serviceChargeRatePercent > 0)
+                    ? Math.round(subtotal * (pricingForm.serviceChargeRatePercent / 100) * 100) / 100
+                    : 0;
+                  const vat = (pricingForm.vatEnabled && pricingForm.vatRatePercent > 0)
+                    ? Math.round((subtotal + service) * (pricingForm.vatRatePercent / 100) * 100) / 100
+                    : 0;
+                  const total = Math.round((subtotal + service + vat) * 100) / 100;
+
+                  return (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                      {/* Live Bill Card */}
+                      <div className="bg-black/80 rounded-xl p-4 border border-white/10 space-y-3 font-mono">
+                        <div className="text-xs text-neutral-400 font-bold flex justify-between border-b border-white/10 pb-2">
+                          <span>بيان الفاتورة التجريبي</span>
+                          <span className="text-amber-400">بوخارست بلاك</span>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          <div className="flex justify-between text-neutral-300">
+                            <span>المجموع الفرعي للطلب:</span>
+                            <span>{subtotal.toFixed(2)} ج.م</span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className={pricingForm.serviceChargeEnabled ? 'text-neutral-300' : 'text-neutral-600'}>
+                              رسوم الخدمة ({pricingForm.serviceChargeEnabled ? `${pricingForm.serviceChargeRatePercent}%` : 'معطلة'}):
+                            </span>
+                            <span className={pricingForm.serviceChargeEnabled ? 'text-amber-300' : 'text-neutral-600'}>
+                              {pricingForm.serviceChargeEnabled ? `+${service.toFixed(2)} ج.م` : '٠.٠٠ ج.م'}
+                            </span>
+                          </div>
+
+                          <div className="flex justify-between">
+                            <span className={pricingForm.vatEnabled ? 'text-neutral-300' : 'text-neutral-600'}>
+                              ضريبة القيمة المضافة ({pricingForm.vatEnabled ? `${pricingForm.vatRatePercent}%` : 'معطلة'}):
+                            </span>
+                            <span className={pricingForm.vatEnabled ? 'text-amber-300' : 'text-neutral-600'}>
+                              {pricingForm.vatEnabled ? `+${vat.toFixed(2)} ج.م` : '٠.٠٠ ج.م'}
+                            </span>
+                          </div>
+
+                          <div className="pt-2 border-t border-white/15 flex justify-between text-sm font-bold text-emerald-400">
+                            <span>الإجمالي النهائي المطلوب:</span>
+                            <span>{total.toFixed(2)} ج.م</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Notice Generator Preview */}
+                      <div className="bg-black/60 rounded-xl p-4 border border-white/10 space-y-3">
+                        <div className="text-xs text-neutral-400 font-bold border-b border-white/10 pb-2">
+                          التنويه القانوني التلقائي المعروض على المنيو والفواتير
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          <div className="bg-white/5 p-2.5 rounded-lg border border-white/5">
+                            <span className="text-[10px] text-amber-400 block font-bold mb-1">باللغة العربية:</span>
+                            <p className="text-neutral-200 leading-relaxed">
+                              {pricingForm.serviceChargeEnabled && pricingForm.vatEnabled
+                                ? `كل الأسعار بالجنيه المصري، وتخضع لـ ${pricingForm.serviceChargeRatePercent}% رسوم خدمة و${pricingForm.vatRatePercent}% ضريبة قيمة مضافة تُضاف على الفاتورة.`
+                                : pricingForm.vatEnabled
+                                ? `كل الأسعار بالجنيه المصري، وتخضع لـ ${pricingForm.vatRatePercent}% ضريبة قيمة مضافة تُضاف على الفاتورة.`
+                                : pricingForm.serviceChargeEnabled
+                                ? `كل الأسعار بالجنيه المصري، وتخضع لـ ${pricingForm.serviceChargeRatePercent}% رسوم خدمة تُضاف على الفاتورة.`
+                                : 'كل الأسعار بالجنيه المصري وشاملة الحساب بالكامل بدون أي ضرائب أو رسوم إضافية.'}
+                            </p>
+                          </div>
+
+                          <div className="bg-white/5 p-2.5 rounded-lg border border-white/5" dir="ltr">
+                            <span className="text-[10px] text-amber-400 block font-bold mb-1 text-left">In English:</span>
+                            <p className="text-neutral-200 leading-relaxed text-left text-[11px]">
+                              {pricingForm.serviceChargeEnabled && pricingForm.vatEnabled
+                                ? `All prices are in EGP and subject to ${pricingForm.serviceChargeRatePercent}% Service Charge & ${pricingForm.vatRatePercent}% VAT added to the bill.`
+                                : pricingForm.vatEnabled
+                                ? `All prices are in EGP and subject to ${pricingForm.vatRatePercent}% VAT added to the bill.`
+                                : pricingForm.serviceChargeEnabled
+                                ? `All prices are in EGP and subject to ${pricingForm.serviceChargeRatePercent}% Service Charge added to the bill.`
+                                : 'All prices are in EGP and fully inclusive. No extra taxes or service charges apply.'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Save button */}
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSavePricing}
+                    disabled={isSavingPricing}
+                    className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-2 cursor-pointer transition-transform active:scale-95 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{isSavingPricing ? 'جاري الحفظ في Firestore...' : 'حفظ وتطبيق التغييرات على سحابة Firestore'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Cloudinary CDN Management & Migration Card */}
+              <div className="bg-[#141414] p-5 rounded-2xl border border-amber-500/20 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-400">
+                      <UploadCloud className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        سحابة Cloudinary CDN & نظام التحسين التلقائي (f_auto, q_auto)
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full font-mono">
+                          Active & Optimized
+                        </span>
+                      </h3>
+                      <p className="text-xs text-neutral-400 mt-0.5">
+                        كافة صور الأطباق والمعرض والبانرات مخدمة عبر شبكة Cloudinary فائقة السرعة
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={executeImageMigration}
+                    disabled={isMigratingAppImages}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer transition-transform active:scale-95 disabled:opacity-50 shrink-0"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isMigratingAppImages ? 'animate-spin' : ''}`} />
+                    <span>{isMigratingAppImages ? 'جاري ترحيل وتحديث الصور...' : 'ترحيل كافة روابط وصور التطبيق إلى Cloudinary الآن'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-black/60 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="text-neutral-500 text-[10px] block">Cloud Name</span>
+                    <span className="font-mono text-white font-bold">{CLOUDINARY_CONFIG.cloudName}</span>
+                  </div>
+                  <div className="bg-black/60 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="text-neutral-500 text-[10px] block">Upload Preset (Unsigned)</span>
+                    <span className="font-mono text-white font-bold">{CLOUDINARY_CONFIG.uploadPreset}</span>
+                  </div>
+                  <div className="bg-black/60 p-3 rounded-xl border border-white/5 space-y-1">
+                    <span className="text-neutral-500 text-[10px] block">Auto Optimization Flags</span>
+                    <span className="font-mono text-emerald-400 font-bold">f_auto, q_auto (WebP/AVIF)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {/* ==========================================

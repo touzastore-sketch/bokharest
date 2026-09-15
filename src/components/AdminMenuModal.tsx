@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 import { X, Check, RotateCcw, DollarSign, ToggleLeft, ToggleRight, Sparkles, UploadCloud, Camera } from 'lucide-react';
 
 interface AdminMenuModalProps {
@@ -105,7 +106,7 @@ export const AdminMenuModal: React.FC<AdminMenuModalProps> = ({ onClose }) => {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <img
-                  src={item.image || UNIFIED_MENU_ITEM_IMAGE}
+                  src={getOptimizedImageUrl(item.image || UNIFIED_MENU_ITEM_IMAGE)}
                   alt={item.name_en}
                   referrerPolicy="no-referrer"
                   className="w-12 h-12 rounded-xl object-cover bg-neutral-900 shrink-0"

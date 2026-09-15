@@ -1,4 +1,37 @@
-import { Category, MenuItem, RestaurantInfo } from '../types';
+import { Category, MenuItem, RestaurantInfo, PricingPolicy } from '../types';
+
+export function generateTaxNotice(
+  serviceChargeEnabled: boolean,
+  serviceChargeRate: number,
+  vatEnabled: boolean,
+  vatRate: number
+): { ar: string; en: string } {
+  const sPercent = Math.round(serviceChargeRate * 100);
+  const vPercent = Math.round(vatRate * 100);
+
+  if (serviceChargeEnabled && vatEnabled && sPercent > 0 && vPercent > 0) {
+    return {
+      ar: `كل الأسعار بالجنيه المصري، وتخضع لـ ${sPercent}% رسوم خدمة و${vPercent}% ضريبة قيمة مضافة تُضاف على الفاتورة.`,
+      en: `All prices are in EGP and subject to ${sPercent}% Service Charge & ${vPercent}% VAT added to the bill.`,
+    };
+  }
+  if (vatEnabled && vPercent > 0) {
+    return {
+      ar: `كل الأسعار بالجنيه المصري، وتخضع لـ ${vPercent}% ضريبة قيمة مضافة تُضاف على الفاتورة.`,
+      en: `All prices are in EGP and subject to ${vPercent}% VAT added to the bill.`,
+    };
+  }
+  if (serviceChargeEnabled && sPercent > 0) {
+    return {
+      ar: `كل الأسعار بالجنيه المصري، وتخضع لـ ${sPercent}% رسوم خدمة تُضاف على الفاتورة.`,
+      en: `All prices are in EGP and subject to ${sPercent}% Service Charge added to the bill.`,
+    };
+  }
+  return {
+    ar: 'كل الأسعار بالجنيه المصري وشاملة الحساب بالكامل بدون أي ضرائب أو رسوم إضافية.',
+    en: 'All prices are in EGP and fully inclusive. No extra taxes or service charges apply.',
+  };
+}
 
 export const OFFICIAL_RESTAURANT_INFO: RestaurantInfo = {
   name_en: "Bokharest Black",
@@ -23,12 +56,15 @@ export const OFFICIAL_RESTAURANT_INFO: RestaurantInfo = {
 };
 
 
-export const UNIFIED_MENU_ITEM_IMAGE = 'https://i.ibb.co/j98T5cJL/Screenshot-2026-09-12-at-3-54-40-AM-1.png';
-export const MENU_PRICING_POLICY = {
+// Cloudinary auto-optimized CDN image (f_auto,q_auto)
+export const UNIFIED_MENU_ITEM_IMAGE = 'https://res.cloudinary.com/ccnaucox/image/upload/f_auto,q_auto/v1789476558/kr3dnj0ltb9msgtjdfpe.png';
+export const MENU_PRICING_POLICY: PricingPolicy = {
   currency_ar: "ج.م",
   currency_en: "EGP",
   serviceChargeRate: 0.12, // 12% رسوم خدمة
+  serviceChargeEnabled: true,
   vatRate: 0.14, // 14% ضريبة قيمة مضافة
+  vatEnabled: true,
   taxNotice_ar: "كل الأسعار بالجنيه المصري، وتخضع لـ 12% رسوم خدمة و14% ضريبة قيمة مضافة تُضاف على الفاتورة.",
   taxNotice_en: "All prices are in EGP and subject to 12% Service Charge & 14% VAT added to the bill.",
 };

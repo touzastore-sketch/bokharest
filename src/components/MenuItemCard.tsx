@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MenuItem } from '../types';
 import { useApp } from '../context/AppContext';
 import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 import { Heart, Plus, Minus, Check } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
@@ -46,10 +47,10 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
 
   const isFav = isFavorite(item.id);
 
-  // Default unified menu image fallback if unavail
-  const imageSrc = !imgError && item.image
+  // Default unified menu image fallback if unavail (with Cloudinary f_auto,q_auto)
+  const imageSrc = getOptimizedImageUrl(!imgError && item.image
     ? item.image
-    : UNIFIED_MENU_ITEM_IMAGE;
+    : UNIFIED_MENU_ITEM_IMAGE);
 
   const primaryName = language === 'ar' ? item.name_ar : item.name_en;
   const secondaryName = language === 'ar' ? item.name_en : item.name_ar;
