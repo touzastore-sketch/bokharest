@@ -20,8 +20,9 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: 📱 Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: 📱 Accept Android SDK Licenses
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
       - name: 🌐 Set up Node.js
         uses: actions/setup-node@v4
@@ -42,20 +43,20 @@ jobs:
         working-directory: ./android
         run: |
           echo "Generating Clean Release Keystore..."
+          mkdir -p app
           keytool -genkey -v -keystore app/release.jks -alias bokharest -keyalg RSA -keysize 2048 -validity 10000 -storepass bokharest2026 -keypass bokharest2026 -dname "CN=Bokharest, OU=App, O=BokharestBlack, L=PortSaid, C=EG"
           cp app/release.jks release.jks
 
-      - name: 🐘 Build Release AAB
+      - name: 🐘 Build Release AAB & APK
         working-directory: ./android
         run: |
-          gradle wrapper --gradle-version 8.9 --distribution-type bin
           chmod +x ./gradlew
-          ./gradlew bundleRelease --stacktrace
+          ./gradlew bundleRelease assembleRelease --stacktrace
 
       - name: 📤 Upload AAB for Direct Download
         uses: actions/upload-artifact@v4
         with:
-          name: Bokharest-Black-AppBundle-aab
+          name: Bokharest-Black-v2.0.0-AAB-and-APK
           path: |
             android/app/build/outputs/bundle/**/*.aab
             android/app/build/outputs/apk/**/*.apk

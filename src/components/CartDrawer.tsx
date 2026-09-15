@@ -601,8 +601,12 @@ export const CartDrawer: React.FC = () => {
                           ? 'إخفاء التفاصيل'
                           : 'Hide details'
                         : language === 'ar'
-                        ? 'عرض تفاصيل الخدمة والضريبة'
-                        : 'Show fee breakdown'}
+                        ? pricingPolicy.serviceChargeEnabled || pricingPolicy.vatEnabled
+                          ? 'عرض تفاصيل الخدمة والضريبة'
+                          : 'عرض تفاصيل الحساب'
+                        : pricingPolicy.serviceChargeEnabled || pricingPolicy.vatEnabled
+                        ? 'Show fee breakdown'
+                        : 'Show bill breakdown'}
                     </span>
                     {showBillDetails ? (
                       <ChevronUp className="w-3.5 h-3.5" />
@@ -617,7 +621,21 @@ export const CartDrawer: React.FC = () => {
                   <div>
                     <span className="text-white text-sm font-bold block">{t('total')}</span>
                     <span className="text-[10px] text-neutral-400">
-                      {language === 'ar' ? 'شامل الخدمة (12%) والضريبة (14%)' : 'Incl. Service (12%) & VAT (14%)'}
+                      {pricingPolicy.serviceChargeEnabled && pricingPolicy.vatEnabled
+                        ? (language === 'ar'
+                            ? `شامل الخدمة (${Math.round(pricingPolicy.serviceChargeRate * 100)}%) والضريبة (${Math.round(pricingPolicy.vatRate * 100)}%)`
+                            : `Incl. Service (${Math.round(pricingPolicy.serviceChargeRate * 100)}%) & VAT (${Math.round(pricingPolicy.vatRate * 100)}%)`)
+                        : pricingPolicy.vatEnabled
+                        ? (language === 'ar'
+                            ? `شامل الضريبة (${Math.round(pricingPolicy.vatRate * 100)}%)`
+                            : `Incl. VAT (${Math.round(pricingPolicy.vatRate * 100)}%)`)
+                        : pricingPolicy.serviceChargeEnabled
+                        ? (language === 'ar'
+                            ? `شامل الخدمة (${Math.round(pricingPolicy.serviceChargeRate * 100)}%)`
+                            : `Incl. Service (${Math.round(pricingPolicy.serviceChargeRate * 100)}%)`)
+                        : (language === 'ar'
+                            ? 'الأسعار صافية بدون ضرائب أو رسوم إضافية'
+                            : 'All prices net, no additional taxes or fees')}
                     </span>
                   </div>
                   <div className="flex items-baseline gap-1">

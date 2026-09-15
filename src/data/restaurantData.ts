@@ -33,6 +33,8 @@ export function generateTaxNotice(
   };
 }
 
+export const APP_VERSION = 'v2.0.0';
+
 export const OFFICIAL_RESTAURANT_INFO: RestaurantInfo = {
   name_en: "Bokharest Black",
   name_ar: "بوخارست بلاك",

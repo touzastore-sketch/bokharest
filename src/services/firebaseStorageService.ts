@@ -3,7 +3,7 @@ import { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, serverTime
 import { firebaseStorage, firestoreDb } from './firebase';
 import { UploadedImageRecord, MenuItem } from '../types';
 import { optimizeFileAutoFQ, optimizeRemoteUrlAutoFQ } from '../utils/imageOptimizer';
-import { updateAllMenuItemsImageInFirestore } from './firestoreDataService';
+import { updateAllMenuItemsImageInFirestore, deleteGalleryImageFromFirestore } from './firestoreDataService';
 import { CLOUDINARY_ASSETS, uploadImageToCloudinary, getOptimizedImageUrl } from './cloudinaryService';
 
 const UPLOADED_IMAGES_COLLECTION = 'uploaded_images';
@@ -223,6 +223,11 @@ export async function deleteUploadedImage(record: UploadedImageRecord): Promise<
     }
     await deleteDoc(doc(firestoreDb, UPLOADED_IMAGES_COLLECTION, record.id)).catch(() => {});
 
+    // إذا كانت الصورة ضمن المعرض أو ترتبط به، نحذفها أيضاً من المعرض ونحظر عودتها
+    if (record.folder === 'gallery' || record.id.includes('gal') || record.id.includes('gallery')) {
+      await deleteGalleryImageFromFirestore(record.id, record.url).catch(() => {});
+    }
+
     // Update local cache
     const current = await getUploadedImages();
     const filtered = current.filter((img) => img.id !== record.id);
@@ -403,30 +408,7 @@ export async function migrateAllAppImagesToFirebase(
         console.warn(`[FirebaseStorage] Firestore sync notice for ${item.name}:`, fsErr);
       }
 
-      // 3. If this is a gallery image, also ensure it's saved in the 'gallery' collection
-      if (item.folder === 'gallery') {
-        try {
-          const galleryDocId = item.id.replace('app_img_', '');
-          await setDoc(
-            doc(firestoreDb, 'gallery', galleryDocId),
-            {
-              id: galleryDocId,
-              title_ar: item.name,
-              title_en: item.name,
-              category: 'interior',
-              image: finalUrl,
-              description_ar: item.description,
-              description_en: item.description,
-              active: true,
-              updatedAt: serverTimestamp(),
-            },
-            { merge: true }
-          );
-        } catch (galErr) {
-          console.warn('[FirebaseStorage] Gallery sync note:', galErr);
-        }
-      }
-
+      // صور المعرض يديرها المستخدم بحرية من لوحة التحكم، ولا نعيد إدراجها تلقائياً لمنع عودة الصور المحذوفة
       cacheImageLocally(record);
       migratedRecords.push(record);
     } catch (itemErr) {

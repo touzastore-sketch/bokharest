@@ -11,6 +11,7 @@ import {
   limit,
   serverTimestamp,
   writeBatch,
+  arrayUnion,
 } from 'firebase/firestore';
 import { firestoreDb } from './firebase';
 import { Category, MenuItem, OrderRecord, ReservationRecord, CustomerFeedback, RestaurantInfo, AdvertisementItem, GalleryImage } from '../types';
@@ -129,20 +130,33 @@ export async function seedFirestoreIfEmpty(): Promise<{ seeded: boolean; categor
       console.log(`[FirestoreData] ✅ تم بنجاح نقل البنرات الإعلانية إلى Cloud Firestore.`);
     }
 
-    // تهيئة صور المعرض (Gallery) إذا كانت فارغة
-    const gallerySnapshot = await getDocs(collection(firestoreDb, COLLECTIONS.GALLERY));
-    if (gallerySnapshot.empty && GALLERY_IMAGES.length > 0) {
-      console.log(`[FirestoreData] جارٍ رفع وتأسيس ${GALLERY_IMAGES.length} صور للمعرض في Cloud Firestore...`);
-      const batch = writeBatch(firestoreDb);
-      for (const img of GALLERY_IMAGES) {
-        const ref = doc(firestoreDb, COLLECTIONS.GALLERY, img.id);
-        batch.set(ref, {
-          ...cleanDataForFirestore(img),
-          updatedAt: serverTimestamp(),
-        });
+    // تهيئة صور المعرض (Gallery) فقط إذا لم تتم تهيئتها مسبقاً
+    const galleryMetaRef = doc(firestoreDb, 'system_metadata', 'gallery_status');
+    const galleryMetaSnap = await getDoc(galleryMetaRef).catch(() => null);
+    const galleryMeta = galleryMetaSnap?.exists() ? galleryMetaSnap.data() : null;
+    const isGalleryInitialized = galleryMeta?.initialized === true;
+    const remoteDeletedGallery = new Set<string>(galleryMeta?.deletedIds || []);
+
+    if (!isGalleryInitialized) {
+      const gallerySnapshot = await getDocs(collection(firestoreDb, COLLECTIONS.GALLERY));
+      if (gallerySnapshot.empty && GALLERY_IMAGES.length > 0) {
+        console.log(`[FirestoreData] جارٍ رفع وتأسيس ${GALLERY_IMAGES.length} صور للمعرض في Cloud Firestore...`);
+        const batch = writeBatch(firestoreDb);
+        const localDeleted = getLocalDeletedGalleryIds();
+        for (const img of GALLERY_IMAGES) {
+          if (!localDeleted.has(img.id) && !remoteDeletedGallery.has(img.id) && (!img.url || !localDeleted.has(img.url))) {
+            const ref = doc(firestoreDb, COLLECTIONS.GALLERY, img.id);
+            batch.set(ref, {
+              ...cleanDataForFirestore(img),
+              updatedAt: serverTimestamp(),
+            });
+          }
+        }
+        await batch.commit();
+        console.log(`[FirestoreData] ✅ تم بنجاح نقل صور المعرض إلى Cloud Firestore.`);
       }
-      await batch.commit();
-      console.log(`[FirestoreData] ✅ تم بنجاح نقل صور المعرض إلى Cloud Firestore.`);
+      // وضع علامة أن المعرض تمت تهيئته سحابياً حتى لا تعود الصور المحذوفة مطلقاً
+      await setDoc(galleryMetaRef, { initialized: true }, { merge: true }).catch(() => {});
     }
 
     return {
@@ -323,14 +337,82 @@ export async function updateOrderStatusInFirestore(
   }
 }
 
+export const DELETED_ORDERS_KEY = 'bokharest_deleted_order_ids_v1';
+export const DELETED_RESERVATIONS_KEY = 'bokharest_deleted_reservation_ids_v1';
+
+export function getLocalDeletedOrderIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DELETED_ORDERS_KEY);
+    return new Set<string>(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+export function recordLocalDeletedOrderId(orderId: string): void {
+  try {
+    const set = getLocalDeletedOrderIds();
+    set.add(orderId);
+    localStorage.setItem(DELETED_ORDERS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+export function unmarkDeletedOrderId(orderId: string): void {
+  try {
+    const set = getLocalDeletedOrderIds();
+    set.delete(orderId);
+    localStorage.setItem(DELETED_ORDERS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+export function getLocalDeletedReservationIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DELETED_RESERVATIONS_KEY);
+    return new Set<string>(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+export function recordLocalDeletedReservationId(resId: string): void {
+  try {
+    const set = getLocalDeletedReservationIds();
+    set.add(resId);
+    localStorage.setItem(DELETED_RESERVATIONS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
+export function unmarkDeletedReservationId(resId: string): void {
+  try {
+    const set = getLocalDeletedReservationIds();
+    set.delete(resId);
+    localStorage.setItem(DELETED_RESERVATIONS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
+
 /**
- * حذف طلب من Cloud Firestore
+ * حذف طلب من Cloud Firestore وإشعار كافة أجهزة العملاء بحذفه فوراً
  */
 export async function deleteOrderFromFirestore(orderId: string): Promise<boolean> {
   try {
+    recordLocalDeletedOrderId(orderId);
+
     const ref = doc(firestoreDb, COLLECTIONS.ORDERS, orderId);
     await deleteDoc(ref);
-    console.log(`[FirestoreData] 🗑️ تم حذف الطلب (${orderId}) من Cloud Firestore`);
+
+    // تسجيل معرف الطلب المحذوف في system_metadata/orders_status ليحذفه تطبيق العميل فوراً
+    const metaRef = doc(firestoreDb, 'system_metadata', 'orders_status');
+    await setDoc(
+      metaRef,
+      {
+        deletedOrderIds: arrayUnion(orderId),
+        lastDeletedId: orderId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    ).catch(() => {});
+
+    console.log(`[FirestoreData] 🗑️ تم حذف الطلب (${orderId}) من Cloud Firestore وتعميم الحذف على العملاء`);
     return true;
   } catch (error) {
     console.error('[FirestoreData] Failed to delete order from Firestore:', error);
@@ -338,28 +420,87 @@ export async function deleteOrderFromFirestore(orderId: string): Promise<boolean
   }
 }
 
-
 /**
- * الاستماع لسجل الطلبات من Firestore
+ * الاستماع لسجل الطلبات من Firestore مع مزامنة الحذف المباشر للعميل
  */
 export function subscribeToOrders(
-  onUpdate: (orders: OrderRecord[]) => void
+  onUpdate: (orders: OrderRecord[], deletedOrderIds?: string[]) => void
 ): () => void {
   try {
-    const q = query(collection(firestoreDb, COLLECTIONS.ORDERS), orderBy('serverTime', 'desc'), limit(50));
-    return onSnapshot(
+    let currentOrders: OrderRecord[] = [];
+    let currentDeletedIds: string[] = Array.from(getLocalDeletedOrderIds());
+    let isInitialized = false;
+
+    const dispatch = () => {
+      const deletedSet = new Set(currentDeletedIds);
+      const filtered = currentOrders.filter((o) => !deletedSet.has(o.id));
+      onUpdate(filtered, currentDeletedIds);
+    };
+
+    // الاستماع لبيانات المحذوفات السحابية
+    const metaRef = doc(firestoreDb, 'system_metadata', 'orders_status');
+    const unsubMeta = onSnapshot(
+      metaRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Array.isArray(data.deletedOrderIds)) {
+            const combined = new Set([...currentDeletedIds, ...data.deletedOrderIds]);
+            currentDeletedIds = Array.from(combined);
+            try {
+              localStorage.setItem(DELETED_ORDERS_KEY, JSON.stringify(currentDeletedIds));
+            } catch {}
+            if (isInitialized) {
+              dispatch();
+            }
+          }
+        }
+      },
+      (err) => {
+        console.warn('[FirestoreData] Orders status metadata note:', err);
+      }
+    );
+
+    // الاستماع لمجموعة الطلبات
+    const q = query(collection(firestoreDb, COLLECTIONS.ORDERS), limit(100));
+    const unsubCollection = onSnapshot(
       q,
       (snapshot) => {
+        isInitialized = true;
         const orders: OrderRecord[] = [];
         snapshot.forEach((d) => {
           orders.push(d.data() as OrderRecord);
         });
-        onUpdate(orders);
+
+        orders.sort((a, b) => {
+          const timeA = new Date(a.date || 0).getTime();
+          const timeB = new Date(b.date || 0).getTime();
+          return timeB - timeA;
+        });
+
+        // التقاط أي وثيقة حُذفت مباشرة
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'removed') {
+            const removedId = change.doc.id;
+            recordLocalDeletedOrderId(removedId);
+            if (!currentDeletedIds.includes(removedId)) {
+              currentDeletedIds.push(removedId);
+            }
+          }
+        });
+
+        currentOrders = orders;
+        dispatch();
       },
       (error) => {
         console.warn('[FirestoreData] Orders listener note:', error);
       }
     );
+
+    return () => {
+      unsubMeta();
+      unsubCollection();
+    };
   } catch {
     return () => {};
   }
@@ -370,6 +511,7 @@ export function subscribeToOrders(
  */
 export async function saveReservationToFirestore(reservation: ReservationRecord): Promise<boolean> {
   try {
+    unmarkDeletedReservationId(reservation.id);
     const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, reservation.id);
     const cleaned = cleanDataForFirestore(reservation);
     await setDoc(ref, {
@@ -407,13 +549,27 @@ export async function updateReservationStatusInFirestore(
 }
 
 /**
- * حذف حجز طاولة من Cloud Firestore
+ * حذف حجز طاولة من Cloud Firestore وإشعار العميل بحذفه فوراً
  */
 export async function deleteReservationFromFirestore(reservationId: string): Promise<boolean> {
   try {
+    recordLocalDeletedReservationId(reservationId);
+
     const ref = doc(firestoreDb, COLLECTIONS.RESERVATIONS, reservationId);
     await deleteDoc(ref);
-    console.log(`[FirestoreData] 🗑️ تم حذف حجز الطاولة (${reservationId}) من Cloud Firestore`);
+
+    const metaRef = doc(firestoreDb, 'system_metadata', 'reservations_status');
+    await setDoc(
+      metaRef,
+      {
+        deletedReservationIds: arrayUnion(reservationId),
+        lastDeletedId: reservationId,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    ).catch(() => {});
+
+    console.log(`[FirestoreData] 🗑️ تم حذف حجز الطاولة (${reservationId}) وتعميم الحذف`);
     return true;
   } catch (error) {
     console.error('[FirestoreData] Failed to delete reservation from Firestore:', error);
@@ -422,26 +578,83 @@ export async function deleteReservationFromFirestore(reservationId: string): Pro
 }
 
 /**
- * الاستماع لسجل حجوزات الطاولات من Firestore
+ * الاستماع لسجل حجوزات الطاولات من Firestore مع المزامنة اللحظية للحذف
  */
 export function subscribeToReservations(
-  onUpdate: (reservations: ReservationRecord[]) => void
+  onUpdate: (reservations: ReservationRecord[], deletedReservationIds?: string[]) => void
 ): () => void {
   try {
-    const q = query(collection(firestoreDb, COLLECTIONS.RESERVATIONS), orderBy('serverTime', 'desc'), limit(100));
-    return onSnapshot(
+    let currentReservations: ReservationRecord[] = [];
+    let currentDeletedIds: string[] = Array.from(getLocalDeletedReservationIds());
+    let isInitialized = false;
+
+    const dispatch = () => {
+      const deletedSet = new Set(currentDeletedIds);
+      const filtered = currentReservations.filter((r) => !deletedSet.has(r.id));
+      onUpdate(filtered, currentDeletedIds);
+    };
+
+    const metaRef = doc(firestoreDb, 'system_metadata', 'reservations_status');
+    const unsubMeta = onSnapshot(
+      metaRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Array.isArray(data.deletedReservationIds)) {
+            const combined = new Set([...currentDeletedIds, ...data.deletedReservationIds]);
+            currentDeletedIds = Array.from(combined);
+            try {
+              localStorage.setItem(DELETED_RESERVATIONS_KEY, JSON.stringify(currentDeletedIds));
+            } catch {}
+            if (isInitialized) {
+              dispatch();
+            }
+          }
+        }
+      },
+      (err) => {
+        console.warn('[FirestoreData] Reservations status metadata note:', err);
+      }
+    );
+
+    const q = query(collection(firestoreDb, COLLECTIONS.RESERVATIONS), limit(150));
+    const unsubCollection = onSnapshot(
       q,
       (snapshot) => {
+        isInitialized = true;
         const list: ReservationRecord[] = [];
         snapshot.forEach((d) => {
           list.push(d.data() as ReservationRecord);
         });
-        onUpdate(list);
+
+        list.sort((a, b) => {
+          const timeA = new Date(a.date || 0).getTime();
+          const timeB = new Date(b.date || 0).getTime();
+          return timeB - timeA;
+        });
+
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'removed') {
+            const removedId = change.doc.id;
+            recordLocalDeletedReservationId(removedId);
+            if (!currentDeletedIds.includes(removedId)) {
+              currentDeletedIds.push(removedId);
+            }
+          }
+        });
+
+        currentReservations = list;
+        dispatch();
       },
       (error) => {
         console.warn('[FirestoreData] Reservations listener note:', error);
       }
     );
+
+    return () => {
+      unsubMeta();
+      unsubCollection();
+    };
   } catch {
     return () => {};
   }
@@ -801,8 +1014,50 @@ export function subscribeToRestaurantInfo(
   }
 }
 
+export const DELETED_GALLERY_KEY = 'bokharest_deleted_gallery_ids_v2';
+
 /**
- * الاستماع اللحظي لصور المعرض في Cloud Firestore
+ * الحصول على قائمة معرفات وروابط صور المعرض المحذوفة محلياً
+ */
+export function getLocalDeletedGalleryIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DELETED_GALLERY_KEY);
+    return new Set<string>(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set<string>();
+  }
+}
+
+/**
+ * تسجيل معرف أو رابط صورة معرض محذوفة لمنع عودتها نهائياً
+ */
+export function recordLocalDeletedGalleryId(id: string, url?: string): void {
+  try {
+    const set = getLocalDeletedGalleryIds();
+    if (id) set.add(id);
+    if (url) set.add(url);
+    localStorage.setItem(DELETED_GALLERY_KEY, JSON.stringify(Array.from(set)));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * إزالة المعرف أو الرابط من قائمة المحذوفات في حال قام المدير بإعادة إضافتها يدوياً
+ */
+export function unmarkDeletedGalleryId(id: string, url?: string): void {
+  try {
+    const set = getLocalDeletedGalleryIds();
+    if (id) set.delete(id);
+    if (url) set.delete(url);
+    localStorage.setItem(DELETED_GALLERY_KEY, JSON.stringify(Array.from(set)));
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * الاستماع اللحظي لصور المعرض في Cloud Firestore مع حظر تام للصور المحذوفة
  */
 export function subscribeToGallery(
   onUpdate: (images: GalleryImage[]) => void,
@@ -810,22 +1065,78 @@ export function subscribeToGallery(
 ): () => void {
   try {
     const q = query(collection(firestoreDb, COLLECTIONS.GALLERY));
-    return onSnapshot(
+    
+    // استماع إضافي لقائمة الصور المحذوفة سحابياً لتحديث الحظر فورياً
+    let cloudDeletedIds = new Set<string>();
+    const metaRef = doc(firestoreDb, 'system_metadata', 'gallery_status');
+    const unsubMeta = onSnapshot(
+      metaRef,
+      (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (Array.isArray(data?.deletedIds)) {
+            cloudDeletedIds = new Set<string>(data.deletedIds);
+            // مزامنة مع التخزين المحلي
+            const local = getLocalDeletedGalleryIds();
+            data.deletedIds.forEach((id: string) => local.add(id));
+            try {
+              localStorage.setItem(DELETED_GALLERY_KEY, JSON.stringify(Array.from(local)));
+            } catch {}
+          }
+        }
+      },
+      () => {}
+    );
+
+    const unsubGallery = onSnapshot(
       q,
       (snapshot) => {
+        const localDeleted = getLocalDeletedGalleryIds();
         const list: GalleryImage[] = [];
+
         snapshot.forEach((docSnap) => {
-          list.push(docSnap.data() as GalleryImage);
+          const data = docSnap.data();
+          const docId = docSnap.id || data.id;
+          const photoUrl = data.url || data.image || data.localUrl || '';
+          const localPhotoUrl = data.localUrl || data.url || data.image || '';
+
+          // إذا تم حذف الصورة سابقاً سواء بالمعرف أو الرابط، نستبعدها فوراً
+          if (
+            localDeleted.has(docId) ||
+            cloudDeletedIds.has(docId) ||
+            (photoUrl && (localDeleted.has(photoUrl) || cloudDeletedIds.has(photoUrl)))
+          ) {
+            return;
+          }
+
+          list.push({
+            id: docId,
+            url: photoUrl,
+            localUrl: localPhotoUrl,
+            title_ar: data.title_ar || '',
+            title_en: data.title_en || '',
+            description_ar: data.description_ar || '',
+            description_en: data.description_en || '',
+            category: data.category || 'ambiance',
+            category_ar: data.category_ar || 'أجواء الكافيه',
+            category_en: data.category_en || 'Ambiance',
+            featured: Boolean(data.featured),
+          });
         });
-        if (list.length > 0) {
-          onUpdate(list);
-        }
+
+        // استدعاء التحديث دائماً حتى لو كانت القائمة فارغة أو تم حذف كافة الصور
+        onUpdate(list);
       },
       (error) => {
         console.warn('[FirestoreData] Gallery listener note:', error);
         if (onError) onError(error);
       }
     );
+
+    return () => {
+      unsubGallery();
+      unsubMeta();
+    };
   } catch (err) {
     console.warn('[FirestoreData] Error setting up gallery listener:', err);
     return () => {};
@@ -837,6 +1148,9 @@ export function subscribeToGallery(
  */
 export async function saveGalleryImageToFirestore(image: GalleryImage): Promise<boolean> {
   try {
+    // إلغاء حظر الصورة إذا كان المدير يضيفها أو يعدلها
+    unmarkDeletedGalleryId(image.id, image.url);
+
     const ref = doc(firestoreDb, COLLECTIONS.GALLERY, image.id);
     const cleaned = cleanDataForFirestore(image);
     await setDoc(
@@ -856,13 +1170,68 @@ export async function saveGalleryImageToFirestore(image: GalleryImage): Promise<
 }
 
 /**
- * حذف صورة من المعرض في Cloud Firestore
+ * حذف صورة نهائياً من المعرض في Cloud Firestore مع حظر عودتها التلقائية
  */
-export async function deleteGalleryImageFromFirestore(imageId: string): Promise<boolean> {
+export async function deleteGalleryImageFromFirestore(imageId: string, imageUrl?: string): Promise<boolean> {
   try {
-    const ref = doc(firestoreDb, COLLECTIONS.GALLERY, imageId);
-    await deleteDoc(ref);
-    console.log(`[FirestoreData] 🗑️ تم حذف صورة المعرض (${imageId}) من Cloud Firestore`);
+    // 1. تسجيل الحذف محلياً فوراً
+    recordLocalDeletedGalleryId(imageId, imageUrl);
+
+    // جمع كافة المعرفات البديلة الشائعة للصورة (مثل gal-1 و gallery_1 و app_img_gallery_1)
+    const idsToDelete = new Set<string>([imageId]);
+    if (imageId.startsWith('gal-')) {
+      const num = imageId.replace('gal-', '');
+      idsToDelete.add(`gallery_${num}`);
+      idsToDelete.add(`app_img_gallery_${num}`);
+    } else if (imageId.startsWith('gallery_')) {
+      const num = imageId.replace('gallery_', '');
+      idsToDelete.add(`gal-${num}`);
+      idsToDelete.add(`app_img_gallery_${num}`);
+    } else if (imageId.startsWith('app_img_gallery_')) {
+      const num = imageId.replace('app_img_gallery_', '');
+      idsToDelete.add(`gal-${num}`);
+      idsToDelete.add(`gallery_${num}`);
+    }
+
+    // 2. حذف الوثائق من مجموعة gallery
+    const deletePromises: Promise<any>[] = [];
+    for (const id of idsToDelete) {
+      deletePromises.push(deleteDoc(doc(firestoreDb, COLLECTIONS.GALLERY, id)).catch(() => {}));
+    }
+
+    // 3. إذا كان الرابط معروفاً، نحذف أي وثائق أخرى تحمل نفس الرابط في المعرض لتنظيف أي تكرارات
+    if (imageUrl) {
+      try {
+        const snap = await getDocs(collection(firestoreDb, COLLECTIONS.GALLERY));
+        snap.forEach((d) => {
+          const dData = d.data();
+          if (dData.url === imageUrl || dData.image === imageUrl || dData.localUrl === imageUrl) {
+            deletePromises.push(deleteDoc(d.ref).catch(() => {}));
+          }
+        });
+      } catch (searchErr) {
+        console.warn('[FirestoreData] Search gallery by url notice:', searchErr);
+      }
+    }
+
+    await Promise.all(deletePromises);
+
+    // 4. تسجيل المعرفات والرابط في قائمة الصور المحذوفة سحابياً لمنع أي سكريبت تهيئة أو ترحيل من إعادتها
+    const galleryMetaRef = doc(firestoreDb, 'system_metadata', 'gallery_status');
+    const idsToRecord = Array.from(idsToDelete);
+    if (imageUrl) idsToRecord.push(imageUrl);
+
+    await setDoc(
+      galleryMetaRef,
+      {
+        initialized: true,
+        deletedIds: arrayUnion(...idsToRecord),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    ).catch(() => {});
+
+    console.log(`[FirestoreData] 🗑️ تم حذف صورة المعرض (${imageId}) نهائياً وحظر عودتها في Cloud Firestore`);
     return true;
   } catch (error) {
     console.error('[FirestoreData] Failed to delete gallery image:', error);

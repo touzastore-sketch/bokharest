@@ -140,13 +140,13 @@ export const GalleryManager: React.FC<GalleryManagerProps> = ({ onNotify }) => {
   };
 
   const handleDelete = async (img: GalleryImage) => {
-    if (!confirm(`هل أنت متأكد من حذف الصورة "${img.title_ar}" نهائياً من المعرض؟`)) {
+    if (!confirm(`هل أنت متأكد من حذف الصورة "${img.title_ar}" نهائياً من المعرض؟ لن تظهر مجدداً حتى بعد التحديث.`)) {
       return;
     }
 
-    const ok = await deleteGalleryImage(img.id);
+    const ok = await deleteGalleryImage(img.id, img.url || img.localUrl);
     if (ok) {
-      onNotify('🗑️ تم حذف الصورة من المعرض بنجاح');
+      onNotify('🗑️ تم حذف الصورة من المعرض نهائياً وحظر عودتها بنجاح');
     }
   };
 

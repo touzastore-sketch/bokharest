@@ -14,6 +14,9 @@ import {
   subscribeToGallery,
   saveGalleryImageToFirestore,
   deleteGalleryImageFromFirestore,
+  getLocalDeletedGalleryIds,
+  recordLocalDeletedGalleryId,
+  unmarkDeletedGalleryId,
   saveMenuItemToFirestore,
   deleteMenuItemFromFirestore,
   saveCategoryToFirestore,
@@ -26,6 +29,10 @@ import {
   deleteOrderFromFirestore,
   saveReservationToFirestore,
   deleteReservationFromFirestore,
+  getLocalDeletedOrderIds,
+  recordLocalDeletedOrderId,
+  getLocalDeletedReservationIds,
+  recordLocalDeletedReservationId,
   saveFeedbackToFirestore,
   migrateAllCollectionsToCloudinary,
 } from '../services/firestoreDataService';
@@ -123,7 +130,7 @@ interface AppContextType {
   openGallery: (initialIndex?: number) => void;
   galleryImages: GalleryImage[];
   saveGalleryImage: (image: GalleryImage) => Promise<boolean>;
-  deleteGalleryImage: (imageId: string) => Promise<boolean>;
+  deleteGalleryImage: (imageId: string, imageUrl?: string) => Promise<boolean>;
 
   // Orders history
   orderHistory: OrderRecord[];
@@ -353,29 +360,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Gallery Images state backed by Firestore and local storage
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {
     try {
+      const deletedIds = getLocalDeletedGalleryIds();
       const saved = localStorage.getItem(STORAGE_KEYS.GALLERY);
-      return saved ? JSON.parse(saved) : GALLERY_IMAGES;
+      const initial: GalleryImage[] = saved ? JSON.parse(saved) : GALLERY_IMAGES;
+      return initial.filter(
+        (img) => !deletedIds.has(img.id) && (!img.url || !deletedIds.has(img.url))
+      );
     } catch {
-      return GALLERY_IMAGES;
+      try {
+        const deletedIds = getLocalDeletedGalleryIds();
+        return GALLERY_IMAGES.filter(
+          (img) => !deletedIds.has(img.id) && (!img.url || !deletedIds.has(img.url))
+        );
+      } catch {
+        return GALLERY_IMAGES;
+      }
     }
   });
 
   const saveGalleryImage = async (image: GalleryImage): Promise<boolean> => {
+    unmarkDeletedGalleryId(image.id, image.url);
     setGalleryImages(prev => {
       const existingIdx = prev.findIndex(img => img.id === image.id);
+      let updated: GalleryImage[];
       if (existingIdx >= 0) {
-        const updated = [...prev];
+        updated = [...prev];
         updated[existingIdx] = image;
-        return updated;
+      } else {
+        updated = [image, ...prev];
       }
-      return [image, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(updated));
+      } catch {}
+      return updated;
     });
     return await saveGalleryImageToFirestore(image);
   };
 
-  const deleteGalleryImage = async (imageId: string): Promise<boolean> => {
-    setGalleryImages(prev => prev.filter(img => img.id !== imageId));
-    return await deleteGalleryImageFromFirestore(imageId);
+  const deleteGalleryImage = async (imageId: string, imageUrl?: string): Promise<boolean> => {
+    recordLocalDeletedGalleryId(imageId, imageUrl);
+    let nextList: GalleryImage[] = [];
+    setGalleryImages(prev => {
+      nextList = prev.filter(img => img.id !== imageId && (!imageUrl || img.url !== imageUrl));
+      return nextList;
+    });
+    try {
+      localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(nextList));
+    } catch {
+      // ignore
+    }
+    return await deleteGalleryImageFromFirestore(imageId, imageUrl);
   };
 
   // Synchronize document dir and lang attributes
@@ -526,38 +560,73 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // 6. Real-time subscription to Gallery Images in Cloud Firestore
     const unsubGallery = subscribeToGallery((remoteGallery) => {
-      if (remoteGallery && remoteGallery.length > 0) {
-        setGalleryImages(remoteGallery);
-        try {
-          localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(remoteGallery));
-        } catch {
-          // ignore
-        }
+      const deletedIds = getLocalDeletedGalleryIds();
+      const filtered = (remoteGallery || []).filter(
+        (img) => !deletedIds.has(img.id) && (!img.url || !deletedIds.has(img.url))
+      );
+      setGalleryImages(filtered);
+      try {
+        localStorage.setItem(STORAGE_KEYS.GALLERY, JSON.stringify(filtered));
+      } catch {
+        // ignore
       }
     });
 
-    // 7. Real-time subscription to Orders in Cloud Firestore (for live status updates)
-    const unsubOrders = subscribeToOrders((remoteOrders) => {
-      if (remoteOrders && remoteOrders.length > 0) {
-        setOrderHistory(remoteOrders);
+    // 7. Real-time subscription to Orders in Cloud Firestore (for live status updates & instant deletion on client side)
+    const unsubOrders = subscribeToOrders((remoteOrders, deletedOrderIds = []) => {
+      const deletedSet = new Set([
+        ...deletedOrderIds,
+        ...Array.from(getLocalDeletedOrderIds()),
+      ]);
+      const activeRemoteMap = new Map(remoteOrders.map((o) => [o.id, o]));
+
+      setOrderHistory((prev) => {
+        // حذف أي طلب تم حذفه من لوحة التحكم إدارياً في الوقت الفعلي
+        const updated = prev
+          .filter((order) => {
+            if (deletedSet.has(order.id)) return false;
+            return activeRemoteMap.has(order.id);
+          })
+          .map((order) => {
+            const remote = activeRemoteMap.get(order.id);
+            return remote ? { ...order, ...remote } : order;
+          });
+
         try {
-          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(remoteOrders));
+          localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(updated));
         } catch {
           // ignore
         }
-      }
+        return updated;
+      });
     });
 
-    // 8. Real-time subscription to Reservations in Cloud Firestore (for live status updates)
-    const unsubReservations = subscribeToReservations((remoteReservations) => {
-      if (remoteReservations && remoteReservations.length > 0) {
-        setReservationHistory(remoteReservations);
+    // 8. Real-time subscription to Reservations in Cloud Firestore (for live status updates & instant deletion on client side)
+    const unsubReservations = subscribeToReservations((remoteReservations, deletedResIds = []) => {
+      const deletedSet = new Set([
+        ...deletedResIds,
+        ...Array.from(getLocalDeletedReservationIds()),
+      ]);
+      const activeRemoteMap = new Map(remoteReservations.map((r) => [r.id, r]));
+
+      setReservationHistory((prev) => {
+        const updated = prev
+          .filter((res) => {
+            if (deletedSet.has(res.id)) return false;
+            return activeRemoteMap.has(res.id);
+          })
+          .map((res) => {
+            const remote = activeRemoteMap.get(res.id);
+            return remote ? { ...res, ...remote } : res;
+          });
+
         try {
-          localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(remoteReservations));
+          localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(updated));
         } catch {
           // ignore
         }
-      }
+        return updated;
+      });
     });
 
     return () => {
@@ -820,8 +889,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       serviceChargeEnabled,
       vatRate,
       vatEnabled,
-      taxNotice_ar: remote?.taxNotice_ar || notice.ar,
-      taxNotice_en: remote?.taxNotice_en || notice.en,
+      taxNotice_ar: notice.ar,
+      taxNotice_en: notice.en,
     };
   }, [restaurantInfo]);
 
@@ -900,7 +969,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [orderHistory, setOrderHistory] = useState<OrderRecord[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ORDERS);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: OrderRecord[] = JSON.parse(saved);
+      const deletedSet = getLocalDeletedOrderIds();
+      return parsed.filter(o => !deletedSet.has(o.id));
     } catch {
       return [];
     }
@@ -911,6 +983,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [orderHistory]);
 
   const deleteOrder = async (orderId: string): Promise<boolean> => {
+    recordLocalDeletedOrderId(orderId);
     setOrderHistory(prev => prev.filter(o => o.id !== orderId));
     return await deleteOrderFromFirestore(orderId);
   };
@@ -926,7 +999,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [reservationHistory, setReservationHistory] = useState<ReservationRecord[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.RESERVATIONS);
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed: ReservationRecord[] = JSON.parse(saved);
+      const deletedSet = getLocalDeletedReservationIds();
+      return parsed.filter(r => !deletedSet.has(r.id));
     } catch {
       return [];
     }
@@ -937,6 +1013,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [reservationHistory]);
 
   const deleteReservation = async (reservationId: string): Promise<boolean> => {
+    recordLocalDeletedReservationId(reservationId);
     setReservationHistory(prev => prev.filter(r => r.id !== reservationId));
     return await deleteReservationFromFirestore(reservationId);
   };

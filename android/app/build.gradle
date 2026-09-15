@@ -10,8 +10,8 @@ android {
         applicationId "com.bokharest.app"
         minSdk 24
         targetSdk 36
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 4
+        versionName "2.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -21,6 +21,9 @@ android {
             def store = file('release.jks')
             if (!store.exists()) {
                 store = file('app/release.jks')
+            }
+            if (!store.exists()) {
+                store = file('../release.jks')
             }
             if (store.exists()) {
                 storeFile store

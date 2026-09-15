@@ -77,6 +77,7 @@ import {
 } from '../../services/firebaseStorageService';
 import { AdvertisementsManager } from './AdvertisementsManager';
 import { GalleryManager } from './GalleryManager';
+import { APP_VERSION } from '../../data/restaurantData';
 
 type AdminTab =
   | 'overview'
@@ -388,13 +389,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
   // Delete order from Firestore
   const handleDeleteOrder = async (orderId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الطلب نهائياً من قاعدة بيانات Firestore؟')) {
+    if (!confirm('هل أنت متأكد من حذف هذا الطلب نهائياً؟ سيتم حذفه مباشرة من شاشة العميل أيضاً.')) {
       return;
     }
     const ok = await deleteOrderFromFirestore(orderId);
     if (ok) {
       setLiveOrders((prev) => prev.filter((o) => o.id !== orderId));
-      showNotification('🗑️ تم حذف الطلب نهائياً من سحابة Firestore بنجاح');
+      showNotification('🗑️ تم حذف الطلب نهائياً من Firestore وحذفه مباشرة من عند العميل بنجاح');
     }
   };
 
@@ -408,13 +409,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
   // Delete reservation from Firestore
   const handleDeleteReservation = async (resId: string) => {
-    if (!confirm('هل أنت متأكد من حذف هذا الحجز نهائياً من قاعدة بيانات Firestore؟')) {
+    if (!confirm('هل أنت متأكد من حذف هذا الحجز نهائياً؟ سيتم حذفه مباشرة من شاشة العميل أيضاً.')) {
       return;
     }
     const ok = await deleteReservationFromFirestore(resId);
     if (ok) {
       setLiveReservations((prev) => prev.filter((r) => r.id !== resId));
-      showNotification('🗑️ تم حذف الحجز نهائياً من سحابة Firestore بنجاح');
+      showNotification('🗑️ تم حذف الحجز نهائياً من Firestore وحذفه مباشرة من عند العميل بنجاح');
     }
   };
 
@@ -526,6 +527,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 Firebase Live
+              </span>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-neutral-300 border border-white/15">
+                {APP_VERSION}
               </span>
             </div>
             <p className="text-[11px] text-neutral-400 hidden sm:block">

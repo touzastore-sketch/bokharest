@@ -18,6 +18,7 @@ import {
   ArrowLeftRight,
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
+import { APP_VERSION } from '../data/restaurantData';
 
 export const MoreScreen: React.FC = () => {
   const {
@@ -356,7 +357,7 @@ export const MoreScreen: React.FC = () => {
             © 2026 SolimanMedia. All Rights Reserved
           </p>
           <p className="text-[10px] text-neutral-500">
-            Bokharest Black • v1.0.0
+            Bokharest Black • {APP_VERSION}
           </p>
         </div>
       </ScrollReveal>
