@@ -1,5 +1,5 @@
 import React from 'react';
-import { UtensilsCrossed, MessageSquareText } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
 
 interface CategoryServingNoteProps {
   note: string;
@@ -95,16 +95,6 @@ export const CategoryServingNote: React.FC<CategoryServingNoteProps> = ({
           {optionsText}
         </p>
       )}
-
-      {/* Customer Instruction Guide */}
-      <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center gap-1.5 text-[11px] sm:text-xs text-amber-300/90 font-medium">
-        <MessageSquareText className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-        <span>
-          {language === 'ar'
-            ? 'يمكنك كتابة اختيار الطبق الجانبي في ملاحظات الطلب عند إنشائه'
-            : 'You can specify your side dish choice in the order notes when placing it'}
-        </span>
-      </div>
     </div>
   );
 };
