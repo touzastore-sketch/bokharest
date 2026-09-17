@@ -36,6 +36,7 @@ jobs:
 
       - name: 📂 Sync Web Build Assets into Android App
         run: |
+          rm -rf android/app/src/main/assets
           mkdir -p android/app/src/main/assets
           cp -r dist/* android/app/src/main/assets/
 
@@ -53,11 +54,16 @@ jobs:
           chmod +x ./gradlew
           ./gradlew bundleRelease assembleRelease --stacktrace
 
-      - name: 📤 Upload AAB for Direct Download
+      - name: 📱 Upload APK (Direct Phone Installation)
         uses: actions/upload-artifact@v4
         with:
-          name: Bokharest-Black-v2.0.0-AAB-and-APK
-          path: |
-            android/app/build/outputs/bundle/**/*.aab
-            android/app/build/outputs/apk/**/*.apk
+          name: Bokharest-Black-APK-Installable
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 30
+
+      - name: 📤 Upload AAB (Google Play Store Bundle)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bokharest-Black-AAB-PlayStore
+          path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
