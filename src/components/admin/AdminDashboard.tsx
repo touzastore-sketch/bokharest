@@ -833,6 +833,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                             <span className="text-[11px] text-neutral-400">
                               {order.items?.length || 0} أصناف • {order.total} ج.م
                             </span>
+                            {order.address && (
+                              <span className="block text-[10px] text-amber-400/90 truncate max-w-[220px]">
+                                📍 {order.address}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span
@@ -1401,6 +1406,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                 {order.phoneNumber}
                               </span>
                             </div>
+                            {order.address && (
+                              <div className="flex items-center gap-1 text-[11px] text-amber-300/90 mt-0.5">
+                                <span className="text-[10px] text-neutral-400">العنوان:</span>
+                                <span>{order.address}</span>
+                              </div>
+                            )}
                             <span className="text-[10px] text-neutral-500">
                               {order.date || 'اليوم'}
                             </span>

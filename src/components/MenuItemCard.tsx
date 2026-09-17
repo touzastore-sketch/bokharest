@@ -1,28 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { MenuItem } from '../types';
 import { useApp } from '../context/AppContext';
 import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { getOptimizedImageUrl } from '../services/cloudinaryService';
-import { Heart, Plus, Minus, Check } from 'lucide-react';
+import { Heart, Plus, Minus, Check, UtensilsCrossed } from 'lucide-react';
 import { haptic } from '../utils/haptics';
+import { parseSideOptions } from '../utils/sideOptions';
 
 interface MenuItemCardProps {
   item: MenuItem;
 }
 
 export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
-  const { language, t, addToCart, cart, updateQuantity, isFavorite, toggleFavorite, setSelectedItemForDetail } = useApp();
+  const {
+    language,
+    t,
+    addToCart,
+    cart,
+    updateQuantity,
+    updateItemNotes,
+    isFavorite,
+    toggleFavorite,
+    setSelectedItemForDetail,
+    categories,
+  } = useApp();
+
   const [imgError, setImgError] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+
+  // Category and side dish options
+  const category = categories.find((c) => c.id === item.category_id);
+  const categoryNote = language === 'ar' ? category?.note_ar : (category?.note_en || category?.note_ar);
+  const sideData = useMemo(() => parseSideOptions(categoryNote, language), [categoryNote, language]);
 
   // Check if item is already in cart
   const cartItem = cart.find(ci => ci.item.id === item.id);
   const quantityInCart = cartItem ? cartItem.quantity : 0;
 
+  // Selected side dish state
+  const [selectedSide, setSelectedSide] = useState<string>(() => {
+    if (cartItem?.notes && sideData.hasOptions) {
+      const match = sideData.options.find(opt => cartItem.notes?.includes(opt));
+      if (match) return match;
+    }
+    return '';
+  });
+
+  // Keep selectedSide synced with cartItem
+  useEffect(() => {
+    if (cartItem?.notes && sideData.hasOptions) {
+      const match = sideData.options.find(opt => cartItem.notes?.includes(opt));
+      if (match && match !== selectedSide) {
+        setSelectedSide(match);
+      }
+    }
+  }, [cartItem?.notes, sideData.options, sideData.hasOptions, selectedSide]);
+
+  const handleSelectSide = (opt: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    haptic.selection();
+    const newSide = selectedSide === opt ? '' : opt;
+    setSelectedSide(newSide);
+
+    // If already in cart, update cart item note immediately
+    if (quantityInCart > 0) {
+      const noteStr = newSide
+        ? (language === 'ar' ? `الطبق الجانبي: ${newSide}` : `Side: ${newSide}`)
+        : '';
+      updateItemNotes(item.id, noteStr);
+    }
+  };
+
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
     haptic.add();
-    addToCart(item, 1);
+    const noteStr = selectedSide
+      ? (language === 'ar' ? `الطبق الجانبي: ${selectedSide}` : `Side: ${selectedSide}`)
+      : '';
+    addToCart(item, 1, noteStr);
     setJustAdded(true);
     setTimeout(() => setJustAdded(false), 1200);
   };
@@ -156,6 +211,57 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
             {description}
           </p>
         </div>
+
+        {/* Side Dish Choices on the Card Exterior (Mobile-First, Highly Clear) */}
+        {sideData.hasOptions && isAvailable && (
+          <div
+            className="mt-3 pt-2.5 border-t border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-1 mb-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                <UtensilsCrossed className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span>{language === 'ar' ? 'الطبق الجانبي:' : 'Side Choice:'}</span>
+              </div>
+              {selectedSide ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-300 bg-emerald-950/70 border border-emerald-500/40 px-2.5 py-0.5 rounded-full shadow-sm">
+                  <Check className="w-3 h-3 text-emerald-400 stroke-[2.5]" />
+                  <span className="truncate max-w-[130px]">{selectedSide}</span>
+                </span>
+              ) : (
+                <span className="text-[10px] text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full font-medium">
+                  {language === 'ar' ? 'اختر طبقك' : 'Choose side'}
+                </span>
+              )}
+            </div>
+
+            {/* Mobile Touch Chips (Large, ergonomic, high-contrast) */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar touch-pan-x">
+              {sideData.options.map((option) => {
+                const isSelected = selectedSide === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={(e) => handleSelectSide(option, e)}
+                    className={`shrink-0 min-h-[38px] px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 cursor-pointer active:scale-95 active:opacity-80 touch-press select-none ${
+                      isSelected
+                        ? 'bg-amber-400 text-black border-2 border-amber-300 shadow-md shadow-amber-400/30 font-bold'
+                        : 'bg-[#181818] hover:bg-[#242424] text-neutral-200 border border-white/20 hover:border-amber-400/50'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        isSelected ? 'bg-black' : 'bg-amber-400/80'
+                      }`}
+                    />
+                    <span className="whitespace-nowrap">{option}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Action Bar */}
         <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">

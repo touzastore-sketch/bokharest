@@ -41,6 +41,7 @@ import { autoSyncAllAppAssetsToFirebase, migrateAllAppImagesToFirebase } from '.
 interface CustomerInfo {
   name: string;
   phone: string;
+  address?: string;
   notes: string;
 }
 
@@ -80,6 +81,7 @@ interface AppContextType {
   cart: CartItem[];
   addToCart: (item: MenuItem, quantity?: number, notes?: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
+  updateItemNotes: (itemId: string, notes: string) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
   cartCount: number;
@@ -357,20 +359,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsGalleryOpen(true);
   };
 
-  // Gallery Images state backed by Firestore and local storage
+  // Gallery Images state backed by Firestore and local storage (focusing exclusively on authentic cafe ambiance)
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {
     try {
       const deletedIds = getLocalDeletedGalleryIds();
       const saved = localStorage.getItem(STORAGE_KEYS.GALLERY);
       const initial: GalleryImage[] = saved ? JSON.parse(saved) : GALLERY_IMAGES;
       return initial.filter(
-        (img) => !deletedIds.has(img.id) && (!img.url || !deletedIds.has(img.url))
+        (img) =>
+          !deletedIds.has(img.id) &&
+          (!img.url || !deletedIds.has(img.url)) &&
+          img.category !== 'drinks' &&
+          img.category !== 'dining'
       );
     } catch {
       try {
         const deletedIds = getLocalDeletedGalleryIds();
         return GALLERY_IMAGES.filter(
-          (img) => !deletedIds.has(img.id) && (!img.url || !deletedIds.has(img.url))
+          (img) =>
+            !deletedIds.has(img.id) &&
+            (!img.url || !deletedIds.has(img.url)) &&
+            img.category !== 'drinks' &&
+            img.category !== 'dining'
         );
       } catch {
         return GALLERY_IMAGES;
@@ -562,7 +572,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const unsubGallery = subscribeToGallery((remoteGallery) => {
       const deletedIds = getLocalDeletedGalleryIds();
       const filtered = (remoteGallery || []).filter(
-        (img) => !deletedIds.has(img.id) && (!img.url || !deletedIds.has(img.url))
+        (img) =>
+          !deletedIds.has(img.id) &&
+          (!img.url || !deletedIds.has(img.url)) &&
+          img.category !== 'drinks' &&
+          img.category !== 'dining'
       );
       setGalleryImages(filtered);
       try {
@@ -852,6 +866,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const updateItemNotes = (itemId: string, notes: string) => {
+    setCart(prev => prev.map(ci => (ci.item.id === itemId ? { ...ci, notes } : ci)));
+  };
+
   const removeFromCart = (itemId: string) => {
     setCart(prev => prev.filter(ci => ci.item.id !== itemId));
   };
@@ -955,9 +973,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [customerInfo, setCustomerInfo] = useState<CustomerInfo>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.CUSTOMER);
-      return saved ? JSON.parse(saved) : { name: '', phone: '', notes: '' };
+      return saved
+        ? { name: '', phone: '', address: '', notes: '', ...JSON.parse(saved) }
+        : { name: '', phone: '', address: '', notes: '' };
     } catch {
-      return { name: '', phone: '', notes: '' };
+      return { name: '', phone: '', address: '', notes: '' };
     }
   });
 
@@ -1133,6 +1153,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 -----------------------------------
 *اسم العميل:* ${customerInfo.name || 'عميل كريم'}
 *رقم الهاتف:* \u202A${customerInfo.phone || 'غير محدد'}\u202C
+*عنوان التوصيل:* ${customerInfo.address?.trim() ? customerInfo.address.trim() : 'استلام من الكافيه / لم يحدد'}
 
 *تفاصيل الأصناف المطلوبة:*
 ${itemsList}
@@ -1160,6 +1181,7 @@ _تم إرسال الطلب عبر تطبيق بوخارست بلاك الرسم
 -----------------------------------
 *Customer:* ${customerInfo.name || 'Valued Guest'}
 *Phone:* ${customerInfo.phone || 'Not provided'}
+*Delivery Address:* ${customerInfo.address?.trim() ? customerInfo.address.trim() : 'Takeaway / Pick-up'}
 
 *Order Items:*
 ${itemsList}
@@ -1186,6 +1208,7 @@ _Sent via official Bokharest Black mobile application_`;
       id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
       customerName: customerInfo.name || (language === 'ar' ? 'عميل كريم' : 'Valued Guest'),
       phoneNumber: customerInfo.phone || '',
+      address: customerInfo.address || '',
       notes: customerInfo.notes,
       items: cart.map(ci => ({
         name_ar: ci.item.name_ar,
@@ -1415,6 +1438,7 @@ _Sent via official Bokharest Black mobile application_`;
         cart,
         addToCart,
         updateQuantity,
+        updateItemNotes,
         removeFromCart,
         clearCart,
         cartCount,

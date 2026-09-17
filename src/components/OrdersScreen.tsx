@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ShoppingBag, Clock, CheckCircle2, RotateCcw, ArrowRight, ArrowLeft, Send, Calendar, Users, Plus, Check, Trash2 } from 'lucide-react';
+import { ShoppingBag, Clock, CheckCircle2, RotateCcw, ArrowRight, ArrowLeft, Send, Calendar, Users, Plus, Check, Trash2, MapPin } from 'lucide-react';
 import { ScrollReveal } from './ScrollReveal';
 
 export const OrdersScreen: React.FC = () => {
@@ -417,6 +417,27 @@ export const OrdersScreen: React.FC = () => {
                           </div>
                         ))}
                       </div>
+
+                      {/* Delivery Address if present */}
+                      {order.address && (
+                        <div className="flex items-start gap-1.5 text-xs text-neutral-300 pt-1.5 border-t border-white/5">
+                          <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                          <span className="text-neutral-400 font-medium">
+                            {language === 'ar' ? 'العنوان:' : 'Address:'}
+                          </span>
+                          <span className="text-white font-normal">{order.address}</span>
+                        </div>
+                      )}
+
+                      {/* Special Notes if present */}
+                      {order.notes && (
+                        <div className="text-[11px] text-neutral-400 pt-1 border-t border-white/5">
+                          <span className="text-neutral-500 font-medium block text-[10px]">
+                            {language === 'ar' ? 'ملاحظات الطلب:' : 'Order Notes:'}
+                          </span>
+                          <span className="text-neutral-300 italic">{order.notes}</span>
+                        </div>
+                      )}
 
                       {/* Total & Reorder Button */}
                       <div className="pt-2 border-t border-white/5 flex items-center justify-between">

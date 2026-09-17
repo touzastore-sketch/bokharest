@@ -56,6 +56,13 @@ export interface OrderRecord {
   feedbackComment?: string;
 }
 
+export interface CustomerInfo {
+  name: string;
+  phone: string;
+  address?: string;
+  notes: string;
+}
+
 export interface CustomerFeedback {
   id: string;
   orderId?: string;

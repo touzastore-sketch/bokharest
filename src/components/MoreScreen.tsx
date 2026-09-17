@@ -12,6 +12,8 @@ import {
   Clock,
   Calendar,
   Camera,
+  Sparkles,
+  Maximize2,
   ChevronRight,
   ChevronLeft,
   Check,
@@ -19,6 +21,7 @@ import {
 } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 import { APP_VERSION } from '../data/restaurantData';
+import { getOptimizedImageUrl } from '../services/cloudinaryService';
 
 export const MoreScreen: React.FC = () => {
   const {
@@ -31,6 +34,7 @@ export const MoreScreen: React.FC = () => {
     reservationHistory,
     setIsReservationOpen,
     openGallery,
+    galleryImages,
     setActiveTab,
     setSelectedCategory,
   } = useApp();
@@ -181,6 +185,72 @@ export const MoreScreen: React.FC = () => {
         </div>
       </ScrollReveal>
 
+      {/* Authentic Cafe Ambiance Showcase */}
+      {galleryImages.length > 0 && (
+        <ScrollReveal yOffset={20} delay={0.09}>
+          <div className="p-5 rounded-3xl bg-[#0e0e0e] border border-white/15 shadow-xl space-y-3.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm">
+                    {language === 'ar' ? 'استعراض أجواء بوخارست الحقيقية' : 'Authentic Bokharest Ambiance'}
+                  </h3>
+                  <p className="text-[11px] text-neutral-400">
+                    {language === 'ar'
+                      ? 'جولة بصرية في رقي الديكور الكلاسيكي، الإضاءة الساحرة، وجلسات الـ VIP'
+                      : 'A visual tour of classic luxury decor, warm lighting, and VIP lounges'}
+                  </p>
+                </div>
+              </div>
+
+              <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 shrink-0">
+                {galleryImages.length} {language === 'ar' ? 'مشاهد' : 'Scenes'}
+              </span>
+            </div>
+
+            {/* Horizontal photo preview cards for quick touch & fullscreen view */}
+            <div className="flex items-center gap-3 overflow-x-auto pb-1 no-scrollbar touch-pan-x pt-1">
+              {galleryImages.map((img, idx) => (
+                <div
+                  key={img.id}
+                  onClick={() => {
+                    haptic.tab();
+                    openGallery(idx);
+                  }}
+                  className="relative shrink-0 w-44 sm:w-52 aspect-[4/3] rounded-2xl overflow-hidden border border-white/15 group cursor-pointer active:scale-95 transition-all shadow-lg"
+                >
+                  <img
+                    src={getOptimizedImageUrl(img.url || img.localUrl)}
+                    alt={language === 'ar' ? img.title_ar : img.title_en}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                  
+                  {/* Top-right fullscreen icon hint */}
+                  <div className="absolute top-2 right-2 rtl:right-auto rtl:left-2 p-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white opacity-80 group-hover:opacity-100">
+                    <Maximize2 className="w-3.5 h-3.5" />
+                  </div>
+
+                  {/* Title badge overlay */}
+                  <div className="absolute bottom-2.5 inset-x-2.5">
+                    <span className="text-xs font-bold text-white block leading-snug drop-shadow-md truncate">
+                      {language === 'ar' ? img.title_ar : img.title_en}
+                    </span>
+                    <span className="text-[10px] text-amber-300/90 font-medium">
+                      {language === 'ar' ? 'اضغط للعرض الكامل' : 'Tap to view full'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </ScrollReveal>
+      )}
+
       {/* Quick Access Menu Options */}
       <ScrollReveal yOffset={20} delay={0.1}>
         <div className="rounded-2xl bg-[#0e0e0e] border border-white/10 overflow-hidden divide-y divide-white/5">
@@ -200,16 +270,16 @@ export const MoreScreen: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h4 className="font-bold text-white text-sm">
-                    {language === 'ar' ? 'معرض الصور الملكي' : 'Royal Photo Gallery'}
+                    {language === 'ar' ? 'معرض أجواء الكافيه الملكي' : 'Royal Ambiance Gallery'}
                   </h4>
                   <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-white/15 text-white">
-                    9 {language === 'ar' ? 'صور' : 'Photos'}
+                    {galleryImages.length} {language === 'ar' ? 'صور' : 'Photos'}
                   </span>
                 </div>
                 <span className="text-[11px] text-neutral-400">
                   {language === 'ar'
-                    ? 'استعراض حقيقي لأجواء الكافيه والأطباق والمشروبات'
-                    : 'Exclusive look at our ambiance, dining and drinks'}
+                    ? 'استعراض حقيقي وفاخر لأجواء وجلسات وديكورات الكافيه'
+                    : 'Exclusive look at our classic interior decor and luxury seating'}
                 </span>
               </div>
             </div>

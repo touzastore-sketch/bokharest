@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   User,
   Phone,
+  MapPin,
   ClipboardList,
   Receipt,
   FileText,
@@ -195,7 +196,7 @@ export const CartDrawer: React.FC = () => {
             >
               <User className="w-4 h-4 text-amber-400" />
               <span>{language === 'ar' ? 'بياناتك والتأكيد' : 'Details & Checkout'}</span>
-              {(customerInfo.name || customerInfo.phone) && (
+              {(customerInfo.name || customerInfo.phone || customerInfo.address) && (
                 <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
               )}
             </button>
@@ -540,7 +541,47 @@ export const CartDrawer: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Field 3: Special Notes (Dedicated spacious multiline direct writing only - NO chips/options) */}
+                  {/* Field 3: Delivery Address (عنوان التوصيل) */}
+                  <div className="flex flex-col gap-1.5 scroll-mt-28">
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <label htmlFor="customer-address-field" className="flex items-center gap-1.5 text-neutral-200">
+                        <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                        <span>{language === 'ar' ? 'عنوان التوصيل' : 'Delivery Address'}</span>
+                      </label>
+                      <span className="text-[10px] text-amber-400 font-medium">
+                        {language === 'ar' ? 'مطلوب للتوصيل' : 'For Delivery'}
+                      </span>
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        id="customer-address-field"
+                        type="text"
+                        autoComplete="street-address"
+                        value={customerInfo.address || ''}
+                        onFocus={(e) => {
+                          setTimeout(() => {
+                            e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                          }, 150);
+                        }}
+                        onChange={(e) =>
+                          setCustomerInfo((prev) => ({ ...prev, address: e.target.value }))
+                        }
+                        placeholder={
+                          language === 'ar'
+                            ? 'المنطقة، الشارع، رقم العمارة، الشقة / علامة مميزة...'
+                            : 'Area, street name, building no., floor / apartment...'
+                        }
+                        className="w-full min-h-[50px] sm:min-h-[46px] bg-black/90 border border-white/20 rounded-xl px-4 py-3 text-base sm:text-sm text-white placeholder:text-neutral-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-400/25 transition-all shadow-inner"
+                      />
+                    </div>
+                    <p className="text-[11px] text-neutral-400 leading-normal">
+                      {language === 'ar'
+                        ? '📍 سيتم إرفاق العنوان تلقائياً في رسالة الطلب لتسليمه لك في أسرع وقت.'
+                        : '📍 The delivery address will be included in your order message.'}
+                    </p>
+                  </div>
+
+                  {/* Field 4: Special Notes (Dedicated spacious multiline direct writing only - NO chips/options) */}
                   <div className="flex flex-col gap-1.5 scroll-mt-28">
                     <div className="flex items-center justify-between text-xs font-semibold">
                       <label htmlFor="customer-notes-field" className="flex items-center gap-1.5 text-neutral-200">
