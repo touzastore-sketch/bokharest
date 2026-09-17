@@ -78,6 +78,7 @@ import {
 import { AdvertisementsManager } from './AdvertisementsManager';
 import { GalleryManager } from './GalleryManager';
 import { APP_VERSION } from '../../data/restaurantData';
+import { getItemSideOptions, parseSideOptions } from '../../utils/sideOptions';
 
 type AdminTab =
   | 'overview'
@@ -197,11 +198,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     preparation_time: '15 دقيقة',
     badge_ar: '',
     badge_en: '',
+    side_options: undefined,
   });
+
+  // State for side dishes inside full item form
+  const [itemFormNewSideInput, setItemFormNewSideInput] = useState('');
+  const [itemFormEditingSideIdx, setItemFormEditingSideIdx] = useState<number | null>(null);
+  const [itemFormEditingSideVal, setItemFormEditingSideVal] = useState('');
+
+  // Quick Side Dishes Management Modal for single item
+  const [quickSidesItem, setQuickSidesItem] = useState<MenuItem | null>(null);
+  const [quickSidesList, setQuickSidesList] = useState<string[]>([]);
+  const [newQuickSideInput, setNewQuickSideInput] = useState('');
+  const [editingQuickSideIdx, setEditingQuickSideIdx] = useState<number | null>(null);
+  const [editingQuickSideVal, setEditingQuickSideVal] = useState('');
 
   // Category Management State
   const [isAddingCat, setIsAddingCat] = useState(false);
-  const [newCatData, setNewCatData] = useState({ name_ar: '', name_en: '' });
+  const [newCatData, setNewCatData] = useState({ name_ar: '', name_en: '', note_ar: '', note_en: '' });
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCatData, setEditCatData] = useState({ name_ar: '', name_en: '', note_ar: '', note_en: '' });
 
   // Product Image Direct Upload State
   const [isUploadingProductImage, setIsUploadingProductImage] = useState(false);
@@ -355,12 +371,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       badge_ar: itemFormData.badge_ar,
       badge_en: itemFormData.badge_en,
       type: itemFormData.type,
+      side_options: itemFormData.side_options,
     };
 
     await saveMenuItem(itemToSave);
     showNotification(`✅ تم حفظ وإضافة الصنف "${itemToSave.name_ar}" بنجاح في القائمة وسحابة Firebase!`);
     setEditingItem(null);
     setIsAddingItem(false);
+  };
+
+  // Open Quick Side Options Modal for an item
+  const handleOpenQuickSides = (item: MenuItem) => {
+    setQuickSidesItem(item);
+    const cat = categories.find((c) => c.id === item.category_id);
+    const sideData = getItemSideOptions(item, cat?.note_ar, 'ar');
+    if (item.side_options !== undefined) {
+      setQuickSidesList([...item.side_options]);
+    } else {
+      setQuickSidesList(sideData.hasOptions ? [...sideData.options] : []);
+    }
+    setNewQuickSideInput('');
+    setEditingQuickSideIdx(null);
+    setEditingQuickSideVal('');
+  };
+
+  // Save quick sides directly to Firestore
+  const handleSaveQuickSides = async () => {
+    if (!quickSidesItem) return;
+    const updated: MenuItem = {
+      ...quickSidesItem,
+      side_options: quickSidesList,
+    };
+    await saveMenuItem(updated);
+    showNotification(`✅ تم تحديث الأطباق الجانبية لـ "${quickSidesItem.name_ar}" بنجاح في Firestore!`);
+    setQuickSidesItem(null);
+  };
+
+  // Reset item side options to category default
+  const handleResetToCategoryDefault = async () => {
+    if (!quickSidesItem) return;
+    const updated: MenuItem = {
+      ...quickSidesItem,
+      side_options: undefined,
+    };
+    await saveMenuItem(updated);
+    showNotification(`🔄 تمت إعادة ضبط الأطباق الجانبية للوضع التلقائي (حسب القسم) لـ "${quickSidesItem.name_ar}"`);
+    setQuickSidesItem(null);
   };
 
   // Delete single item
@@ -1011,6 +1067,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                         <th className="p-3">الصورة</th>
                         <th className="p-3">اسم الصنف</th>
                         <th className="p-3">القسم</th>
+                        <th className="p-3">الأطباق الجانبية</th>
                         <th className="p-3">السعر (ج.م)</th>
                         <th className="p-3 text-center">التوفر</th>
                         <th className="p-3 text-center">مميز</th>
@@ -1060,6 +1117,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                 <span className="px-2 py-1 rounded-md bg-white/5 text-neutral-300 text-[11px] font-medium border border-white/5">
                                   {cat?.name_ar || item.category_id}
                                 </span>
+                              </td>
+
+                              <td className="p-3">
+                                {(() => {
+                                  const itemSideData = getItemSideOptions(item, cat?.note_ar, 'ar');
+                                  const isCustom = item.side_options !== undefined;
+                                  return (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenQuickSides(item)}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all border ${
+                                        itemSideData.hasOptions
+                                          ? isCustom
+                                            ? 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-300'
+                                            : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300 hover:text-white'
+                                          : 'bg-white/5 hover:bg-white/10 border-dashed border-white/15 text-neutral-400 hover:text-white'
+                                      }`}
+                                      title="اضغط للتحكم الكامل (تعديل / حذف / إضافة) بالأطباق الجانبية لهذا الصنف"
+                                    >
+                                      <UtensilsCrossed className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                                      <span>
+                                        {itemSideData.hasOptions
+                                          ? `${itemSideData.options.length} أطباق`
+                                          : '+ أطباق'}
+                                      </span>
+                                      {isCustom && (
+                                        <span className="text-[9px] font-bold px-1 rounded bg-amber-400/20 text-amber-300">
+                                          مخصص
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })()}
                               </td>
 
                               <td className="p-3">
@@ -1331,6 +1421,307 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                         </div>
                       </div>
 
+                      {/* Side Options / Dishes Management Section */}
+                      <div className="p-4 rounded-2xl bg-black/40 border border-amber-500/25 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                              <UtensilsCrossed className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                                <span>الأصناف والأطباق الجانبية</span>
+                                <span className="text-[10px] text-amber-400/90 font-mono">(Side Dishes)</span>
+                              </h4>
+                              <p className="text-[11px] text-neutral-400">
+                                الخيارات التي تظهر للعميل لاختيارها مباشرة مع هذا الصنف
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Mode Badge */}
+                          <div className="flex items-center gap-1.5">
+                            {itemFormData.side_options === undefined ? (
+                              <span className="text-[10px] px-2.5 py-1 rounded-full bg-white/10 text-neutral-300 border border-white/10">
+                                🔄 تلقائي (حسب القسم)
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
+                                ⭐ مخصص للصنف ({itemFormData.side_options.length})
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* If still undefined, show preview of category defaults + button to customize */}
+                        {itemFormData.side_options === undefined ? (
+                          <div className="p-3 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                            {(() => {
+                              const currCat = categories.find((c) => c.id === itemFormData.category_id);
+                              const parsedCatSides = parseSideOptions(currCat?.note_ar, 'ar');
+                              return (
+                                <>
+                                  <div className="text-[11px] text-neutral-300 leading-relaxed">
+                                    {parsedCatSides.hasOptions ? (
+                                      <span>
+                                        يرث هذا الصنف حالياً أطباق قسم{' '}
+                                        <strong className="text-amber-400">{currCat?.name_ar}</strong>:{' '}
+                                        <span className="text-white font-semibold">
+                                          {parsedCatSides.options.join(' ، ')}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <span className="text-neutral-400">
+                                        لا توجد أطباق جانبية افتراضية في هذا القسم. يمكنك تخصيص أطباق جانبية لهذا الصنف مباشرة.
+                                      </span>
+                                    )}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setItemFormData((prev) => ({
+                                        ...prev,
+                                        side_options: parsedCatSides.hasOptions
+                                          ? [...parsedCatSides.options]
+                                          : [],
+                                      }));
+                                    }}
+                                    className="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 hover:text-amber-200 text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>تخصيص الأطباق الجانبية لهذا الصنف (تعديل / حذف / إضافة)</span>
+                                  </button>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          /* Custom side options controls */
+                          <div className="space-y-3">
+                            {/* Chips List */}
+                            <div className="space-y-1.5">
+                              <label className="text-[11px] font-semibold text-neutral-300 block">
+                                قائمة الأطباق الجانبية المتاحة (اضغط ✏️ للتعديل أو ✕ للحذف):
+                              </label>
+
+                              {itemFormData.side_options.length === 0 ? (
+                                <div className="p-3 text-center rounded-xl bg-white/5 border border-dashed border-white/10 text-neutral-400 text-xs">
+                                  🚫 تم تعطيل الأطباق الجانبية لهذا الصنف (لن تظهر له اختيارات جانبية).
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap gap-2">
+                                  {itemFormData.side_options.map((opt, idx) => (
+                                    <div
+                                      key={idx}
+                                      className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1a1a1a] border border-amber-500/30 text-xs text-white shadow-sm"
+                                    >
+                                      {itemFormEditingSideIdx === idx ? (
+                                        <div className="flex items-center gap-1">
+                                          <input
+                                            type="text"
+                                            value={itemFormEditingSideVal}
+                                            onChange={(e) => setItemFormEditingSideVal(e.target.value)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                if (itemFormEditingSideVal.trim()) {
+                                                  const copy = [...(itemFormData.side_options || [])];
+                                                  copy[idx] = itemFormEditingSideVal.trim();
+                                                  setItemFormData({ ...itemFormData, side_options: copy });
+                                                  setItemFormEditingSideIdx(null);
+                                                }
+                                              }
+                                            }}
+                                            className="w-28 bg-black border border-amber-500 rounded px-2 py-0.5 text-xs text-white"
+                                            autoFocus
+                                          />
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              if (itemFormEditingSideVal.trim()) {
+                                                const copy = [...(itemFormData.side_options || [])];
+                                                copy[idx] = itemFormEditingSideVal.trim();
+                                                setItemFormData({ ...itemFormData, side_options: copy });
+                                                setItemFormEditingSideIdx(null);
+                                              }
+                                            }}
+                                            className="text-emerald-400 hover:text-emerald-300 p-0.5"
+                                            title="تأكيد التعديل"
+                                          >
+                                            <Check className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => setItemFormEditingSideIdx(null)}
+                                            className="text-neutral-400 hover:text-white p-0.5"
+                                            title="إلغاء"
+                                          >
+                                            ✕
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <span className="font-medium text-amber-200">{opt}</span>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setItemFormEditingSideIdx(idx);
+                                              setItemFormEditingSideVal(opt);
+                                            }}
+                                            className="text-neutral-400 hover:text-amber-300 transition-colors p-0.5"
+                                            title="تعديل اسم الصنف الجانبي"
+                                          >
+                                            <Edit3 className="w-3 h-3" />
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              const copy = [...(itemFormData.side_options || [])];
+                                              copy.splice(idx, 1);
+                                              setItemFormData({ ...itemFormData, side_options: copy });
+                                            }}
+                                            className="text-neutral-400 hover:text-rose-400 transition-colors p-0.5"
+                                            title="حذف هذا الصنف الجانبي"
+                                          >
+                                            <Trash2 className="w-3 h-3" />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Add New Side Option Input */}
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                placeholder="اكتب اسم صنف جانبي جديد (مثال: أرز بالخلطة، بطاطس محمرة)..."
+                                value={itemFormNewSideInput}
+                                onChange={(e) => setItemFormNewSideInput(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const val = itemFormNewSideInput.trim();
+                                    if (val) {
+                                      const cur = itemFormData.side_options || [];
+                                      if (!cur.includes(val)) {
+                                        setItemFormData({ ...itemFormData, side_options: [...cur, val] });
+                                      }
+                                      setItemFormNewSideInput('');
+                                    }
+                                  }
+                                }}
+                                className="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const val = itemFormNewSideInput.trim();
+                                  if (val) {
+                                    const cur = itemFormData.side_options || [];
+                                    if (!cur.includes(val)) {
+                                      setItemFormData({ ...itemFormData, side_options: [...cur, val] });
+                                    }
+                                    setItemFormNewSideInput('');
+                                  }
+                                }}
+                                className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs shrink-0 flex items-center gap-1.5 transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>إضافة صنف</span>
+                              </button>
+                            </div>
+
+                            {/* Quick Preset Badges */}
+                            <div>
+                              <span className="text-[10px] text-neutral-400 block mb-1">
+                                💡 خيارات سريعة شائعة (اضغط للإضافة الفورية):
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {[
+                                  'بطاطس محمرة',
+                                  'أرز أبيض',
+                                  'أرز بالخلطة',
+                                  'خضار سوتيه',
+                                  'مهروسة بطاطس',
+                                  'باستا وايت',
+                                  'باستا ريد',
+                                  'ذرة مشوية',
+                                  'سلطة كول سلو',
+                                ].map((preset) => {
+                                  const isAlreadyIn = (itemFormData.side_options || []).includes(preset);
+                                  return (
+                                    <button
+                                      key={preset}
+                                      type="button"
+                                      disabled={isAlreadyIn}
+                                      onClick={() => {
+                                        const cur = itemFormData.side_options || [];
+                                        if (!cur.includes(preset)) {
+                                          setItemFormData({ ...itemFormData, side_options: [...cur, preset] });
+                                        }
+                                      }}
+                                      className={`text-[10px] px-2 py-1 rounded-lg border transition-all ${
+                                        isAlreadyIn
+                                          ? 'bg-amber-500/10 border-amber-500/20 text-amber-300/40 cursor-not-allowed'
+                                          : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300 hover:text-white'
+                                      }`}
+                                    >
+                                      + {preset}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Action Toolbar */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/5 text-[11px]">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const currCat = categories.find((c) => c.id === itemFormData.category_id);
+                                    const parsed = parseSideOptions(currCat?.note_ar, 'ar');
+                                    if (parsed.hasOptions) {
+                                      setItemFormData({
+                                        ...itemFormData,
+                                        side_options: [...parsed.options],
+                                      });
+                                    } else {
+                                      alert('لا توجد أطباق مسجلة في هذا القسم لاستيرادها.');
+                                    }
+                                  }}
+                                  className="text-neutral-400 hover:text-amber-300 underline"
+                                >
+                                  📥 استيراد من القسم
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setItemFormData({ ...itemFormData, side_options: [] });
+                                  }}
+                                  className="text-neutral-400 hover:text-rose-400 underline"
+                                >
+                                  🚫 مسح الكل (بدون أطباق)
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setItemFormData({ ...itemFormData, side_options: undefined });
+                                }}
+                                className="text-amber-400 hover:text-amber-300 font-medium"
+                              >
+                                🔄 استعادة الوضع التلقائي (حسب القسم)
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
                         <button
                           type="button"
@@ -1347,6 +1738,273 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                         </button>
                       </div>
                     </form>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Side Dishes Management Modal for single item */}
+              {quickSidesItem && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+                  onClick={() => setQuickSidesItem(null)}
+                >
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full max-w-lg bg-[#121212] border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+                  >
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                          <UtensilsCrossed className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-white">
+                            إدارة الأطباق الجانبية للصنف
+                          </h3>
+                          <p className="text-xs text-amber-300 font-semibold truncate max-w-[260px]">
+                            {quickSidesItem.name_ar}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setQuickSidesItem(null)}
+                        className="text-neutral-400 hover:text-white p-1 rounded-lg"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Chips list */}
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-neutral-200">
+                            الأطباق الجانبية الحالية ({quickSidesList.length}):
+                          </span>
+                          <span className="text-[11px] text-neutral-400">
+                            (تعديل ✏️ أو حذف ✕)
+                          </span>
+                        </div>
+
+                        {quickSidesList.length === 0 ? (
+                          <div className="p-4 text-center rounded-2xl bg-white/5 border border-dashed border-white/15 text-neutral-400 text-xs">
+                            🚫 لا توجد أطباق جانبية لهذا الصنف (لن يطلب من العميل اختيار طبق جانبي).
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {quickSidesList.map((opt, idx) => (
+                              <div
+                                key={idx}
+                                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#1c1c1c] border border-amber-500/30 text-xs text-white shadow"
+                              >
+                                {editingQuickSideIdx === idx ? (
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="text"
+                                      value={editingQuickSideVal}
+                                      onChange={(e) => setEditingQuickSideVal(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          if (editingQuickSideVal.trim()) {
+                                            const copy = [...quickSidesList];
+                                            copy[idx] = editingQuickSideVal.trim();
+                                            setQuickSidesList(copy);
+                                            setEditingQuickSideIdx(null);
+                                          }
+                                        }
+                                      }}
+                                      className="w-28 bg-black border border-amber-500 rounded px-2 py-0.5 text-xs text-white"
+                                      autoFocus
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (editingQuickSideVal.trim()) {
+                                          const copy = [...quickSidesList];
+                                          copy[idx] = editingQuickSideVal.trim();
+                                          setQuickSidesList(copy);
+                                          setEditingQuickSideIdx(null);
+                                        }
+                                      }}
+                                      className="text-emerald-400 hover:text-emerald-300 p-0.5"
+                                      title="حفظ التعديل"
+                                    >
+                                      <Check className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setEditingQuickSideIdx(null)}
+                                      className="text-neutral-400 hover:text-white p-0.5"
+                                      title="إلغاء"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <span className="font-semibold text-amber-200">{opt}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingQuickSideIdx(idx);
+                                        setEditingQuickSideVal(opt);
+                                      }}
+                                      className="text-neutral-400 hover:text-amber-300 p-0.5 transition-colors"
+                                      title="تعديل هذا الصنف"
+                                    >
+                                      <Edit3 className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const copy = [...quickSidesList];
+                                        copy.splice(idx, 1);
+                                        setQuickSidesList(copy);
+                                      }}
+                                      className="text-neutral-400 hover:text-rose-400 p-0.5 transition-colors"
+                                      title="حذف هذا الصنف"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Add new option */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="اكتب صنف جانبي جديد (مثلاً: بطاطس محمرة، أرز بالخلطة)..."
+                          value={newQuickSideInput}
+                          onChange={(e) => setNewQuickSideInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const val = newQuickSideInput.trim();
+                              if (val && !quickSidesList.includes(val)) {
+                                setQuickSidesList([...quickSidesList, val]);
+                                setNewQuickSideInput('');
+                              }
+                            }
+                          }}
+                          className="flex-1 bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const val = newQuickSideInput.trim();
+                            if (val && !quickSidesList.includes(val)) {
+                              setQuickSidesList([...quickSidesList, val]);
+                              setNewQuickSideInput('');
+                            }
+                          }}
+                          className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1.5 transition-colors shrink-0"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>إضافة</span>
+                        </button>
+                      </div>
+
+                      {/* Quick Presets */}
+                      <div>
+                        <span className="text-[10px] text-neutral-400 block mb-1">
+                          💡 أطباق شائعة للإضافة بنقرة واحدة:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            'بطاطس محمرة',
+                            'أرز أبيض',
+                            'أرز بالخلطة',
+                            'خضار سوتيه',
+                            'مهروسة بطاطس',
+                            'باستا وايت',
+                            'باستا ريد',
+                            'ذرة مشوية',
+                            'سلطة كول سلو',
+                          ].map((preset) => {
+                            const inList = quickSidesList.includes(preset);
+                            return (
+                              <button
+                                key={preset}
+                                type="button"
+                                disabled={inList}
+                                onClick={() => {
+                                  if (!quickSidesList.includes(preset)) {
+                                    setQuickSidesList([...quickSidesList, preset]);
+                                  }
+                                }}
+                                className={`text-[10px] px-2 py-1 rounded-lg border transition-all ${
+                                  inList
+                                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-300/40 cursor-not-allowed'
+                                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-neutral-300 hover:text-white'
+                                }`}
+                              >
+                                + {preset}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Helper options */}
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs text-neutral-400">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const cat = categories.find((c) => c.id === quickSidesItem.category_id);
+                            const parsed = parseSideOptions(cat?.note_ar, 'ar');
+                            if (parsed.hasOptions) {
+                              setQuickSidesList([...parsed.options]);
+                            } else {
+                              alert('لا توجد أطباق افتراضية مسجلة في هذا القسم.');
+                            }
+                          }}
+                          className="hover:text-amber-300 underline"
+                        >
+                          📥 استيراد من القسم
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setQuickSidesList([])}
+                          className="hover:text-rose-400 underline"
+                        >
+                          🚫 مسح الكل
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleResetToCategoryDefault}
+                          className="text-amber-400 hover:text-amber-300 font-semibold"
+                          title="حذف التخصيص والرجوع إلى الإعداد الافتراضي للقسم"
+                        >
+                          🔄 استعادة الوضع التلقائي
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Footer buttons */}
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setQuickSidesItem(null)}
+                        className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-neutral-300"
+                      >
+                        إلغاء
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleSaveQuickSides}
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs shadow-lg transition-all"
+                      >
+                        💾 حفظ الأطباق الجانبية في Firestore
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1690,47 +2348,180 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 <div className="bg-[#141414] border border-amber-500/40 rounded-2xl p-4 space-y-3">
                   <h4 className="text-xs font-bold text-white">إضافة قسم جديد</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[11px] text-neutral-300 block mb-1">اسم القسم بالعربية *</label>
+                      <input
+                        type="text"
+                        placeholder="مثال: مشويات، طواجن، مقبلات..."
+                        value={newCatData.name_ar}
+                        onChange={(e) => setNewCatData({ ...newCatData, name_ar: e.target.value })}
+                        className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-neutral-300 block mb-1">اسم القسم بالإنجليزية</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Grills, Casseroles, Appetizers..."
+                        value={newCatData.name_en}
+                        onChange={(e) => setNewCatData({ ...newCatData, name_en: e.target.value })}
+                        className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-neutral-300 block mb-1">
+                      ملاحظة القسم الافتراضية / الأطباق الجانبية المقترحة (اختياري)
+                    </label>
                     <input
                       type="text"
-                      placeholder="اسم القسم بالعربية *"
-                      value={newCatData.name_ar}
-                      onChange={(e) => setNewCatData({ ...newCatData, name_ar: e.target.value })}
-                      className="bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
-                    />
-                    <input
-                      type="text"
-                      placeholder="اسم القسم بالإنجليزية *"
-                      value={newCatData.name_en}
-                      onChange={(e) => setNewCatData({ ...newCatData, name_en: e.target.value })}
-                      className="bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white"
+                      placeholder="مثال: يقدم مع (بطاطس محمرة / أرز بالخلطة / سلطة كول سلو)"
+                      value={newCatData.note_ar}
+                      onChange={(e) => setNewCatData({ ...newCatData, note_ar: e.target.value })}
+                      className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-500"
                     />
                   </div>
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() => setIsAddingCat(false)}
-                      className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-neutral-400"
+                      className="px-3 py-1.5 rounded-lg bg-white/5 text-xs text-neutral-400 hover:text-white"
                     >
                       إلغاء
                     </button>
                     <button
                       onClick={async () => {
-                        if (!newCatData.name_ar) return;
+                        if (!newCatData.name_ar.trim()) {
+                          alert('يرجى كتابة اسم القسم بالعربية');
+                          return;
+                        }
                         const catId = `cat_${Date.now()}`;
                         const newCat: Category = {
                           id: catId,
-                          name_ar: newCatData.name_ar,
-                          name_en: newCatData.name_en || newCatData.name_ar,
+                          name_ar: newCatData.name_ar.trim(),
+                          name_en: newCatData.name_en.trim() || newCatData.name_ar.trim(),
+                          note_ar: newCatData.note_ar.trim() || undefined,
                           display_order: categories.length + 1,
                         };
                         await saveCategory(newCat);
                         showNotification(`✅ تم إضافة قسم "${newCat.name_ar}" في Firestore`);
-                        setNewCatData({ name_ar: '', name_en: '' });
+                        setNewCatData({ name_ar: '', name_en: '', note_ar: '', note_en: '' });
                         setIsAddingCat(false);
                       }}
-                      className="px-4 py-1.5 rounded-lg bg-amber-500 text-black font-bold text-xs"
+                      className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-colors"
                     >
                       حفظ في Firestore
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Category Modal */}
+              {editingCategory && (
+                <div
+                  className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+                  onClick={() => setEditingCategory(null)}
+                >
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full max-w-lg bg-[#141414] border border-amber-500/40 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-4"
+                  >
+                    <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-10 h-10 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+                          <Edit3 className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-bold text-white">
+                            تعديل اسم وبيانات القسم
+                          </h3>
+                          <p className="text-xs text-neutral-400">
+                            يتم حفظ التعديلات فوراً في سحابة Firestore
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setEditingCategory(null)}
+                        className="text-neutral-400 hover:text-white p-1 rounded-lg"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-200 block mb-1">
+                          اسم القسم بالعربية *
+                        </label>
+                        <input
+                          type="text"
+                          value={editCatData.name_ar}
+                          onChange={(e) => setEditCatData({ ...editCatData, name_ar: e.target.value })}
+                          className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                          placeholder="اسم القسم بالعربية"
+                          autoFocus
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-200 block mb-1">
+                          اسم القسم بالإنجليزية
+                        </label>
+                        <input
+                          type="text"
+                          value={editCatData.name_en}
+                          onChange={(e) => setEditCatData({ ...editCatData, name_en: e.target.value })}
+                          className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                          placeholder="Category Name in English"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-semibold text-neutral-200 block mb-1">
+                          الملاحظة الافتراضية / الأطباق الجانبية للقسم (اختياري)
+                        </label>
+                        <input
+                          type="text"
+                          value={editCatData.note_ar}
+                          onChange={(e) => setEditCatData({ ...editCatData, note_ar: e.target.value })}
+                          className="w-full bg-black/60 border border-white/15 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500 placeholder-neutral-500"
+                          placeholder="مثال: يقدم مع (بطاطس محمرة / أرز بالخلطة / سلطة كول سلو)"
+                        />
+                        <p className="text-[10px] text-neutral-500 mt-1">
+                          💡 هذه الأطباق تظهر كخيارات افتراضية للأصناف التي تنتمي لهذا القسم ما لم يتم تخصيص أطباق خاصة بها.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-3 border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategory(null)}
+                        className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-xs text-neutral-300 transition-colors"
+                      >
+                        إلغاء
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!editCatData.name_ar.trim()) {
+                            alert('اسم القسم بالعربية مطلوب');
+                            return;
+                          }
+                          const updatedCategory: Category = {
+                            ...editingCategory,
+                            name_ar: editCatData.name_ar.trim(),
+                            name_en: editCatData.name_en.trim() || editCatData.name_ar.trim(),
+                            note_ar: editCatData.note_ar.trim() || undefined,
+                          };
+                          await saveCategory(updatedCategory);
+                          showNotification(`✅ تم تحديث قسم "${updatedCategory.name_ar}" بنجاح في Firestore`);
+                          setEditingCategory(null);
+                        }}
+                        className="px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs shadow-lg transition-all"
+                      >
+                        💾 حفظ التعديلات في Firestore
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1741,21 +2532,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   return (
                     <div
                       key={cat.id}
-                      className="bg-[#111111] border border-white/10 rounded-2xl p-4 flex items-center justify-between"
+                      className="bg-[#111111] border border-white/10 hover:border-white/20 transition-all rounded-2xl p-4 flex items-center justify-between gap-3"
                     >
-                      <div>
-                        <h4 className="font-bold text-white text-sm">{cat.name_ar}</h4>
-                        <p className="text-xs text-neutral-400 font-sans">{cat.name_en}</p>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-white text-sm truncate">{cat.name_ar}</h4>
+                        <p className="text-xs text-neutral-400 font-sans truncate">{cat.name_en}</p>
+                        {cat.note_ar && (
+                          <p className="text-[11px] text-amber-300/80 truncate mt-0.5" title={cat.note_ar}>
+                            {cat.note_ar}
+                          </p>
+                        )}
                         <span className="text-[10px] text-amber-400 font-mono mt-1 inline-block">
                           {itemsCount} أصناف مرتبطة
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingCategory(cat);
+                            setEditCatData({
+                              name_ar: cat.name_ar || '',
+                              name_en: cat.name_en || '',
+                              note_ar: cat.note_ar || '',
+                              note_en: cat.note_en || '',
+                            });
+                          }}
+                          className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 border border-amber-500/20 rounded-xl transition-colors flex items-center gap-1 text-xs font-semibold"
+                          title="تعديل اسم القسم والملاحظات"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">تعديل</span>
+                        </button>
+
                         <button
                           onClick={async () => {
                             if (itemsCount > 0) {
-                              alert(`لا يمكن حذف هذا القسم لأنه يحتوي على ${itemsCount} أصناف!`);
+                              alert(`لا يمكن حذف هذا القسم لأنه يحتوي على ${itemsCount} أصناف! يجب نقل أو حذف الأصناف التابعة له أولاً.`);
                               return;
                             }
                             if (confirm(`حذف قسم "${cat.name_ar}" من Firestore؟`)) {
@@ -1763,7 +2577,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                               showNotification('🗑️ تم حذف القسم من السحابة.');
                             }
                           }}
-                          className="p-1.5 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 rounded-lg transition-colors"
+                          className="p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 rounded-xl transition-colors border border-rose-500/20"
                           title="حذف القسم"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

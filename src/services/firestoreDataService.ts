@@ -244,6 +244,7 @@ export function subscribeToMenuItems(
               badge_en: data.badge_en,
               badge_ar: data.badge_ar,
               type: data.type,
+              side_options: Array.isArray(data.side_options) ? data.side_options : undefined,
             });
           });
           onUpdate(list);

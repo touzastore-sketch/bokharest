@@ -26,6 +26,7 @@ export interface MenuItem {
   badge_en?: string;
   badge_ar?: string;
   type?: 'hot' | 'cold';
+  side_options?: string[];
 }
 
 export interface CartItem {

@@ -52,3 +52,29 @@ export function parseSideOptions(note?: string, language: 'ar' | 'en' = 'ar'): P
     options,
   };
 }
+
+/**
+ * Gets effective side options for a menu item:
+ * 1. If item.side_options is defined as an array of items -> uses item.side_options
+ * 2. If item.side_options is defined as empty [] -> side dishes explicitly disabled for this item
+ * 3. If item.side_options is undefined -> falls back to category note
+ */
+export function getItemSideOptions(
+  item: { side_options?: string[] },
+  categoryNote?: string,
+  language: 'ar' | 'en' = 'ar'
+): ParsedSideOptions {
+  if (item && item.side_options !== undefined) {
+    if (!Array.isArray(item.side_options) || item.side_options.length === 0) {
+      return { hasOptions: false, title: '', options: [] };
+    }
+    return {
+      hasOptions: true,
+      title: language === 'ar' ? 'الطبق الجانبي' : 'Side Choice',
+      options: item.side_options,
+    };
+  }
+
+  return parseSideOptions(categoryNote, language);
+}
+

@@ -34,6 +34,12 @@ export const ItemDetailModal: React.FC = () => {
       : itemCategory.note_en
     : undefined;
 
+  const effectiveServingNote = item.side_options !== undefined
+    ? (item.side_options.length > 0
+        ? `${language === 'ar' ? 'تُقدَّم مع اختيارك من: ' : 'Served with your choice of: '}${item.side_options.join(' / ')}`
+        : undefined)
+    : categoryNote;
+
   const handleSelectOption = (option: string) => {
     haptic.selection();
     if (notes.includes(option)) {
@@ -177,10 +183,10 @@ export const ItemDetailModal: React.FC = () => {
             </p>
           </div>
 
-          {/* Serving Options Note (if category has one) */}
-          {categoryNote && (
+          {/* Serving Options Note (if item or category has one) */}
+          {effectiveServingNote && (
             <CategoryServingNote
-              note={categoryNote}
+              note={effectiveServingNote}
               language={language}
               interactive={true}
               selectedOptions={notes ? notes.split('+').map((s) => s.trim()) : []}

@@ -5,7 +5,7 @@ import { UNIFIED_MENU_ITEM_IMAGE } from '../data/restaurantData';
 import { getOptimizedImageUrl } from '../services/cloudinaryService';
 import { Heart, Plus, Minus, Check, UtensilsCrossed } from 'lucide-react';
 import { haptic } from '../utils/haptics';
-import { parseSideOptions } from '../utils/sideOptions';
+import { parseSideOptions, getItemSideOptions } from '../utils/sideOptions';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -31,7 +31,7 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
   // Category and side dish options
   const category = categories.find((c) => c.id === item.category_id);
   const categoryNote = language === 'ar' ? category?.note_ar : (category?.note_en || category?.note_ar);
-  const sideData = useMemo(() => parseSideOptions(categoryNote, language), [categoryNote, language]);
+  const sideData = useMemo(() => getItemSideOptions(item, categoryNote, language), [item, categoryNote, language]);
 
   // Check if item is already in cart
   const cartItem = cart.find(ci => ci.item.id === item.id);
