@@ -610,11 +610,14 @@ export async function autoSyncAllAppAssetsToFirebase(): Promise<{
     });
     bannerUrl = await getDownloadURL(bannerUpload.ref);
 
-    // تحديث البانرات في Firestore
+    // تحديث البانرات التي ليس لها صورة فقط دون الكتابة فوق البانرات المخصصة
     const adsSnap = await getDocs(collection(firestoreDb, 'advertisements'));
     if (!adsSnap.empty) {
       for (const adDoc of adsSnap.docs) {
-        await setDoc(adDoc.ref, { image: bannerUrl, updatedAt: serverTimestamp() }, { merge: true });
+        const adData = adDoc.data();
+        if (!adData.image) {
+          await setDoc(adDoc.ref, { image: bannerUrl, updatedAt: serverTimestamp() }, { merge: true });
+        }
       }
     }
     console.log('[FirebaseStorage] ✅ تم رفع وتحديث البانر الإعلاني في Firebase:', bannerUrl);

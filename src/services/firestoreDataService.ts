@@ -262,6 +262,72 @@ export function subscribeToMenuItems(
 }
 
 /**
+ * جلب كافة أصناف المنيو مباشرة من Firestore
+ */
+export async function getMenuItemsFromFirestore(): Promise<MenuItem[]> {
+  try {
+    const q = collection(firestoreDb, COLLECTIONS.MENU_ITEMS);
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return [];
+    const list: MenuItem[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      list.push({
+        id: docSnap.id,
+        category_id: data.category_id || '',
+        name_ar: data.name_ar || '',
+        name_en: data.name_en || '',
+        description_ar: data.description_ar || '',
+        description_en: data.description_en || '',
+        price: Number(data.price) || 0,
+        image: data.image || '',
+        available: data.available !== false,
+        featured: Boolean(data.featured),
+        calories: data.calories ? Number(data.calories) : undefined,
+        preparation_time: data.preparation_time,
+        badge_en: data.badge_en,
+        badge_ar: data.badge_ar,
+        type: data.type,
+        side_options: Array.isArray(data.side_options) ? data.side_options : undefined,
+      });
+    });
+    return list;
+  } catch (err) {
+    console.warn('[FirestoreData] Error fetching menu items:', err);
+    return [];
+  }
+}
+
+/**
+ * جلب كافة التصنيفات مباشرة من Firestore
+ */
+export async function getCategoriesFromFirestore(): Promise<Category[]> {
+  try {
+    const q = collection(firestoreDb, COLLECTIONS.CATEGORIES);
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return [];
+    const list: Category[] = [];
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      list.push({
+        id: docSnap.id,
+        name_ar: data.name_ar || '',
+        name_en: data.name_en || '',
+        note_ar: data.note_ar,
+        note_en: data.note_en,
+        iconName: data.iconName,
+        display_order: data.display_order ?? 0,
+      });
+    });
+    list.sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    return list;
+  } catch (err) {
+    console.warn('[FirestoreData] Error fetching categories:', err);
+    return [];
+  }
+}
+
+/**
  * حفظ أو تعديل صنف في قائمة الطعام في Firestore
  */
 export async function saveMenuItemToFirestore(item: MenuItem): Promise<boolean> {

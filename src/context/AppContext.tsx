@@ -35,6 +35,8 @@ import {
   recordLocalDeletedReservationId,
   saveFeedbackToFirestore,
   migrateAllCollectionsToCloudinary,
+  getMenuItemsFromFirestore,
+  getCategoriesFromFirestore,
 } from '../services/firestoreDataService';
 import { autoSyncAllAppAssetsToFirebase, migrateAllAppImagesToFirebase } from '../services/firebaseStorageService';
 
@@ -817,21 +819,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshMenu = async (): Promise<{ success: boolean; count: number }> => {
     setIsMenuRefreshing(true);
-    // Simulate real-time fine dining catalog sync and cache re-evaluation
-    await new Promise(resolve => setTimeout(resolve, 850));
+    let count = menuItems.length;
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.MENU_ITEMS);
-      if (saved) {
-        setMenuItems(JSON.parse(saved));
-      } else {
-        setMenuItems(INITIAL_MENU_ITEMS);
+      const [remoteItems, remoteCats] = await Promise.all([
+        getMenuItemsFromFirestore(),
+        getCategoriesFromFirestore()
+      ]);
+
+      if (remoteItems && remoteItems.length > 0) {
+        setMenuItems(remoteItems);
+        count = remoteItems.length;
+        try {
+          localStorage.setItem(STORAGE_KEYS.MENU_ITEMS, JSON.stringify(remoteItems));
+        } catch {}
       }
-    } catch {
-      setMenuItems(INITIAL_MENU_ITEMS);
+
+      if (remoteCats && remoteCats.length > 0) {
+        setCategories(remoteCats);
+        try {
+          localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(remoteCats));
+        } catch {}
+      }
+    } catch (err) {
+      console.warn('[AppContext] Refresh menu failed to fetch from remote, keeping current items:', err);
     }
     setLastMenuRefreshed(new Date());
     setIsMenuRefreshing(false);
-    return { success: true, count: menuItems.length };
+    return { success: true, count };
   };
 
   // Cart state
