@@ -587,10 +587,8 @@ export async function autoSyncAllAppAssetsToFirebase(): Promise<{
       customMetadata: { autoFQ: 'true', quality: '0.82', type: 'menu_dish' },
     });
     menuUrl = await getDownloadURL(uploadTask.ref);
-
-    // تحديث كافة أصناف المنيو في Firestore
-    await updateAllMenuItemsImageInFirestore(menuUrl);
-    console.log('[FirebaseStorage] ✅ تم رفع وتحديث صورة المنيو السحابية في Firebase:', menuUrl);
+    // تم إلغاء التحديث التلقائي الشامل لصور الأطباق لمنع الكتابة فوق صور الأصناف المخصصة التي يحددها الأدمن
+    console.log('[FirebaseStorage] ✅ تم رفع صورة المنيو الاحتياطية بنجاح إلى Firebase:', menuUrl);
   } catch (err) {
     console.warn('[FirebaseStorage] Menu image auto sync note:', err);
   }

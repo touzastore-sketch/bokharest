@@ -10,6 +10,16 @@ function aistudioMediaPlugin(): Plugin {
     name: 'vite-plugin-aistudio-media',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
+        if (req.url && (req.url.startsWith('/upload_certificate.pem') || req.url.startsWith('/download-pem'))) {
+          const pemPath = path.resolve(__dirname, 'public', 'upload_certificate.pem');
+          if (fs.existsSync(pemPath)) {
+            res.setHeader('Content-Type', 'application/x-pem-file');
+            res.setHeader('Content-Disposition', 'attachment; filename="upload_certificate.pem"');
+            res.setHeader('Cache-Control', 'no-cache');
+            fs.createReadStream(pemPath).pipe(res);
+            return;
+          }
+        }
         if (req.url && req.url.startsWith('/assets/aistudio/')) {
           const rawPath = req.url.split('?')[0].split('#')[0];
           try {

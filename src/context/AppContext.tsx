@@ -60,7 +60,7 @@ interface AppContextType {
   menuItems: MenuItem[];
   saveMenuItem: (item: MenuItem) => Promise<boolean>;
   deleteMenuItem: (itemId: string) => Promise<boolean>;
-  updateMenuItem: (item: MenuItem) => void;
+  updateMenuItem: (item: MenuItem) => Promise<boolean> | void;
   updateItemPrice: (id: string, newPrice: number) => void;
   toggleItemAvailability: (id: string) => void;
   toggleItemFeatured: (id: string) => void;
@@ -718,9 +718,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return await saveRestaurantInfoToFirestore(preparedInfo);
   };
 
-  const updateMenuItem = (updatedItem: MenuItem) => {
-    setMenuItems(prev => prev.map(item => item.id === updatedItem.id ? updatedItem : item));
-    saveMenuItemToFirestore(updatedItem);
+  // Save categories locally when changed
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    } catch {
+      // ignore
+    }
+  }, [categories]);
+
+  const updateMenuItem = async (updatedItem: MenuItem): Promise<boolean> => {
+    return await saveMenuItem(updatedItem);
   };
 
   const updateItemPrice = (id: string, newPrice: number) => {
@@ -778,13 +786,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const saveCategory = async (cat: Category): Promise<boolean> => {
     setCategories((prev) => {
       const exists = prev.some((c) => c.id === cat.id);
-      return exists ? prev.map((c) => (c.id === cat.id ? cat : c)) : [...prev, cat];
+      const updated = exists ? prev.map((c) => (c.id === cat.id ? cat : c)) : [...prev, cat];
+      try {
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+      } catch {}
+      return updated;
     });
     return await saveCategoryToFirestore(cat);
   };
 
   const deleteCategory = async (catId: string): Promise<boolean> => {
-    setCategories((prev) => prev.filter((c) => c.id !== catId));
+    setCategories((prev) => {
+      const updated = prev.filter((c) => c.id !== catId);
+      try {
+        localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     return await deleteCategoryFromFirestore(catId);
   };
 

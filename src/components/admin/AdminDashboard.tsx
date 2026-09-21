@@ -39,7 +39,9 @@ import {
   MapPin,
   Globe,
   Percent,
-  Receipt
+  Receipt,
+  Download,
+  Upload
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -453,6 +455,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
       setLiveOrders((prev) => prev.filter((o) => o.id !== orderId));
       showNotification('🗑️ تم حذف الطلب نهائياً من Firestore وحذفه مباشرة من عند العميل بنجاح');
     }
+  };
+
+  // Export Categories & Menu to JSON backup file
+  const handleExportBackup = () => {
+    const backupData = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      restaurantName: 'Bokharest Black',
+      categories,
+      menuItems,
+      restaurantInfo,
+    };
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `bokharest_backup_${new Date().toISOString().slice(0, 10)}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showNotification('💾 تم تحميل ملف النسخة الاحتياطية بنجاح!');
+  };
+
+  // Import Categories & Menu from JSON file
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const content = event.target?.result as string;
+        const parsed = JSON.parse(content);
+
+        if (!parsed.categories && !parsed.menuItems) {
+          alert('ملف النسخة الاحتياطية غير صالح.');
+          return;
+        }
+
+        if (!confirm('هل أنت متأكد من استيراد هذه النسخة الاحتياطية وتطبيقها في Firestore؟')) {
+          return;
+        }
+
+        let importedCats = 0;
+        let importedDishes = 0;
+
+        if (Array.isArray(parsed.categories)) {
+          for (const cat of parsed.categories) {
+            await saveCategory(cat);
+            importedCats++;
+          }
+        }
+
+        if (Array.isArray(parsed.menuItems)) {
+          for (const item of parsed.menuItems) {
+            await saveMenuItem(item);
+            importedDishes++;
+          }
+        }
+
+        showNotification(`✅ تم بنجاح استعادة ${importedCats} قسم و ${importedDishes} صنف وحفظها في Firestore!`);
+      } catch (err) {
+        console.error(err);
+        alert('حدث خطأ أثناء قراءة ملف النسخة الاحتياطية.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // Download Google Play Upload Certificate PEM directly
+  const handleDownloadPem = () => {
+    const pemContent = `-----BEGIN CERTIFICATE-----
+MIIDmTCCAOGgAwIBAgIUcA1dXzZ001TJBrXrB1wiwve34REwDQYJKoZIhvcNAQEL
+BQAwWzESMBAGA1UEAwwJQm9raGFyZXN0MQwwCgYDVQQLDANBcHAFZAVBgNVBAoM
+DkJva2hhcmVzdEJsYWNrMREwDwYDVQQHDAhQb3J0U2FpZDELMAkGA1UEBhMCRUcw
+IBCNmJYwOTIxMTU1OTExWhgPMjA1NDAyMDYxNTU5MTFaMFsxEjAQBgNVBAMMCUJV
+a2hhcmVzdDEMMAoGA1UECwwDQXBwMRcwFQYDVQQKDA5Cb2toYXJlc3RCbGFjazER
+MA8GA1UEBwwIUG9ydFNhaWQXCtAJBgNVBAYTAkVHMIIBIjANBgkqhkiG9w0BAQEF
+AAOCAQ8AMIIBCgKCAQEAxkEVXW3n42atReh66/k5w5F2nGlJqWylM/zg4QQANakY
+siYilTwhVGaE67b+kxANYPgV0pILYpePPtZ8SwYIwrCDV3fwuGDK334LPEferqWi
+qp1H6Z8RMe9tfVU9gYukPH0X4pS1qO3ppa8VgaSB3p0oFNor9KACOX6OmDuUtdfe
+8HWpnU5Pzmwo956a0SpidjuW+kJu4LfGQwPx34/iwg16D7wHki5giI9a0Y3gOAUD
++YWB7T6DO69D+V7gRgLzEj1XgCibTtdhwDiEco0lD3HJCSJff9mXX55R5Rczh1aw
+NrOVxo06QSXZVENWsmbs3000mvnkFqQrq0ZYlL+wrQIDAQABo1MwUTAdBgNVHQ4E
+FgQUcm8scI391Vjf0ECM2RmDheu2/rkwHwYDVR0jBBgwFoAUcm8scI391Vjf0ECM
+2RmDheu2/rkwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQSFAAOCAQEAcpKa
+ucwKgNwU3LFO6FTcsdC6JHzNdB0gjX4n/zx7PS2yFrpKOO/Edmdmh7xrBbKfBS/+
+vvAEomLnfeXM0BySAl4EOqaVoZcQs7YU4DtRkG91XAD3R3/Jpkaqb5JHj1g2jAy7
+zvQ76jfT2th3e8VQRFcGbmbW98RsKfGtw9EtmobHtr3wZMHAHdrkmRD6DgDrysLP
+wiaiNRP97U9UvpNz7U0nKs3ra28HAjvKHhHAOnsHKetRhNm3q6umXKhYv6PcdrN7
+92W5qyu+1xtYG9kvlIppUjNpk7aHTcxVuMyDYirGm9O9rm5aS4JLngIjpPuBNvxr
+93vTYY4c9ZndclTOag==
+-----END CERTIFICATE-----
+`;
+    const blob = new Blob([pemContent], { type: 'application/x-x509-ca-cert;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'upload_certificate.pem';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showNotification('⬇️ تم بدء تنزيل ملف upload_certificate.pem مباشرة!');
   };
 
   // Update reservation status
@@ -994,6 +1100,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
                 <div className="flex items-center gap-2 flex-wrap">
                   <button
+                    onClick={handleExportBackup}
+                    className="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-neutral-200 border border-white/10 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5"
+                    title="تحميل نسخة احتياطية من كافة الأقسام والأصناف كملف JSON"
+                  >
+                    <Download className="w-3.5 h-3.5 text-amber-400" />
+                    تصدير نسخة احتياطية
+                  </button>
+
+                  <label className="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-neutral-200 border border-white/10 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                    استيراد نسخة
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportBackup}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
                     onClick={() => {
                       setItemFormData({
                         name_ar: '',
@@ -1015,16 +1141,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   >
                     <Plus className="w-4 h-4" />
                     إضافة صنف جديد
-                  </button>
-
-                  <button
-                    onClick={() => handleBatchUpdateAllImages(APP_DEFAULT_IMAGES[0].url)}
-                    disabled={isBatchUpdatingImages}
-                    className="px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
-                    title="تحديث صور جميع الأصناف في Firestore دفعة واحدة"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    تحديث صور كافة الأصناف في السحابة
                   </button>
                 </div>
               </div>
@@ -2334,13 +2450,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setIsAddingCat(true)}
-                  className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  إضافة قسم جديد
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={handleExportBackup}
+                    className="px-3 py-2 bg-white/5 hover:bg-white/10 text-neutral-200 border border-white/10 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5"
+                    title="تحميل نسخة احتياطية من كافة الأقسام والأصناف كملف JSON"
+                  >
+                    <Download className="w-3.5 h-3.5 text-amber-400" />
+                    تصدير نسخة احتياطية
+                  </button>
+
+                  <label className="px-3 py-2 bg-white/5 hover:bg-white/10 text-neutral-200 border border-white/10 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5 text-amber-400" />
+                    استيراد نسخة
+                    <input
+                      type="file"
+                      accept=".json"
+                      onChange={handleImportBackup}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    onClick={() => setIsAddingCat(true)}
+                    className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                  >
+                    <Plus className="w-4 h-4" />
+                    إضافة قسم جديد
+                  </button>
+                </div>
               </div>
 
               {/* Add Category Drawer */}
@@ -2985,6 +3123,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                   <CheckCircle2 className="w-4 h-4" />
                   حفظ التعديلات الآن
                 </button>
+              </div>
+
+              {/* GOOGLE PLAY APP SIGNING CERTIFICATE DOWNLOAD CARD */}
+              <div className="bg-gradient-to-br from-amber-500/10 via-black to-[#111111] p-5 rounded-2xl border border-amber-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
+                      <KeyRound className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        شهادة مفتاح توقيع التطبيق لـ Google Play Console
+                        <span className="text-[10px] bg-amber-400/20 text-amber-400 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono">
+                          upload_certificate.pem
+                        </span>
+                      </h3>
+                      <p className="text-xs text-neutral-400">
+                        الملف المطلوب لرفعه في Google Play Console لحل تعارض مفاتيح التوقيع (App Signing Key)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPem}
+                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
+                    >
+                      <Download className="w-4 h-4" />
+                      تحميل ملف upload_certificate.pem
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-black/50 p-3 rounded-xl border border-white/10 text-xs text-neutral-300 space-y-1">
+                  <p className="font-semibold text-amber-300">طريقة استخدامه في Google Play Console:</p>
+                  <p className="text-[11px] text-neutral-400">
+                    ادخل على Google Play Console ⬅ إعدادات الإصدار (Release ➡ Setup ➡ App Signing) ⬅ اختر "Request key upgrade" أو "Upload a new upload key certificate" ثم اختر هذا الملف المُحمّل.
+                  </p>
+                </div>
               </div>
 
               <form
