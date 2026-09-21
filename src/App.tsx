@@ -15,6 +15,7 @@ import { FloatingCartBar } from './components/FloatingCartBar';
 import { ImageUploadCenterModal } from './components/ImageUploadCenterModal';
 import { ImageMigrationModal } from './components/ImageMigrationModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { CLOUDINARY_ASSETS, getOptimizedImageUrl } from './services/cloudinaryService';
 
 const AppContent: React.FC = () => {
@@ -180,8 +181,10 @@ const AppContent: React.FC = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppContent />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }

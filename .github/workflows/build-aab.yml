@@ -57,13 +57,13 @@ jobs:
       - name: 📱 Upload APK (Direct Phone Installation)
         uses: actions/upload-artifact@v4
         with:
-          name: Bokharest-Black-APK-Installable
+          name: Bokharest-Black-v2.0.1-APK-Installable
           path: android/app/build/outputs/apk/release/*.apk
           retention-days: 30
 
       - name: 📤 Upload AAB (Google Play Store Bundle)
         uses: actions/upload-artifact@v4
         with:
-          name: Bokharest-Black-AAB-PlayStore
+          name: Bokharest-Black-v2.0.1-AAB-PlayStore
           path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
