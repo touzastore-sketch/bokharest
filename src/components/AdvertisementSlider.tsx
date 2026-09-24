@@ -22,7 +22,8 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   className = '',
   autoPlayIntervalMs = ADVERTISEMENT_CONFIG.autoPlayIntervalMs,
 }) => {
-  const { language, restaurantInfo, setActiveTab, setIsReservationOpen, setIsCartOpen, advertisements: contextAds } = useApp();
+  const { language, restaurantInfo, setActiveTab, setIsReservationOpen, setIsCartOpen, advertisements: contextAds, theme } = useApp();
+  const isLight = theme === 'light';
 
   const advertisements = propsAds || (contextAds && contextAds.length > 0 ? contextAds : INITIAL_ADVERTISEMENTS);
 
@@ -243,7 +244,11 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
     >
       <div 
         ref={containerRef}
-        className="relative group rounded-2xl sm:rounded-3xl border border-white/20 bg-gradient-to-b from-[#141414] to-[#0a0a0a] shadow-2xl overflow-hidden"
+        className={`relative group rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 ${
+          isLight
+            ? 'border border-neutral-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.06)]'
+            : 'border border-white/20 bg-gradient-to-b from-[#141414] to-[#0a0a0a]'
+        }`}
         onMouseEnter={() => ADVERTISEMENT_CONFIG.pauseOnHover && setIsPaused(true)}
         onMouseLeave={() => {
           if (ADVERTISEMENT_CONFIG.pauseOnHover) setIsPaused(false);
@@ -353,7 +358,11 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                   e.stopPropagation();
                   goToPrev();
                 }}
-                className="absolute top-1/2 -translate-y-1/2 start-2.5 sm:start-4 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/90 border border-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90 opacity-70 hover:opacity-100 shadow-xl focus:outline-none cursor-pointer"
+                className={`absolute top-1/2 -translate-y-1/2 start-2.5 sm:start-4 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-90 opacity-80 hover:opacity-100 shadow-md focus:outline-none cursor-pointer ${
+                  isLight
+                    ? 'bg-white/95 hover:bg-black text-black hover:text-white border border-neutral-300'
+                    : 'bg-black/60 hover:bg-black/90 text-white border border-white/25 shadow-xl'
+                }`}
               >
                 <PrevIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -367,7 +376,11 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                   e.stopPropagation();
                   goToNext();
                 }}
-                className="absolute top-1/2 -translate-y-1/2 end-2.5 sm:end-4 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-black/60 hover:bg-black/90 border border-white/25 text-white flex items-center justify-center backdrop-blur-md transition-all active:scale-90 opacity-70 hover:opacity-100 shadow-xl focus:outline-none cursor-pointer"
+                className={`absolute top-1/2 -translate-y-1/2 end-2.5 sm:end-4 z-30 w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all active:scale-90 opacity-80 hover:opacity-100 shadow-md focus:outline-none cursor-pointer ${
+                  isLight
+                    ? 'bg-white/95 hover:bg-black text-black hover:text-white border border-neutral-300'
+                    : 'bg-black/60 hover:bg-black/90 text-white border border-white/25 shadow-xl'
+                }`}
               >
                 <NextIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
@@ -377,7 +390,11 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
           {/* Bottom Indicators Container (Dots & Direct Counter) */}
           {totalSlides > 1 && (
             <div className="absolute bottom-2 sm:bottom-3 inset-x-0 z-30 flex items-center justify-center gap-1.5 pointer-events-none">
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/65 backdrop-blur-md border border-white/15 pointer-events-auto shadow-lg">
+              <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full backdrop-blur-md pointer-events-auto shadow-md ${
+                isLight
+                  ? 'bg-white/95 border border-neutral-300 text-black'
+                  : 'bg-black/65 border border-white/15'
+              }`}>
                 {activeAds.map((_, idx) => {
                   const isActive = idx === currentIndex;
                   return (
@@ -391,7 +408,11 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                       }}
                       className={`transition-all duration-300 rounded-full cursor-pointer focus:outline-none ${
                         isActive
-                          ? 'w-5 sm:w-6 h-1.5 sm:h-2 bg-white shadow-sm shadow-white'
+                          ? isLight
+                            ? 'w-5 sm:w-6 h-1.5 sm:h-2 bg-black shadow-sm'
+                            : 'w-5 sm:w-6 h-1.5 sm:h-2 bg-white shadow-sm shadow-white'
+                          : isLight
+                          ? 'w-1.5 sm:w-2 h-1.5 sm:h-2 bg-neutral-300 hover:bg-neutral-500'
                           : 'w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/35 hover:bg-white/70'
                       }`}
                     />

@@ -21,6 +21,7 @@ import { CLOUDINARY_ASSETS, getOptimizedImageUrl } from './services/cloudinarySe
 const AppContent: React.FC = () => {
   const {
     language,
+    theme,
     activeTab,
     selectedItemForDetail,
     setSelectedItemForDetail,
@@ -108,7 +109,11 @@ const AppContent: React.FC = () => {
     <div 
       id="app-root"
       dir={language === 'ar' ? 'rtl' : 'ltr'}
-      className="min-h-screen bg-black text-white flex flex-col justify-between selection:bg-neutral-800 selection:text-white relative overflow-x-hidden"
+      className={`min-h-screen flex flex-col justify-between relative overflow-x-hidden transition-colors duration-200 ${
+        theme === 'light'
+          ? 'bg-[#f8f9fa] text-neutral-900 selection:bg-neutral-200 selection:text-black'
+          : 'bg-black text-white selection:bg-neutral-800 selection:text-white'
+      }`}
     >
       {/* 15. Splash Screen (Loading Screen) with the Official Brand Logo */}
       {showSplash && <SplashScreen onFinish={() => setShowSplash(false)} />}
@@ -119,11 +124,21 @@ const AppContent: React.FC = () => {
         className="fixed inset-0 pointer-events-none z-0 flex items-center justify-center overflow-hidden select-none"
       >
         {/* Soft luxury ambient backdrop radial lighting */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.85)_80%)] pointer-events-none" />
+        <div 
+          className={`absolute inset-0 pointer-events-none ${
+            theme === 'light'
+              ? 'bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.015)_0%,rgba(248,249,250,0.95)_80%)]'
+              : 'bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0.85)_80%)]'
+          }`} 
+        />
 
         {/* Central Prominent Brand Watermark Emblem */}
         <div 
-          className="w-[90vw] max-w-[620px] aspect-square opacity-[0.11] select-none pointer-events-none flex items-center justify-center"
+          className={`w-[90vw] max-w-[620px] aspect-square select-none pointer-events-none flex items-center justify-center ${
+            theme === 'light'
+              ? 'opacity-[0.035] filter grayscale contrast-125'
+              : 'opacity-[0.11] filter drop-shadow-[0_0_40px_rgba(255,255,255,0.2)]'
+          }`}
         >
           <img
             src={getOptimizedImageUrl(CLOUDINARY_ASSETS.logo)}
@@ -131,7 +146,7 @@ const AppContent: React.FC = () => {
               (e.currentTarget as HTMLImageElement).src = getOptimizedImageUrl(CLOUDINARY_ASSETS.logoFallback);
             }}
             alt=""
-            className="w-full h-full object-contain filter drop-shadow-[0_0_40px_rgba(255,255,255,0.2)] pointer-events-none"
+            className="w-full h-full object-contain pointer-events-none"
             loading="eager"
             decoding="async"
           />

@@ -5,7 +5,8 @@ import { ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
 import { haptic } from '../utils/haptics';
 
 export const FloatingCartBar: React.FC = () => {
-  const { cartCount, cartTotal, isCartOpen, setIsCartOpen, language } = useApp();
+  const { cartCount, cartTotal, isCartOpen, setIsCartOpen, language, theme } = useApp();
+  const isLight = theme === 'light';
 
   // Show only if cart has items and the cart drawer is not currently open
   const isVisible = cartCount > 0 && !isCartOpen;
@@ -29,13 +30,21 @@ export const FloatingCartBar: React.FC = () => {
               haptic.tab();
               setIsCartOpen(true);
             }}
-            className="pointer-events-auto min-h-[48px] bg-[#101010]/95 backdrop-blur-xl border border-white/20 hover:border-white/40 text-white rounded-full py-2.5 ps-4 pe-2.5 flex items-center justify-between gap-3 shadow-[0_12px_32px_rgba(0,0,0,0.85),0_0_20px_rgba(255,255,255,0.08)] cursor-pointer w-full max-w-sm transition-all duration-150 group touch-press"
+            className={`pointer-events-auto min-h-[48px] backdrop-blur-xl rounded-full py-2.5 ps-4 pe-2.5 flex items-center justify-between gap-3 cursor-pointer w-full max-w-sm transition-all duration-150 group touch-press border ${
+              isLight
+                ? 'bg-white/95 text-neutral-950 border-neutral-300 shadow-[0_12px_32px_rgba(0,0,0,0.18),0_0_12px_rgba(0,0,0,0.06)] hover:border-neutral-400'
+                : 'bg-[#101010]/95 text-white border-white/20 hover:border-white/40 shadow-[0_12px_32px_rgba(0,0,0,0.85),0_0_20px_rgba(255,255,255,0.08)]'
+            }`}
           >
             {/* Left / Info Cluster */}
             <div className="flex items-center gap-2.5 min-w-0">
               {/* Animated Cart Icon with Badge */}
               <div className="relative shrink-0 flex items-center justify-center">
-                <div className="w-8 h-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-white group-hover:bg-white/15 transition-colors">
+                <div className={`w-8 h-8 rounded-full border flex items-center justify-center transition-colors ${
+                  isLight
+                    ? 'bg-neutral-100 border-neutral-300 text-neutral-900 group-hover:bg-neutral-200'
+                    : 'bg-white/10 border-white/15 text-white group-hover:bg-white/15'
+                }`}>
                   <ShoppingBag className="w-4 h-4" />
                 </div>
                 <motion.span
@@ -43,7 +52,11 @@ export const FloatingCartBar: React.FC = () => {
                   initial={{ scale: 0.5 }}
                   animate={{ scale: [1.3, 1] }}
                   transition={{ duration: 0.25 }}
-                  className="absolute -top-1 -right-1 rtl:-left-1 rtl:right-auto bg-white text-black text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-md border border-black"
+                  className={`absolute -top-1 -right-1 rtl:-left-1 rtl:right-auto text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center shadow-md border ${
+                    isLight
+                      ? 'bg-neutral-950 text-white border-white'
+                      : 'bg-white text-black border-black'
+                  }`}
                 >
                   {cartCount}
                 </motion.span>
@@ -52,16 +65,18 @@ export const FloatingCartBar: React.FC = () => {
               {/* Items & Total info */}
               <div className="flex flex-col text-start truncate leading-tight">
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="font-bold text-white">
+                  <span className={`font-black ${isLight ? 'text-neutral-950' : 'text-white'}`}>
                     {language === 'ar' ? 'سلة الطلب' : 'Your Cart'}
                   </span>
-                  <span className="text-[10px] text-neutral-400 font-medium">
+                  <span className={`text-[10px] font-medium ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
                     ({cartCount} {language === 'ar' ? (cartCount === 1 ? 'صنف' : 'أصناف') : (cartCount === 1 ? 'item' : 'items')})
                   </span>
                 </div>
-                <div className="text-xs font-mono font-bold text-white flex items-center gap-1 mt-0.5">
+                <div className={`text-xs font-mono font-bold flex items-center gap-1 mt-0.5 ${
+                  isLight ? 'text-neutral-950' : 'text-white'
+                }`}>
                   <span>{cartTotal}</span>
-                  <span className="text-[10px] font-sans text-neutral-400 font-normal">
+                  <span className={`text-[10px] font-sans font-normal ${isLight ? 'text-neutral-500' : 'text-neutral-400'}`}>
                     {language === 'ar' ? 'ج.م' : 'EGP'}
                   </span>
                 </div>
@@ -69,7 +84,11 @@ export const FloatingCartBar: React.FC = () => {
             </div>
 
             {/* Right / CTA Pill */}
-            <div className="flex items-center gap-1.5 bg-white text-black font-bold text-xs py-2 px-3.5 rounded-full group-hover:bg-neutral-200 transition-all shadow-md shrink-0">
+            <div className={`flex items-center gap-1.5 font-bold text-xs py-2 px-3.5 rounded-full transition-all shadow-md shrink-0 ${
+              isLight
+                ? 'bg-neutral-950 text-white group-hover:bg-neutral-800'
+                : 'bg-white text-black group-hover:bg-neutral-200'
+            }`}>
               <span>{language === 'ar' ? 'تنفيذ الطلب' : 'Checkout'}</span>
               {language === 'ar' ? (
                 <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />

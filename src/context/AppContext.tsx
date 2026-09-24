@@ -53,6 +53,11 @@ interface AppContextType {
   toggleLanguage: () => void;
   t: (key: string) => string;
   
+  // Theme system (White & Black is primary default)
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
+  
   // Navigation
   activeTab: 'home' | 'menu' | 'orders' | 'more';
   setActiveTab: (tab: 'home' | 'menu' | 'orders' | 'more') => void;
@@ -204,6 +209,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem(STORAGE_KEYS.LANG);
     return saved === 'en' ? 'en' : 'ar';
   });
+
+  // App Theme: Default to 'light' (White in Black luxury theme)
+  const [theme, setThemeState] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('bokharest_theme_mode');
+      if (saved === 'dark' || saved === 'light') return saved;
+    } catch {}
+    return 'light';
+  });
+
+  const setTheme = (newTheme: 'light' | 'dark') => {
+    setThemeState(newTheme);
+    try {
+      localStorage.setItem('bokharest_theme_mode', newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+      if (newTheme === 'light') {
+        document.body.classList.remove('theme-dark');
+        document.body.classList.add('theme-light');
+      } else {
+        document.body.classList.remove('theme-light');
+        document.body.classList.add('theme-dark');
+      }
+    } catch {}
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('data-theme', theme);
+      if (theme === 'light') {
+        document.body.classList.remove('theme-dark');
+        document.body.classList.add('theme-light');
+      } else {
+        document.body.classList.remove('theme-light');
+        document.body.classList.add('theme-dark');
+      }
+    } catch {}
+  }, [theme]);
 
   const [activeTab, setActiveTab] = useState<'home' | 'menu' | 'orders' | 'more'>('home');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -1447,6 +1493,9 @@ _Sent via official Bokharest Black mobile application_`;
         setLanguage,
         toggleLanguage,
         t,
+        theme,
+        setTheme,
+        toggleTheme,
         activeTab,
         setActiveTab,
         categories,

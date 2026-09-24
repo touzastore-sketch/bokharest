@@ -33,7 +33,9 @@ export function generateTaxNotice(
   };
 }
 
-export const APP_VERSION = 'v2.0.0';
+export const APP_VERSION = 'v2.0.1';
+export const APP_VERSION_CODE = 5;
+export const APP_PACKAGE_ID = 'com.bokharest.app';
 
 export const OFFICIAL_RESTAURANT_INFO: RestaurantInfo = {
   name_en: "Bokharest Black",

@@ -12,8 +12,8 @@
   }
 
   body {
-    background-color: #000000;
-    color: #ffffff;
+    background-color: #f8f9fa;
+    color: #0a0a0a;
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
   }
@@ -46,19 +46,19 @@
 
 /* Luxury hairline subtle borders */
 .border-subtle {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(0, 0, 0, 0.08);
 }
 
 .border-subtle-hover:hover {
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(0, 0, 0, 0.22);
 }
 
 .bg-luxury-card {
-  background-color: #0d0d0d;
+  background-color: #ffffff;
 }
 
 .bg-luxury-surface {
-  background-color: #141414;
+  background-color: #ffffff;
 }
 
 /* Universal Premium Mobile Touch Feedback Utilities */
@@ -84,8 +84,8 @@
   justify-content: center;
   gap: 8px;
   border-radius: 16px;
-  background-color: #ffffff;
-  color: #000000;
+  background-color: #000000;
+  color: #ffffff;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -97,7 +97,7 @@
 }
 
 .btn-touch-primary:hover {
-  background-color: #e5e5e5;
+  background-color: #262626;
 }
 
 .btn-touch-primary:active {
@@ -114,13 +114,14 @@
   justify-content: center;
   gap: 8px;
   border-radius: 16px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #ffffff;
+  color: #000000;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms ease, border-color 150ms ease;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
@@ -129,8 +130,8 @@
 }
 
 .btn-touch-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.35);
+  background-color: #f3f4f6;
+  border-color: rgba(0, 0, 0, 0.3);
 }
 
 .btn-touch-secondary:active {

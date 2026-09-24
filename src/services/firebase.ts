@@ -1,10 +1,16 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, initializeFirestore, setLogLevel } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  setLogLevel,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 // كتم السجلات التحذيرية التلقائية لحالات تقلب الشبكة أو إعادة الاتصال في الخلفية
 try {
-  setLogLevel('error');
+  setLogLevel('silent');
 } catch {
   // ignore
 }
@@ -22,19 +28,30 @@ export const firebaseConfig = {
 // تهيئة تطبيق Firebase
 export const firebaseApp = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// تهيئة Cloud Firestore مع إعدادات متقدمة تدعم الاتصال المستقر عبر Long-Polling
+// تهيئة Cloud Firestore مع دعم التخزين المؤقت المستمر (Persistent Local Cache) والاتصال التلقائي المستقر
 let firestoreInstance;
 try {
   firestoreInstance = initializeFirestore(firebaseApp, {
-    experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: true,
     ignoreUndefinedProperties: true,
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
   });
 } catch {
-  firestoreInstance = getFirestore(firebaseApp);
+  try {
+    firestoreInstance = initializeFirestore(firebaseApp, {
+      experimentalAutoDetectLongPolling: true,
+      ignoreUndefinedProperties: true,
+    });
+  } catch {
+    firestoreInstance = getFirestore(firebaseApp);
+  }
 }
 
 export const firestoreDb = firestoreInstance;
 
 // تهيئة Firebase Storage لرفع الصور
 export const firebaseStorage = getStorage(firebaseApp);
+
 

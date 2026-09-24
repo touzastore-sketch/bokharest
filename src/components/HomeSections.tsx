@@ -4,40 +4,55 @@ import { MapPin, ExternalLink, Navigation, Phone, MessageSquare, Clock, Calendar
 
 // Table Reservation VIP Banner Section
 export const TableReservationSection: React.FC = () => {
-  const { language, t, setIsReservationOpen } = useApp();
+  const { language, t, setIsReservationOpen, theme } = useApp();
+  const isLight = theme === 'light';
 
   return (
     <section className="py-6 px-4 select-none">
-      <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-r from-[#121212] via-[#1a1a1a] to-[#0d0d0d] border border-white/20 overflow-hidden text-center sm:text-left rtl:sm:text-right flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+      <div className={`relative rounded-3xl p-6 sm:p-8 overflow-hidden text-center sm:text-left rtl:sm:text-right flex flex-col sm:flex-row items-center justify-between gap-6 transition-all duration-200 ${
+        isLight
+          ? 'bg-gradient-to-r from-amber-50/40 via-white to-amber-50/20 border border-neutral-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]'
+          : 'bg-gradient-to-r from-[#121212] via-[#1a1a1a] to-[#0d0d0d] border border-white/20 shadow-2xl'
+      }`}>
         {/* Subtle decorative glow */}
-        <div className="absolute top-0 right-1/4 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+        <div className={`absolute top-0 right-1/4 w-32 h-32 rounded-full blur-2xl pointer-events-none ${
+          isLight ? 'bg-amber-400/10' : 'bg-white/5'
+        }`} />
 
         <div className="relative z-10 max-w-md">
-          <div className="flex items-center justify-center sm:justify-start rtl:sm:justify-end gap-2 text-white/80 mb-1">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-            <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-neutral-300">
+          <div className="flex items-center justify-center sm:justify-start rtl:sm:justify-end gap-2 mb-1">
+            <Sparkles className={`w-3.5 h-3.5 ${isLight ? 'text-amber-600' : 'text-white'}`} />
+            <span className={`text-[10px] font-extrabold tracking-[0.25em] uppercase ${
+              isLight ? 'text-amber-700' : 'text-neutral-300'
+            }`}>
               {language === 'ar' ? 'حجوزات طاولات VIP' : 'VIP Table Reservations'}
             </span>
           </div>
 
-          <h3 className="font-serif-luxury text-xl sm:text-2xl font-bold text-white mt-1">
+          <h3 className={`font-serif-luxury text-xl sm:text-2xl font-black mt-1 ${
+            isLight ? 'text-neutral-950' : 'text-white'
+          }`}>
             {language === 'ar' ? 'احجز طاولتك الفاخرة مسبقاً' : 'Reserve Your Luxury Table'}
           </h3>
 
-          <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+          <p className={`text-xs mt-2 leading-relaxed font-medium ${
+            isLight ? 'text-neutral-600' : 'text-neutral-400'
+          }`}>
             {language === 'ar'
               ? 'سواء كان عشاءً رومانسياً، احتفالاً خاصاً أو لقاء عمل راقٍ، اختر التاريخ والوقت وسنجهز لك أرقى الأجواء عبر واتساب فوراً.'
               : 'Whether an intimate dinner, business gathering, or celebration, secure your table with tailored seating directly via WhatsApp.'}
           </p>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-start rtl:sm:justify-end gap-3 mt-4 text-[11px] text-neutral-300">
+          <div className={`flex flex-wrap items-center justify-center sm:justify-start rtl:sm:justify-end gap-3 mt-4 text-[11px] font-semibold ${
+            isLight ? 'text-neutral-700' : 'text-neutral-300'
+          }`}>
             <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-white" />
+              <Calendar className={`w-3 h-3 ${isLight ? 'text-neutral-900' : 'text-white'}`} />
               {language === 'ar' ? 'تأكيد فوري' : 'Instant Confirmation'}
             </span>
-            <span className="w-1 h-1 rounded-full bg-neutral-600" />
+            <span className={`w-1 h-1 rounded-full ${isLight ? 'bg-neutral-300' : 'bg-neutral-600'}`} />
             <span className="flex items-center gap-1">
-              <Users className="w-3 h-3 text-white" />
+              <Users className={`w-3 h-3 ${isLight ? 'text-neutral-900' : 'text-white'}`} />
               {language === 'ar' ? 'تجهيزات خاصة' : 'VIP Arrangements'}
             </span>
           </div>
@@ -47,7 +62,11 @@ export const TableReservationSection: React.FC = () => {
           <button
             id="home-banner-book-table-btn"
             onClick={() => setIsReservationOpen(true)}
-            className="w-full sm:w-auto min-h-[48px] min-w-[48px] py-3.5 px-7 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 active:scale-95 active:opacity-80 transition-all duration-150 flex items-center justify-center gap-2.5 shadow-xl shadow-white/10 focus:outline-none cursor-pointer touch-press"
+            className={`w-full sm:w-auto min-h-[48px] min-w-[48px] py-3.5 px-7 rounded-2xl font-bold text-xs uppercase tracking-wider active:scale-95 active:opacity-80 transition-all duration-150 flex items-center justify-center gap-2.5 shadow-md focus:outline-none cursor-pointer touch-press ${
+              isLight
+                ? 'bg-black text-white hover:bg-neutral-800'
+                : 'bg-white text-black hover:bg-neutral-200 shadow-white/10'
+            }`}
           >
             <Calendar className="w-4 h-4" />
             <span>{t('book_table')}</span>
@@ -60,23 +79,38 @@ export const TableReservationSection: React.FC = () => {
 
 // Order Now CTA Banner Section
 export const OrderBannerSection: React.FC = () => {
-  const { language, t, setActiveTab, setIsCartOpen, restaurantInfo } = useApp();
+  const { language, t, setActiveTab, setIsCartOpen, restaurantInfo, theme } = useApp();
+  const isLight = theme === 'light';
 
   return (
     <section className="py-6 px-4 select-none">
-      <div className="relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#181818] via-[#0d0d0d] to-black border border-white/20 overflow-hidden text-center sm:text-left rtl:sm:text-right flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
+      <div className={`relative rounded-3xl p-6 sm:p-8 overflow-hidden text-center sm:text-left rtl:sm:text-right flex flex-col sm:flex-row items-center justify-between gap-6 transition-all duration-200 ${
+        isLight
+          ? 'bg-white border border-neutral-200 shadow-[0_4px_20px_rgba(0,0,0,0.04)]'
+          : 'bg-gradient-to-br from-[#181818] via-[#0d0d0d] to-black border border-white/20 shadow-2xl'
+      }`}>
         {/* Subtle geometric lines */}
-        <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full border border-white/5 pointer-events-none" />
-        <div className="absolute -left-12 -bottom-12 w-48 h-48 rounded-full border border-white/5 pointer-events-none" />
+        <div className={`absolute -right-12 -top-12 w-48 h-48 rounded-full border pointer-events-none ${
+          isLight ? 'border-neutral-100' : 'border-white/5'
+        }`} />
+        <div className={`absolute -left-12 -bottom-12 w-48 h-48 rounded-full border pointer-events-none ${
+          isLight ? 'border-neutral-100' : 'border-white/5'
+        }`} />
 
         <div className="relative z-10 max-w-md">
-          <span className="text-[10px] font-bold tracking-[0.25em] uppercase text-neutral-400">
+          <span className={`text-[10px] font-extrabold tracking-[0.25em] uppercase ${
+            isLight ? 'text-amber-600' : 'text-neutral-400'
+          }`}>
             {language === 'ar' ? 'طلب فوري ومباشر' : 'Instant Direct Ordering'}
           </span>
-          <h3 className="font-serif-luxury text-xl sm:text-2xl font-bold text-white mt-1">
+          <h3 className={`font-serif-luxury text-xl sm:text-2xl font-black mt-1 ${
+            isLight ? 'text-neutral-950' : 'text-white'
+          }`}>
             {language === 'ar' ? 'جاهز لتجربة استثنائية؟' : 'Ready for an Exquisite Feast?'}
           </h3>
-          <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
+          <p className={`text-xs mt-2 leading-relaxed font-medium ${
+            isLight ? 'text-neutral-600' : 'text-neutral-400'
+          }`}>
             {language === 'ar'
               ? 'اختر أطباقك المفضلة وسنقوم بإعداد وتوصيل طلبك بأعلى معايير الجودة والسرعة عبر واتساب مباشرة.'
               : 'Pick your favorites and send your order directly to our team via WhatsApp for priority service.'}
@@ -89,7 +123,11 @@ export const OrderBannerSection: React.FC = () => {
               setActiveTab('menu');
               setIsCartOpen(true);
             }}
-            className="min-h-[48px] min-w-[48px] py-3.5 px-6 rounded-2xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-all duration-150 flex items-center justify-center gap-2 shadow-lg active:scale-95 active:opacity-80 cursor-pointer touch-press"
+            className={`min-h-[48px] min-w-[48px] py-3.5 px-6 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-150 flex items-center justify-center gap-2 shadow-sm active:scale-95 active:opacity-80 cursor-pointer touch-press ${
+              isLight
+                ? 'bg-black text-white hover:bg-neutral-800'
+                : 'bg-white text-black hover:bg-neutral-200'
+            }`}
           >
             <MessageSquare className="w-4 h-4" />
             <span>{t('order_now')}</span>
@@ -98,7 +136,11 @@ export const OrderBannerSection: React.FC = () => {
           <a
             href={restaurantInfo.phoneCall}
             dir="ltr"
-            className="min-h-[48px] min-w-[48px] py-3.5 px-5 rounded-2xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-xs transition-all duration-150 flex items-center justify-center gap-2 font-mono active:scale-95 active:opacity-80 touch-press"
+            className={`min-h-[48px] min-w-[48px] py-3.5 px-5 rounded-2xl font-bold text-xs transition-all duration-150 flex items-center justify-center gap-2 font-mono active:scale-95 active:opacity-80 touch-press ${
+              isLight
+                ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300'
+                : 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
+            }`}
           >
             <Phone className="w-3.5 h-3.5 shrink-0" />
             <bdi dir="ltr" className="font-mono tracking-wider font-bold">
@@ -113,30 +155,41 @@ export const OrderBannerSection: React.FC = () => {
 
 // About Bokharest Black Section
 export const AboutSection: React.FC = () => {
-  const { language, t, restaurantInfo } = useApp();
+  const { language, t, restaurantInfo, theme } = useApp();
+  const isLight = theme === 'light';
 
   return (
     <section className="py-8 px-4 select-none">
       <div className="max-w-2xl mx-auto text-center">
-        <div className="w-12 h-12 rounded-full border border-white/20 flex items-center justify-center mx-auto mb-4 bg-white/5">
-          <span className="font-serif-luxury text-lg font-bold text-white">B</span>
+        <div className={`w-12 h-12 rounded-full border flex items-center justify-center mx-auto mb-4 ${
+          isLight ? 'border-neutral-300 bg-white text-black shadow-sm' : 'border-white/20 bg-white/5 text-white'
+        }`}>
+          <span className="font-serif-luxury text-lg font-bold">B</span>
         </div>
 
-        <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400">
+        <span className={`text-[10px] font-extrabold tracking-[0.3em] uppercase ${
+          isLight ? 'text-amber-600' : 'text-neutral-400'
+        }`}>
           Heritage & Elegance
         </span>
         
-        <h2 className="font-serif-luxury text-2xl font-bold text-white tracking-wide mt-1 mb-4">
+        <h2 className={`font-serif-luxury text-2xl font-black tracking-wide mt-1 mb-4 ${
+          isLight ? 'text-neutral-950' : 'text-white'
+        }`}>
           {t('about_title')}
         </h2>
 
-        <p className="font-serif-luxury italic text-base sm:text-lg text-neutral-200 leading-relaxed">
+        <p className={`font-serif-luxury italic text-base sm:text-lg leading-relaxed ${
+          isLight ? 'text-neutral-700' : 'text-neutral-200'
+        }`}>
           "{language === 'ar' ? restaurantInfo.about_ar : restaurantInfo.about_en}"
         </p>
 
-        <div className="flex items-center justify-center gap-6 mt-6 pt-6 border-t border-white/10 text-xs text-neutral-400">
+        <div className={`flex items-center justify-center gap-6 mt-6 pt-6 border-t text-xs font-semibold ${
+          isLight ? 'border-neutral-200 text-neutral-600' : 'border-white/10 text-neutral-400'
+        }`}>
           <div className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-neutral-300" />
+            <Clock className={`w-3.5 h-3.5 ${isLight ? 'text-neutral-700' : 'text-neutral-300'}`} />
             <span>{language === 'ar' ? restaurantInfo.openingHours_ar : restaurantInfo.openingHours_en}</span>
           </div>
         </div>
@@ -147,46 +200,71 @@ export const AboutSection: React.FC = () => {
 
 // Location Section
 export const LocationSection: React.FC = () => {
-  const { language, t, restaurantInfo } = useApp();
+  const { language, t, restaurantInfo, theme } = useApp();
+  const isLight = theme === 'light';
 
   return (
     <section className="py-6 px-4 select-none">
       <div className="mb-4 text-center sm:text-left rtl:sm:text-right">
-        <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400">
+        <span className={`text-[10px] font-extrabold tracking-[0.3em] uppercase ${
+          isLight ? 'text-amber-600' : 'text-neutral-400'
+        }`}>
           Visit Our Branches
         </span>
-        <h2 className="font-serif-luxury text-xl sm:text-2xl font-bold text-white tracking-wide mt-0.5">
+        <h2 className={`font-serif-luxury text-xl sm:text-2xl font-black tracking-wide mt-0.5 ${
+          isLight ? 'text-neutral-950' : 'text-white'
+        }`}>
           {t('find_us')}
         </h2>
       </div>
 
-      <div className="rounded-3xl bg-[#0d0d0d] border border-white/15 overflow-hidden shadow-2xl">
-        {/* Map Preview Graphic with Luxury Dark Grid */}
-        <div className="relative h-44 sm:h-52 bg-neutral-950 flex flex-col items-center justify-center p-4 text-center overflow-hidden">
+      <div className={`rounded-3xl overflow-hidden transition-all duration-200 ${
+        isLight
+          ? 'bg-white border border-neutral-200 shadow-[0_4px_24px_rgba(0,0,0,0.05)]'
+          : 'bg-[#0d0d0d] border border-white/15 shadow-2xl'
+      }`}>
+        {/* Map Preview Graphic */}
+        <div className={`relative h-44 sm:h-52 flex flex-col items-center justify-center p-4 text-center overflow-hidden ${
+          isLight ? 'bg-neutral-100' : 'bg-neutral-950'
+        }`}>
           {/* Subtle Map grid texture */}
           <div 
-            className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[length:24px_24px]"
+            className={`absolute inset-0 opacity-20 pointer-events-none ${
+              isLight
+                ? 'bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.15)_1px,transparent_1px)] bg-[length:24px_24px]'
+                : 'bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.15)_1px,transparent_1px)] bg-[length:24px_24px]'
+            }`}
           />
 
-          <div className="relative z-10 w-12 h-12 rounded-full bg-white text-black flex items-center justify-center shadow-xl mb-3 animate-bounce">
+          <div className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center shadow-md mb-3 animate-bounce ${
+            isLight ? 'bg-black text-white' : 'bg-white text-black'
+          }`}>
             <MapPin className="w-6 h-6 stroke-[2.2]" />
           </div>
 
-          <h4 className="relative z-10 font-bold text-white text-base">
+          <h4 className={`relative z-10 font-bold text-base ${isLight ? 'text-neutral-900' : 'text-white'}`}>
             Bokharest Black Restaurant & Cafe
           </h4>
-          <p className="relative z-10 text-xs text-neutral-400 mt-1 max-w-sm">
+          <p className={`relative z-10 text-xs mt-1 max-w-sm font-medium ${
+            isLight ? 'text-neutral-600' : 'text-neutral-400'
+          }`}>
             {language === 'ar' ? restaurantInfo.address_ar : restaurantInfo.address_en}
           </p>
         </div>
 
         {/* Buttons */}
-        <div className="p-4 sm:p-5 bg-[#121212] border-t border-white/10 flex flex-col sm:flex-row gap-3">
+        <div className={`p-4 sm:p-5 border-t flex flex-col sm:flex-row gap-3 ${
+          isLight ? 'bg-white border-neutral-200' : 'bg-[#121212] border-white/10'
+        }`}>
           <a
             href={restaurantInfo.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 min-h-[48px] py-3.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer"
+            className={`flex-1 min-h-[48px] py-3.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer ${
+              isLight
+                ? 'bg-black text-white hover:bg-neutral-800 shadow-sm'
+                : 'bg-white text-black hover:bg-neutral-200'
+            }`}
           >
             <ExternalLink className="w-4 h-4" />
             <span>{t('open_maps')}</span>
@@ -196,7 +274,11 @@ export const LocationSection: React.FC = () => {
             href={restaurantInfo.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 min-h-[48px] py-3.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/20 font-semibold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer"
+            className={`flex-1 min-h-[48px] py-3.5 px-4 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-150 active:scale-95 active:opacity-80 touch-press cursor-pointer ${
+              isLight
+                ? 'bg-neutral-100 hover:bg-neutral-200 text-black border border-neutral-300'
+                : 'bg-white/10 hover:bg-white/15 text-white border border-white/20'
+            }`}
           >
             <Navigation className="w-4 h-4" />
             <span>{t('get_directions')}</span>
@@ -209,7 +291,8 @@ export const LocationSection: React.FC = () => {
 
 // Social Media Section
 export const SocialMediaSection: React.FC = () => {
-  const { t, restaurantInfo } = useApp();
+  const { t, restaurantInfo, theme } = useApp();
+  const isLight = theme === 'light';
 
   const socialChannels = [
     {
@@ -247,10 +330,14 @@ export const SocialMediaSection: React.FC = () => {
   return (
     <section className="py-6 px-4 select-none">
       <div className="mb-4 text-center sm:text-left rtl:sm:text-right">
-        <span className="text-[10px] font-bold tracking-[0.3em] uppercase text-neutral-400">
+        <span className={`text-[10px] font-extrabold tracking-[0.3em] uppercase ${
+          isLight ? 'text-amber-600' : 'text-neutral-400'
+        }`}>
           Social Connection
         </span>
-        <h2 className="font-serif-luxury text-xl sm:text-2xl font-bold text-white tracking-wide mt-0.5">
+        <h2 className={`font-serif-luxury text-xl sm:text-2xl font-black tracking-wide mt-0.5 ${
+          isLight ? 'text-neutral-950' : 'text-white'
+        }`}>
           {t('follow_us')}
         </h2>
       </div>
@@ -262,14 +349,22 @@ export const SocialMediaSection: React.FC = () => {
             href={channel.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="min-h-[48px] p-4 rounded-2xl bg-[#0d0d0d] border border-white/15 hover:border-white/40 flex items-center justify-between transition-all duration-150 group focus:outline-none active:scale-95 active:opacity-80 touch-press cursor-pointer"
+            className={`min-h-[48px] p-4 rounded-2xl flex items-center justify-between transition-all duration-150 group focus:outline-none active:scale-95 active:opacity-80 touch-press cursor-pointer ${
+              isLight
+                ? 'bg-white border border-neutral-200 hover:border-black shadow-sm'
+                : 'bg-[#0d0d0d] border border-white/15 hover:border-white/40'
+            }`}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-white flex items-center justify-center group-hover:bg-white group-hover:text-black transition-colors">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                isLight
+                  ? 'bg-neutral-100 text-black group-hover:bg-black group-hover:text-white'
+                  : 'bg-white/5 border border-white/10 text-white group-hover:bg-white group-hover:text-black'
+              }`}>
                 {channel.icon}
               </div>
               <div>
-                <h4 className="font-bold text-white text-sm">
+                <h4 className={`font-extrabold text-sm ${isLight ? 'text-neutral-900' : 'text-white'}`}>
                   {channel.name}
                 </h4>
                 <span className="text-[11px] text-neutral-500 font-mono">
@@ -278,7 +373,9 @@ export const SocialMediaSection: React.FC = () => {
               </div>
             </div>
 
-            <ExternalLink className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
+            <ExternalLink className={`w-4 h-4 transition-colors ${
+              isLight ? 'text-neutral-400 group-hover:text-black' : 'text-neutral-500 group-hover:text-white'
+            }`} />
           </a>
         ))}
       </div>
@@ -288,24 +385,33 @@ export const SocialMediaSection: React.FC = () => {
 
 // Footer
 export const Footer: React.FC = () => {
-  const { language } = useApp();
+  const { theme } = useApp();
+  const isLight = theme === 'light';
 
   return (
-    <footer className="py-10 px-4 text-center border-t border-white/10 select-none pb-24">
+    <footer className={`py-10 px-4 text-center border-t select-none pb-24 ${
+      isLight ? 'border-neutral-200 bg-white text-neutral-900' : 'border-white/10 text-white'
+    }`}>
       <div className="max-w-md mx-auto flex flex-col items-center">
         {/* Monogram emblem */}
-        <div className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center bg-black mb-3">
-          <span className="font-serif-luxury text-xs font-bold text-white">B</span>
+        <div className={`w-8 h-8 rounded-full border flex items-center justify-center mb-3 ${
+          isLight ? 'border-neutral-300 bg-neutral-100 text-black' : 'border-white/20 bg-black text-white'
+        }`}>
+          <span className="font-serif-luxury text-xs font-bold">B</span>
         </div>
 
-        <p className="font-serif-luxury tracking-[0.2em] text-xs font-bold text-white uppercase">
+        <p className={`font-serif-luxury tracking-[0.2em] text-xs font-extrabold uppercase ${
+          isLight ? 'text-neutral-950' : 'text-white'
+        }`}>
           Bokharest Black
         </p>
-        <p className="text-[10px] text-neutral-500 tracking-wider mt-0.5 font-arabic-luxury">
+        <p className={`text-[10px] tracking-wider mt-0.5 font-arabic-luxury font-semibold ${
+          isLight ? 'text-neutral-600' : 'text-neutral-400'
+        }`}>
           بوخارست بلاك — مطعم وكافيه
         </p>
 
-        <p className="text-[11px] text-neutral-400 mt-4 font-mono tracking-wide">
+        <p className="text-[11px] text-neutral-500 mt-4 font-mono tracking-wide">
           © 2026 SolimanMedia. All Rights Reserved
         </p>
       </div>
