@@ -19,6 +19,8 @@ export const MenuScreen: React.FC = () => {
     language,
     t,
     favorites,
+    onlyFavorites,
+    setOnlyFavorites,
     refreshMenu,
     isMenuRefreshing,
     pricingPolicy,
@@ -27,7 +29,6 @@ export const MenuScreen: React.FC = () => {
 
   const isLight = theme === 'light';
 
-  const [onlyFavorites, setOnlyFavorites] = useState(false);
   const [justRefreshed, setJustRefreshed] = useState(false);
 
   const handleRefresh = async () => {
@@ -47,8 +48,8 @@ export const MenuScreen: React.FC = () => {
         return false;
       }
 
-      // Category filter
-      if (selectedCategory !== 'all' && item.category_id !== selectedCategory) {
+      // Category filter (show all categories when browsing favorites unless user explicitly searches)
+      if (!onlyFavorites && selectedCategory !== 'all' && item.category_id !== selectedCategory) {
         return false;
       }
 
@@ -110,21 +111,31 @@ export const MenuScreen: React.FC = () => {
           <button
             onClick={() => {
               haptic.favorite();
-              setOnlyFavorites(!onlyFavorites);
+              const next = !onlyFavorites;
+              setOnlyFavorites(next);
+              if (next) {
+                setSelectedCategory('all');
+              }
             }}
-            className={`flex items-center gap-2 min-h-[48px] px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-150 shrink-0 border focus:outline-none cursor-pointer active:scale-95 active:opacity-80 touch-press shadow-xs ${
+            className={`flex items-center gap-2 min-h-[48px] px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-200 shrink-0 border focus:outline-none cursor-pointer active:scale-95 touch-press shadow-xs ${
               onlyFavorites
-                ? 'bg-amber-400 text-black border-amber-400 shadow-amber-500/20'
+                ? 'bg-rose-500 text-white border-rose-500 shadow-rose-500/25 ring-2 ring-rose-500/30'
                 : isLight
                 ? 'bg-neutral-100 text-neutral-800 border-neutral-300 hover:border-neutral-400 hover:text-black'
                 : 'bg-[#161616] text-neutral-200 border-white/20 hover:border-white/40 hover:text-white'
             }`}
           >
-            <Heart className={`w-4 h-4 ${onlyFavorites ? 'fill-black' : isLight ? 'text-neutral-500' : 'text-neutral-400'}`} />
+            <Heart className={`w-4 h-4 transition-transform duration-200 ${
+              onlyFavorites ? 'fill-white text-white scale-110' : 'text-rose-500 fill-rose-500/20'
+            }`} />
             <span>{t('favorites')}</span>
             {favorites.length > 0 && (
-              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-bold ${
-                onlyFavorites ? 'bg-black text-amber-300' : isLight ? 'bg-neutral-200 text-neutral-900' : 'bg-white/15 text-white'
+              <span className={`text-[11px] font-mono px-2 py-0.5 rounded-full font-bold transition-colors ${
+                onlyFavorites
+                  ? 'bg-white/25 text-white'
+                  : isLight
+                  ? 'bg-rose-100 text-rose-700'
+                  : 'bg-rose-950/70 text-rose-300 border border-rose-500/30'
               }`}>
                 {favorites.length}
               </span>

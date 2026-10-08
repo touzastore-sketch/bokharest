@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- Background -->
+  <rect width="500" height="500" fill="#000000"/>
+  
+  <!-- Outer Luxury Geometric Ring -->
+  <circle cx="250" cy="250" r="230" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.9"/>
+  <circle cx="250" cy="250" r="222" fill="none" stroke="#ffffff" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="250" cy="250" r="214" fill="none" stroke="#ffffff" stroke-dasharray="3,6" stroke-width="1.5" stroke-opacity="0.5"/>
+  
+  <!-- Crest Crown Ornament -->
+  <g transform="translate(250, 105)" stroke="#ffffff" fill="none">
+    <path d="M-28,25 L-14,8 L0,22 L14,8 L28,25 Z" stroke-width="2" fill="#ffffff"/>
+    <circle cx="-14" cy="4" r="2.5" fill="#ffffff"/>
+    <circle cx="0" cy="18" r="2.5" fill="#ffffff"/>
+    <circle cx="14" cy="4" r="2.5" fill="#ffffff"/>
+    <line x1="-35" y1="29" x2="35" y2="29" stroke-width="1.5"/>
+  </g>
+
+  <!-- Stylized Iconic Monogram 'B' -->
+  <g transform="translate(250, 205)">
+    <!-- Shield / Frame -->
+    <path d="M-60,-50 L60,-50 L50,55 C40,85 0,105 0,105 C0,105 -40,85 -50,55 Z" 
+          fill="none" stroke="#ffffff" stroke-width="2.5" stroke-opacity="0.8"/>
+          
+    <!-- Double Serif / Monoline 'B' -->
+    <text x="0" y="45" 
+          font-family="'Playfair Display', 'Times New Roman', Georgia, serif" 
+          font-size="108" 
+          font-weight="700" 
+          fill="#ffffff" 
+          text-anchor="middle" 
+          letter-spacing="1">B</text>
+  </g>
+
+  <!-- Brand Wordmark English -->
+  <text x="250" y="348" 
+        font-family="'Playfair Display', Georgia, serif" 
+        font-size="28" 
+        font-weight="700" 
+        letter-spacing="9" 
+        fill="#ffffff" 
+        text-anchor="middle">BOKHAREST</text>
+        
+  <text x="250" y="375" 
+        font-family="'Plus Jakarta Sans', system-ui, sans-serif" 
+        font-size="14" 
+        font-weight="600" 
+        letter-spacing="14" 
+        fill="#e5e5e5" 
+        text-anchor="middle">BLACK</text>
+
+  <!-- Divider with Diamond -->
+  <g transform="translate(250, 396)">
+    <line x1="-70" y1="0" x2="-15" y2="0" stroke="#ffffff" stroke-width="1" stroke-opacity="0.4"/>
+    <polygon points="0,-4 4,0 0,4 -4,0" fill="#ffffff"/>
+    <line x1="15" y1="0" x2="70" y2="0" stroke="#ffffff" stroke-width="1" stroke-opacity="0.4"/>
+  </g>
+
+  <!-- Brand Wordmark Arabic -->
+  <text x="250" y="430" 
+        font-family="'Cairo', system-ui, sans-serif" 
+        font-size="22" 
+        font-weight="700" 
+        letter-spacing="1" 
+        fill="#ffffff" 
+        text-anchor="middle">بوخارست بلاك</text>
+
+  <text x="250" y="452" 
+        font-family="'Cairo', system-ui, sans-serif" 
+        font-size="10" 
+        font-weight="400" 
+        letter-spacing="2" 
+        fill="#a3a3a3" 
+        text-anchor="middle">مطعم وكافيه فاخر</text>
+</svg>

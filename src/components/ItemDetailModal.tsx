@@ -117,12 +117,18 @@ export const ItemDetailModal: React.FC = () => {
                 haptic.favorite();
                 toggleFavorite(item.id);
               }}
-              aria-label="Toggle favorite"
-              className="min-h-[48px] min-w-[48px] p-3 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-black/90 transition-all duration-150 focus:outline-none flex items-center justify-center active:scale-95 active:opacity-80 touch-press cursor-pointer shadow-lg"
+              aria-label={isFav ? (language === 'ar' ? 'إزالة من المفضلة' : 'Remove from favorites') : (language === 'ar' ? 'إضافة للمفضلة' : 'Add to favorites')}
+              className={`min-h-[48px] min-w-[48px] p-3 rounded-full backdrop-blur-md border transition-all duration-200 focus:outline-none flex items-center justify-center active:scale-90 touch-press cursor-pointer shadow-lg ${
+                isFav
+                  ? 'bg-black/85 border-rose-500/60 shadow-rose-950/50'
+                  : 'bg-black/60 border-white/20 text-white hover:bg-black/90 hover:border-white/40'
+              }`}
             >
               <Heart
-                className={`w-5 h-5 transition-colors ${
-                  isFav ? 'fill-red-500 text-red-500' : 'text-neutral-300'
+                className={`w-5 h-5 transition-all duration-200 ${
+                  isFav
+                    ? 'fill-rose-500 text-rose-500 scale-110 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)]'
+                    : 'text-white/80 scale-100'
                 }`}
               />
             </button>

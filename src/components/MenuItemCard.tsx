@@ -165,12 +165,18 @@ export const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
         {isAvailable && (
           <button
             onClick={handleFavorite}
-            aria-label="Toggle favorite"
-            className="absolute top-2 right-2 rtl:right-auto rtl:left-2 min-h-[44px] min-w-[44px] p-2.5 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-white hover:bg-black/80 transition-all duration-150 focus:outline-none z-10 flex items-center justify-center active:scale-95 active:opacity-80 touch-press cursor-pointer"
+            aria-label={isFav ? (language === 'ar' ? 'إزالة من المفضلة' : 'Remove from favorites') : (language === 'ar' ? 'إضافة للمفضلة' : 'Add to favorites')}
+            className={`absolute top-2 right-2 rtl:right-auto rtl:left-2 min-h-[44px] min-w-[44px] p-2.5 rounded-full backdrop-blur-md border transition-all duration-200 focus:outline-none z-10 flex items-center justify-center active:scale-90 touch-press cursor-pointer shadow-md ${
+              isFav
+                ? 'bg-black/85 border-rose-500/60 shadow-rose-950/40'
+                : 'bg-black/60 border-white/20 text-white hover:bg-black/80 hover:border-white/40'
+            }`}
           >
             <Heart
-              className={`w-4 h-4 transition-colors ${
-                isFav ? 'fill-white text-white' : 'text-neutral-300 group-hover:text-white'
+              className={`w-4 h-4 transition-all duration-200 ${
+                isFav
+                  ? 'fill-rose-500 text-rose-500 scale-110 drop-shadow-[0_0_6px_rgba(244,63,94,0.5)]'
+                  : 'text-white/80 group-hover:text-white scale-100'
               }`}
             />
           </button>

@@ -31,6 +31,7 @@ export const MoreScreen: React.FC = () => {
     t,
     restaurantInfo,
     favorites,
+    setOnlyFavorites,
     reservationHistory,
     setIsReservationOpen,
     openGallery,
@@ -401,6 +402,8 @@ export const MoreScreen: React.FC = () => {
           <button
             onClick={() => {
               haptic.tab();
+              setOnlyFavorites(true);
+              setSelectedCategory('all');
               setActiveTab('menu');
             }}
             className={`w-full min-h-[48px] p-4 flex items-center justify-between transition-all duration-150 text-left rtl:text-right focus:outline-none cursor-pointer active:scale-[0.98] active:opacity-80 touch-press ${

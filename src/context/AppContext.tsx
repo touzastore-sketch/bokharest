@@ -150,6 +150,8 @@ interface AppContextType {
   favorites: string[];
   toggleFavorite: (itemId: string) => void;
   isFavorite: (itemId: string) => boolean;
+  onlyFavorites: boolean;
+  setOnlyFavorites: (val: boolean) => void;
   
   // Restaurant info
   restaurantInfo: RestaurantInfo;
@@ -1198,6 +1200,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   });
 
+  const [onlyFavorites, setOnlyFavorites] = useState(false);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites));
   }, [favorites]);
@@ -1562,6 +1566,8 @@ _Sent via official Bokharest Black mobile application_`;
         favorites,
         toggleFavorite,
         isFavorite,
+        onlyFavorites,
+        setOnlyFavorites,
         restaurantInfo,
         saveRestaurantInfo,
         updateRestaurantSettings,
