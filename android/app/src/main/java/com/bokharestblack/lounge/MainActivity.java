@@ -1,4 +1,4 @@
-package com.bokharest.app;
+package com.bokharestblack.lounge;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;

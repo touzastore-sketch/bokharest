@@ -3,15 +3,15 @@ plugins {
 }
 
 android {
-    namespace 'com.bokharest.app'
+    namespace 'com.bokharestblack.lounge'
     compileSdk 36
 
     defaultConfig {
-        applicationId "com.bokharest.app"
+        applicationId "com.bokharestblack.lounge"
         minSdk 24
         targetSdk 36
-        versionCode 7
-        versionName "2.0.2"
+        versionCode 8
+        versionName "2.0.3"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

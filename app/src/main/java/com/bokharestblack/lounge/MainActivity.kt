@@ -1,4 +1,4 @@
-package com.bokharest.app
+package com.bokharestblack.lounge
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
