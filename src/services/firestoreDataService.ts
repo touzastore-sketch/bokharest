@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   writeBatch,
   arrayUnion,
+  deleteField,
 } from 'firebase/firestore';
 import { firestoreDb } from './firebase';
 import { Category, MenuItem, OrderRecord, ReservationRecord, CustomerFeedback, RestaurantInfo, AdvertisementItem, GalleryImage } from '../types';
@@ -1009,14 +1010,20 @@ export async function saveAdvertisementToFirestore(ad: AdvertisementItem): Promi
   try {
     const ref = doc(firestoreDb, COLLECTIONS.ADVERTISEMENTS, ad.id);
     const cleaned = cleanDataForFirestore(ad);
-    await setDoc(
-      ref,
-      {
-        ...cleaned,
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+
+    const updatePayload: Record<string, any> = {
+      ...cleaned,
+      updatedAt: serverTimestamp(),
+    };
+
+    // If ad.link is empty, undefined, or whitespace, explicitly delete it from Firestore
+    if (!ad.link || (typeof ad.link === 'string' && ad.link.trim() === '')) {
+      updatePayload.link = deleteField();
+    } else {
+      updatePayload.link = ad.link.trim();
+    }
+
+    await setDoc(ref, updatePayload, { merge: true });
     console.log(`[FirestoreData] ✅ تم حفظ البنر الإعلاني (${ad.id}) في Cloud Firestore`);
     return true;
   } catch (error) {

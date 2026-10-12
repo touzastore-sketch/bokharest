@@ -138,6 +138,49 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
 ];
 
 /**
+ * Utility helper: Formats raw user input (phone number, wa.me, or external URL)
+ * into a standardized valid URL.
+ * Automatically converts phone numbers (e.g. 010..., +201..., 201...) to https://wa.me/20...
+ */
+export function formatAdLinkOrPhone(input?: string): string | undefined {
+  if (!input) return undefined;
+  const trimmed = input.trim();
+  if (!trimmed) return undefined;
+
+  // Already a full web URL
+  if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
+    return trimmed;
+  }
+
+  // wa.me without scheme
+  if (trimmed.startsWith('wa.me/')) {
+    return `https://${trimmed}`;
+  }
+
+  // Check if it represents a phone number
+  const digitsOnly = trimmed.replace(/[^0-9]/g, '');
+  if (digitsOnly.length >= 7) {
+    // Egyptian local phone starting with 01 (e.g. 01214444108, 010...)
+    if (trimmed.startsWith('01') || digitsOnly.startsWith('01')) {
+      return `https://wa.me/2${digitsOnly}`;
+    }
+    // Egyptian phone with international prefix 002
+    if (digitsOnly.startsWith('002')) {
+      return `https://wa.me/${digitsOnly.substring(2)}`;
+    }
+    // Has country code already (e.g. 201... or international)
+    return `https://wa.me/${digitsOnly}`;
+  }
+
+  // Web link without protocol (e.g., instagram.com/...)
+  if (trimmed.includes('.') && !trimmed.includes(' ')) {
+    return `https://${trimmed}`;
+  }
+
+  return trimmed;
+}
+
+/**
  * Utility helper: Generates the target WhatsApp URL based on ad configuration
  */
 export function buildAdWhatsAppUrl(params: {
@@ -148,8 +191,20 @@ export function buildAdWhatsAppUrl(params: {
 }): string {
   const { rawPhoneNumber, language, customMessage, customLink } = params;
 
-  if (customLink && customLink.startsWith('https://wa.me/')) {
-    return customLink;
+  if (customLink) {
+    const formatted = formatAdLinkOrPhone(customLink);
+    if (formatted && (formatted.startsWith('https://wa.me/') || formatted.startsWith('http://wa.me/'))) {
+      if (!formatted.includes('?text=') && !formatted.includes('&text=')) {
+        const text = customMessage
+          ? language === 'ar' ? customMessage.ar : customMessage.en
+          : language === 'ar' ? ADVERTISEMENT_CONFIG.defaultWhatsAppMessage.ar : ADVERTISEMENT_CONFIG.defaultWhatsAppMessage.en;
+        return `${formatted}?text=${encodeURIComponent(text)}`;
+      }
+      return formatted;
+    }
+    if (formatted && (formatted.startsWith('http://') || formatted.startsWith('https://'))) {
+      return formatted;
+    }
   }
 
   const cleanNumber = rawPhoneNumber.replace(/[^0-9]/g, '') || '201214444108';

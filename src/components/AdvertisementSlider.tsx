@@ -6,6 +6,7 @@ import {
   ADVERTISEMENT_CONFIG,
   buildAdWhatsAppUrl,
   getActiveAdvertisements,
+  formatAdLinkOrPhone,
 } from '../data/ads';
 import { ChevronRight, ChevronLeft, MessageSquare, ExternalLink } from 'lucide-react';
 import { getOptimizedImageUrl } from '../services/cloudinaryService';
@@ -81,11 +82,12 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
   const openWhatsApp = (customMessage?: { ar: string; en: string }, customLink?: string) => {
     haptic.order();
 
+    const formattedLink = formatAdLinkOrPhone(customLink);
     const url = buildAdWhatsAppUrl({
       rawPhoneNumber: restaurantInfo.whatsappRaw,
       language: language as 'ar' | 'en',
       customMessage,
-      customLink,
+      customLink: formattedLink,
     });
 
     try {
@@ -106,9 +108,11 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
       e.stopPropagation();
     }
 
+    const resolvedLink = formatAdLinkOrPhone(link);
+
     // If a direct URL/link is provided, navigate directly to it
-    if (link && (link.startsWith('http://') || link.startsWith('https://') || link.startsWith('wa.me'))) {
-      const targetUrl = link.startsWith('wa.me') ? `https://${link}` : link;
+    if (resolvedLink && (resolvedLink.startsWith('http://') || resolvedLink.startsWith('https://') || resolvedLink.startsWith('wa.me'))) {
+      const targetUrl = resolvedLink.startsWith('wa.me') ? `https://${resolvedLink}` : resolvedLink;
       try {
         window.open(targetUrl, '_blank', 'noopener,noreferrer');
       } catch {
@@ -120,12 +124,12 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
     if (!action || action === 'none') return;
 
     if (action === 'whatsapp') {
-      openWhatsApp(whatsappMessage, link);
-    } else if (action === 'external_url' && link) {
+      openWhatsApp(whatsappMessage, resolvedLink);
+    } else if (action === 'external_url' && resolvedLink) {
       try {
-        window.open(link, '_blank', 'noopener,noreferrer');
+        window.open(resolvedLink, '_blank', 'noopener,noreferrer');
       } catch {
-        window.location.href = link;
+        window.location.href = resolvedLink;
       }
     } else if (action === 'internal_page' && link) {
       haptic.tab();
@@ -323,7 +327,7 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                             : language === 'ar' ? 'حجز عبر واتساب' : 'Book via WhatsApp'
                         }
                         onClick={(e) => {
-                          handleAction(hotspot.action, hotspot.link, hotspot.whatsappMessage, e);
+                          handleAction(hotspot.action || ad.actionType || ad.action, hotspot.link || ad.link, hotspot.whatsappMessage || ad.whatsappMessage, e);
                         }}
                         style={{
                           position: 'absolute',

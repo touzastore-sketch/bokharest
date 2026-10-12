@@ -20,6 +20,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { AdvertisementItem } from '../../types';
 import { uploadImageToFirebase } from '../../services/firebaseStorageService';
+import { formatAdLinkOrPhone } from '../../data/ads';
 
 interface AdvertisementsManagerProps {
   onPreviewInApp?: () => void;
@@ -88,7 +89,10 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
 
   const handleOpenEdit = (ad: AdvertisementItem) => {
     setEditingAd(ad);
-    setFormData({ ...ad });
+    setFormData({
+      ...ad,
+      link: ad.link || '',
+    });
     setAutoFQInfo(ad.image.includes('webp') ? 'صورة محسنة بنظام WebP Auto F/Q' : null);
     setIsEditing(true);
   };
@@ -134,6 +138,30 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
       return;
     }
 
+    const hasRawLink = typeof formData.link === 'string' && formData.link.trim() !== '';
+    const finalLink = hasRawLink ? formatAdLinkOrPhone(formData.link) : undefined;
+    const targetAction = (formData.actionType || 'menu') as any;
+
+    // Sync all hotspots with the link:
+    // If finalLink exists, assign it to all hotspots.
+    // If link was cleared, delete link from hotspots so it doesn't trigger the old URL in the AAB!
+    const existingHotspots = (formData.hotspots && formData.hotspots.length > 0)
+      ? formData.hotspots
+      : (editingAd?.hotspots || []);
+
+    const updatedHotspots = existingHotspots.map((h) => {
+      const updated: any = {
+        ...h,
+        action: finalLink ? 'whatsapp' : targetAction,
+      };
+      if (finalLink) {
+        updated.link = finalLink;
+      } else {
+        delete updated.link;
+      }
+      return updated;
+    });
+
     const itemToSave: AdvertisementItem = {
       id: editingAd ? editingAd.id : formData.id || `ad_${Date.now()}`,
       title_ar: formData.title_ar || '',
@@ -146,19 +174,20 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
       image: formData.image || '',
       active: formData.active ?? true,
       priority: Number(formData.priority) || 1,
-      link: formData.link ? formData.link.trim() : undefined,
-      actionType: formData.actionType || 'menu',
+      link: finalLink,
+      action: finalLink ? 'whatsapp' : targetAction,
+      actionType: targetAction,
       actionLabel_ar: formData.actionLabel_ar || 'اطلب الآن',
       actionLabel_en: formData.actionLabel_en || 'Order Now',
       targetId: formData.targetId,
-      hotspots: editingAd?.hotspots || [],
+      hotspots: updatedHotspots,
     };
 
     const success = await saveAdvertisement(itemToSave);
     if (success) {
       showNotification(
         editingAd
-          ? `✅ تم تحديث الإعلان "${itemToSave.title_ar}" فوراً في قاعدة بيانات Firestore!`
+          ? `✅ تم تحديث الإعلان "${itemToSave.title_ar}" فوراً في قاعدة بيانات Firestore وتحديث الرابط لجميع أجهزة العملاء!`
           : `✅ تم إضافة الإعلان الجديد بنجاح في Firestore ويظهر حالياً في التطبيق!`
       );
       setIsEditing(false);
@@ -513,25 +542,33 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
                 )}
               </div>
 
-              {/* Optional Link Input */}
+              {/* Optional Link / Phone Number Input */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="block text-neutral-300 text-xs font-semibold">
-                    رابط الإعلان (اختياري)
+                    رابط الإعلان أو رقم الواتساب (اختياري)
                   </label>
-                  <span className="text-[10px] text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
-                    اختياري — يمكنك تركه فارغاً
+                  <span className="text-[10px] text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                    يدعم أرقام الهواتف مباشرة
                   </span>
                 </div>
                 <input
-                  type="url"
+                  type="text"
                   value={formData.link || ''}
                   onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  placeholder="https://example.com أو wa.me/... (اختياري حسب رغبتك)"
+                  placeholder="مثال: 01214444108 أو https://wa.me/201214444108 أو رابط إنستجرام/فيسبوك"
                   className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white text-xs font-mono focus:border-amber-500 focus:outline-none"
                 />
-                <p className="text-[11px] text-neutral-500">
-                  إذا تركت هذا الحقل فارغاً، سيعمل الإعلان بناءً على وجهة النقر المحددة بالأسفل (مثل فتح المنيو أو الحجز).
+                {formData.link && (
+                  <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-[11px] flex items-center justify-between">
+                    <span className="text-neutral-300">الوجهة المحسوبة في التطبيق:</span>
+                    <span className="text-emerald-400 font-mono font-medium dir-ltr select-all">
+                      {formatAdLinkOrPhone(formData.link)}
+                    </span>
+                  </div>
+                )}
+                <p className="text-[11px] text-neutral-400">
+                  💡 يمكنك إدخال رقم الهاتف أو الواتساب مباشرة (مثلاً 01214444108 أو +2012...) وسيتم تحويله تلقائياً لربطه بجميع شاشات وأجهزة العملاء فوراً بدون إعادة بناء ملف AAB.
                 </p>
               </div>
 
