@@ -1,0 +1,69 @@
+name: Build iOS App (.ipa / Xcode Archive)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS Project & Archive
+    runs-on: macos-14
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🌐 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Install Dependencies & Build Web App
+        run: |
+          npm install
+          npm run build
+
+      - name: 📱 Sync Capacitor iOS
+        run: |
+          npx cap sync ios
+
+      - name: 🛠️ Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: 🏗️ Build iOS Archive (Xcodebuild)
+        working-directory: ./ios/App
+        run: |
+          xcodebuild clean archive \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/BokharestBlack.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            PROVISIONING_PROFILE="" \
+            -destination 'generic/platform=iOS'
+
+      - name: 📦 Export Payload to .IPA
+        working-directory: ./ios/App
+        run: |
+          mkdir -p build/Payload
+          cp -r build/BokharestBlack.xcarchive/Products/Applications/App.app build/Payload/
+          cd build && zip -r BokharestBlack.ipa Payload
+
+      - name: 📤 Upload iOS .IPA Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bokharest-Black-iOS-IPA
+          path: ios/App/build/BokharestBlack.ipa
+          retention-days: 30
+
+      - name: 📤 Upload Full Xcode Archive (.xcarchive)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bokharest-Black-iOS-xcarchive
+          path: ios/App/build/BokharestBlack.xcarchive
+          retention-days: 30
