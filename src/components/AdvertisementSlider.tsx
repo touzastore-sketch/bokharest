@@ -291,11 +291,16 @@ export const AdvertisementSlider: React.FC<AdvertisementSliderProps> = ({
                   onClick={() => {
                     // If no specific hotspots, clicking whole slide triggers ad action or link
                     if (!hasHotspots) {
-                      handleAction(ad.actionType || ad.action, ad.link, ad.whatsappMessage);
+                      const hasLink = typeof ad.link === 'string' && ad.link.trim() !== '';
+                      const effectiveAction = ad.actionType || ad.action;
+                      const hasAction = effectiveAction && effectiveAction !== 'none';
+                      if (hasLink || hasAction) {
+                        handleAction(effectiveAction, ad.link, ad.whatsappMessage);
+                      }
                     }
                   }}
                   style={{
-                    cursor: !hasHotspots && (ad.link || (ad.action && ad.action !== 'none') || (ad.actionType && ad.actionType !== 'none')) ? 'pointer' : 'default'
+                    cursor: !hasHotspots && ((typeof ad.link === 'string' && ad.link.trim() !== '') || ((ad.action && ad.action !== 'none') || (ad.actionType && ad.actionType !== 'none'))) ? 'pointer' : 'default'
                   }}
                 >
                   {/* High Quality Ad Image */}

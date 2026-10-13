@@ -61,18 +61,9 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     title_en: 'Bokharest Black — Luxury Dining Experience',
     image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
-    action: 'whatsapp',
-    link: 'https://wa.me/201214444108',
-    whatsappMessage: {
-      ar: 'مرحباً بوخارست بلاك، أود الاستفسار والحجز بخصوص العرض المعلن 🍽️',
-      en: 'Hello Bokharest Black, I would like to book/inquire regarding your special offer 🍽️',
-    },
-    hotspots: [
-      {
-        ...OFFICIAL_BANNER_BOOK_HOTSPOT,
-        id: 'hotspot-book-btn-1',
-      },
-    ],
+    action: 'none',
+    actionType: 'none',
+    hotspots: [],
     active: true,
   },
   {
@@ -81,18 +72,9 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     title_en: 'Bokharest Black — Exquisite Cuts & Fine Grills',
     image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
-    action: 'whatsapp',
-    link: 'https://wa.me/201214444108',
-    whatsappMessage: {
-      ar: 'مرحباً بوخارست بلاك، أود حجز طاولة والاستفسار عن العرض الخاص 🥩',
-      en: 'Hello Bokharest Black, I would like to reserve a table for your special offer 🥩',
-    },
-    hotspots: [
-      {
-        ...OFFICIAL_BANNER_BOOK_HOTSPOT,
-        id: 'hotspot-book-btn-2',
-      },
-    ],
+    action: 'none',
+    actionType: 'none',
+    hotspots: [],
     active: true,
   },
   {
@@ -101,18 +83,9 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     title_en: 'Bokharest Black — Outdoor Terrace & Dining',
     image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
-    action: 'whatsapp',
-    link: 'https://wa.me/201214444108',
-    whatsappMessage: {
-      ar: 'مرحباً بوخارست بلاك، أود حجز طاولة في جلسات التراس 🥂',
-      en: 'Hello Bokharest Black, I would like to reserve a table on the terrace 🥂',
-    },
-    hotspots: [
-      {
-        ...OFFICIAL_BANNER_BOOK_HOTSPOT,
-        id: 'hotspot-book-btn-3',
-      },
-    ],
+    action: 'none',
+    actionType: 'none',
+    hotspots: [],
     active: true,
   },
   {
@@ -121,18 +94,9 @@ export const INITIAL_ADVERTISEMENTS: AdvertisementItem[] = [
     title_en: 'Bokharest Black — Signature Drinks & Desserts',
     image: OFFICIAL_CLOUDINARY_BANNER_IMAGE,
     aspectRatio: ADVERTISEMENT_CONFIG.bannerAspectRatio,
-    action: 'whatsapp',
-    link: 'https://wa.me/201214444108',
-    whatsappMessage: {
-      ar: 'مرحباً بوخارست بلاك، أود حجز طاولة والاستفسار عن عروض بوخارست بلاك ✨',
-      en: 'Hello Bokharest Black, I would like to reserve and inquire about your offers ✨',
-    },
-    hotspots: [
-      {
-        ...OFFICIAL_BANNER_BOOK_HOTSPOT,
-        id: 'hotspot-book-btn-4',
-      },
-    ],
+    action: 'none',
+    actionType: 'none',
+    hotspots: [],
     active: true,
   },
 ];

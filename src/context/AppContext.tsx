@@ -818,7 +818,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const saveAdvertisement = async (ad: AdvertisementItem): Promise<boolean> => {
     setAdvertisements((prev) => {
       const exists = prev.some((a) => a.id === ad.id);
-      return exists ? prev.map((a) => (a.id === ad.id ? ad : a)) : [ad, ...prev];
+      const updated = exists ? prev.map((a) => (a.id === ad.id ? ad : a)) : [ad, ...prev];
+      try {
+        localStorage.setItem('bokharest_advertisements_v2', JSON.stringify(updated));
+      } catch {}
+      return updated;
     });
     return await saveAdvertisementToFirestore(ad);
   };

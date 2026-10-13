@@ -92,6 +92,7 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
     setFormData({
       ...ad,
       link: ad.link || '',
+      actionType: ad.link ? (ad.actionType || 'whatsapp') : (ad.actionType === 'none' || !ad.actionType ? 'none' : ad.actionType),
     });
     setAutoFQInfo(ad.image.includes('webp') ? 'صورة محسنة بنظام WebP Auto F/Q' : null);
     setIsEditing(true);
@@ -138,29 +139,14 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
       return;
     }
 
-    const hasRawLink = typeof formData.link === 'string' && formData.link.trim() !== '';
-    const finalLink = hasRawLink ? formatAdLinkOrPhone(formData.link) : undefined;
-    const targetAction = (formData.actionType || 'menu') as any;
-
-    // Sync all hotspots with the link:
-    // If finalLink exists, assign it to all hotspots.
-    // If link was cleared, delete link from hotspots so it doesn't trigger the old URL in the AAB!
-    const existingHotspots = (formData.hotspots && formData.hotspots.length > 0)
-      ? formData.hotspots
-      : (editingAd?.hotspots || []);
-
-    const updatedHotspots = existingHotspots.map((h) => {
-      const updated: any = {
-        ...h,
-        action: finalLink ? 'whatsapp' : targetAction,
-      };
-      if (finalLink) {
-        updated.link = finalLink;
-      } else {
-        delete updated.link;
-      }
-      return updated;
-    });
+    const trimmedLink = typeof formData.link === 'string' ? formData.link.trim() : '';
+    const hasRawLink = trimmedLink !== '';
+    const finalLink = hasRawLink ? formatAdLinkOrPhone(trimmedLink) : undefined;
+    
+    // If no link is provided, action is explicitly 'none' so clicking the banner does not open anything
+    const targetAction = finalLink
+      ? 'whatsapp'
+      : (formData.actionType && formData.actionType !== 'whatsapp' ? formData.actionType : 'none');
 
     const itemToSave: AdvertisementItem = {
       id: editingAd ? editingAd.id : formData.id || `ad_${Date.now()}`,
@@ -175,19 +161,21 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
       active: formData.active ?? true,
       priority: Number(formData.priority) || 1,
       link: finalLink,
-      action: finalLink ? 'whatsapp' : targetAction,
+      action: targetAction,
       actionType: targetAction,
-      actionLabel_ar: formData.actionLabel_ar || 'اطلب الآن',
-      actionLabel_en: formData.actionLabel_en || 'Order Now',
+      actionLabel_ar: formData.actionLabel_ar || (finalLink ? 'اطلب الآن' : ''),
+      actionLabel_en: formData.actionLabel_en || (finalLink ? 'Order Now' : ''),
       targetId: formData.targetId,
-      hotspots: updatedHotspots,
+      hotspots: [], // No hotspots so clicking the banner triggers only the chosen action or nothing
     };
 
     const success = await saveAdvertisement(itemToSave);
     if (success) {
       showNotification(
         editingAd
-          ? `✅ تم تحديث الإعلان "${itemToSave.title_ar}" فوراً في قاعدة بيانات Firestore وتحديث الرابط لجميع أجهزة العملاء!`
+          ? (finalLink
+              ? `✅ تم تحديث الإعلان ورابط النقر فوراً لجميع أجهزة العملاء!`
+              : `✅ تم حفظ الإعلان بدون رابط (لن تفتح الصورة أي شيء عند النقر) وتحديث جميع أجهزة العملاء!`)
           : `✅ تم إضافة الإعلان الجديد بنجاح في Firestore ويظهر حالياً في التطبيق!`
       );
       setIsEditing(false);
@@ -555,11 +543,23 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
                 <input
                   type="text"
                   value={formData.link || ''}
-                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                  onChange={(e) => {
+                    const newLink = e.target.value;
+                    setFormData({
+                      ...formData,
+                      link: newLink,
+                      actionType: newLink.trim() ? (formData.actionType === 'none' ? 'whatsapp' : (formData.actionType || 'whatsapp')) : 'none',
+                    });
+                  }}
                   placeholder="مثال: 01214444108 أو https://wa.me/201214444108 أو رابط إنستجرام/فيسبوك"
                   className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white text-xs font-mono focus:border-amber-500 focus:outline-none"
                 />
-                {formData.link && (
+                {!formData.link ? (
+                  <div className="p-2 rounded-lg bg-neutral-900 border border-neutral-700/60 text-[11px] text-neutral-300 flex items-center gap-1.5">
+                    <span>🔒</span>
+                    <span><strong>الحقل فارغ:</strong> لن تفتح الصورة أي شيء عند نقر العميل عليها (صورة إعلانية للعرض فقط).</span>
+                  </div>
+                ) : (
                   <div className="p-2 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-[11px] flex items-center justify-between">
                     <span className="text-neutral-300">الوجهة المحسوبة في التطبيق:</span>
                     <span className="text-emerald-400 font-mono font-medium dir-ltr select-all">
@@ -568,7 +568,7 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
                   </div>
                 )}
                 <p className="text-[11px] text-neutral-400">
-                  💡 يمكنك إدخال رقم الهاتف أو الواتساب مباشرة (مثلاً 01214444108 أو +2012...) وسيتم تحويله تلقائياً لربطه بجميع شاشات وأجهزة العملاء فوراً بدون إعادة بناء ملف AAB.
+                  💡 عند كتابة رقم أو رابط، سيتم فتحه فوراً عند النقر. وإذا تركت الحقل فارغاً، لن تفتح الصورة أي شيء عند الضغط عليها.
                 </p>
               </div>
 
@@ -577,7 +577,7 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
                 <div>
                   <label className="block text-neutral-300 mb-1">وجهة النقر (Action)</label>
                   <select
-                    value={formData.actionType || 'menu'}
+                    value={formData.actionType || (formData.link ? 'whatsapp' : 'none')}
                     onChange={(e) =>
                       setFormData({
                         ...formData,
@@ -586,6 +586,7 @@ export const AdvertisementsManager: React.FC<AdvertisementsManagerProps> = ({
                     }
                     className="w-full bg-black/60 border border-white/15 rounded-xl px-3 py-2 text-white focus:border-amber-500 focus:outline-none"
                   >
+                    <option value="none">بدون إجراء (صورة فقط — لا تفتح شيئاً)</option>
                     <option value="menu">فتح المنيو (Menu)</option>
                     <option value="reservation">حجز طاولة (Reservation)</option>
                     <option value="cart">سلة الطلبات (Cart)</option>

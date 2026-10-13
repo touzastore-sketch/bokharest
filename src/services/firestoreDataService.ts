@@ -17,7 +17,7 @@ import {
 import { firestoreDb } from './firebase';
 import { Category, MenuItem, OrderRecord, ReservationRecord, CustomerFeedback, RestaurantInfo, AdvertisementItem, GalleryImage } from '../types';
 import { INITIAL_CATEGORIES, INITIAL_MENU_ITEMS, OFFICIAL_RESTAURANT_INFO } from '../data/restaurantData';
-import { INITIAL_ADVERTISEMENTS } from '../data/ads';
+import { INITIAL_ADVERTISEMENTS, formatAdLinkOrPhone } from '../data/ads';
 import { GALLERY_IMAGES } from '../data/galleryData';
 import { CLOUDINARY_ASSETS } from './cloudinaryService';
 
@@ -978,14 +978,14 @@ export function subscribeToAdvertisements(
               image: data.image || '',
               fallbackImage: data.fallbackImage,
               aspectRatio: data.aspectRatio,
-              action: data.action || 'whatsapp',
-              actionType: data.actionType || 'menu',
+              action: data.action ? data.action : (data.link ? 'whatsapp' : 'none'),
+              actionType: data.actionType ? data.actionType : (data.link ? 'whatsapp' : 'none'),
               actionLabel_ar: data.actionLabel_ar,
               actionLabel_en: data.actionLabel_en,
               priority: typeof data.priority === 'number' ? data.priority : 1,
-              link: data.link,
+              link: data.link ? data.link : undefined,
               whatsappMessage: data.whatsappMessage,
-              hotspots: data.hotspots,
+              hotspots: data.hotspots || [],
               active: data.active !== false,
             });
           });
@@ -1017,10 +1017,21 @@ export async function saveAdvertisementToFirestore(ad: AdvertisementItem): Promi
     };
 
     // If ad.link is empty, undefined, or whitespace, explicitly delete it from Firestore
-    if (!ad.link || (typeof ad.link === 'string' && ad.link.trim() === '')) {
+    // and make sure the ad does not trigger any action when clicked
+    const trimmedLink = typeof ad.link === 'string' ? ad.link.trim() : '';
+    if (!trimmedLink) {
       updatePayload.link = deleteField();
+      // If user specified an internal action like 'menu', 'reservation', 'cart', keep it; otherwise 'none'
+      const safeAction = ad.actionType && ad.actionType !== 'whatsapp' ? ad.actionType : 'none';
+      updatePayload.action = safeAction;
+      updatePayload.actionType = safeAction;
+      updatePayload.hotspots = [];
     } else {
-      updatePayload.link = ad.link.trim();
+      const formatted = formatAdLinkOrPhone(trimmedLink);
+      updatePayload.link = formatted;
+      updatePayload.action = 'whatsapp';
+      updatePayload.actionType = 'whatsapp';
+      updatePayload.hotspots = [];
     }
 
     await setDoc(ref, updatePayload, { merge: true });
