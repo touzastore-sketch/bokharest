@@ -41,7 +41,8 @@ import {
   Percent,
   Receipt,
   Download,
-  Upload
+  Upload,
+  Smartphone
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -3161,6 +3162,58 @@ wiaiNRP97U9UvpNz7U0nKs3ra28HAjvKHhHAOnsHKetRhNm3q6umXKhYv6PcdrN7
                   <p className="font-semibold text-amber-300">طريقة استخدامه في Google Play Console:</p>
                   <p className="text-[11px] text-neutral-400">
                     ادخل على Google Play Console ⬅ إعدادات الإصدار (Release ➡ Setup ➡ App Signing) ⬅ اختر "Request key upgrade" أو "Upload a new upload key certificate" ثم اختر هذا الملف المُحمّل.
+                  </p>
+                </div>
+              </div>
+
+              {/* APPLE APP STORE (IOS) PACKAGE DOWNLOAD CARD FOR DEVELOPER */}
+              <div className="bg-gradient-to-br from-blue-500/10 via-black to-[#111111] p-5 rounded-2xl border border-blue-500/30 space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        مشروع تطبيق آبل (Apple iOS / Xcode) الجاهز للرفع على App Store
+                        <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/40 px-2 py-0.5 rounded-full font-mono">
+                          com.bokharest.apple
+                        </span>
+                      </h3>
+                      <p className="text-xs text-neutral-400">
+                        الملف الكامل والنهائي المطلوب تسليمه للمطور لرفعه بضغطة زر واحدة على حساب مطور آبل (App Store Connect)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <a
+                      href="/bokharest-ios-project.zip"
+                      download="bokharest-ios-project.zip"
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" />
+                      تحميل مشروع Xcode كامل (.ZIP)
+                    </a>
+                    <a
+                      href="/app-store-icon.png"
+                      download="app-store-icon.png"
+                      className="px-3 py-2 bg-white/10 hover:bg-white/20 text-neutral-200 font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      أيقونة App Store (1024×1024)
+                    </a>
+                  </div>
+                </div>
+
+                <div className="bg-black/60 p-3.5 rounded-xl border border-blue-500/20 text-xs text-neutral-300 space-y-1.5">
+                  <p className="font-semibold text-blue-300 flex items-center gap-1.5">
+                    <span>💡</span>
+                    <span>ماذا تفعل بهذا الملف؟</span>
+                  </p>
+                  <p className="text-[11px] text-neutral-300 leading-relaxed">
+                    هذا الملف يحتوي على مشروع <strong>Xcode</strong> كامل ومبرمج ومربوط بـ <strong>Firebase</strong> بملف <code>GoogleService-Info.plist</code> وتحت معرّف الحزمة <code>com.bokharest.apple</code>.
+                    فقط أعطِ ملف <strong>.ZIP</strong> هذا للمطور، وسيقوم بفتحه مباشرة في برنامج Xcode على جهاز Mac والضغط على <strong>Distribute App</strong> ليتم رفعه مباشرة لحسابك على App Store Connect!
                   </p>
                 </div>
               </div>
