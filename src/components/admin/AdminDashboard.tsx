@@ -562,6 +562,48 @@ wiaiNRP97U9UvpNz7U0nKs3ra28HAjvKHhHAOnsHKetRhNm3q6umXKhYv6PcdrN7
     showNotification('⬇️ تم بدء تنزيل ملف upload_certificate.pem مباشرة!');
   };
 
+  // Download iOS Project Zip securely
+  const handleDownloadIosProject = async () => {
+    try {
+      showNotification('⏳ جارٍ تجهيز وبدء تحميل مشروع Xcode (.ZIP)...');
+      const response = await fetch('/bokharest-ios-project.zip');
+      if (!response.ok) throw new Error('فشل جلب الملف');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bokharest-ios-project.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showNotification('✅ بدأ تنزيل ملف مشروع آبل (.ZIP) بنجاح!');
+    } catch {
+      window.location.href = '/bokharest-ios-project.zip';
+    }
+  };
+
+  // Download App Store Icon securely
+  const handleDownloadAppStoreIcon = async () => {
+    try {
+      showNotification('⏳ جارٍ تحميل أيقونة متجر App Store...');
+      const response = await fetch('/app-store-icon.png');
+      if (!response.ok) throw new Error('فشل جلب الأيقونة');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'app-store-icon.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      showNotification('✅ بدأ تنزيل أيقونة App Store بنجاح!');
+    } catch {
+      window.location.href = '/app-store-icon.png';
+    }
+  };
+
   // Update reservation status
   const handleUpdateReservationStatus = async (resId: string, newStatus: ReservationRecord['status']) => {
     const ok = await updateReservationStatusInFirestore(resId, newStatus);
@@ -3187,22 +3229,22 @@ wiaiNRP97U9UvpNz7U0nKs3ra28HAjvKHhHAOnsHKetRhNm3q6umXKhYv6PcdrN7
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
-                    <a
-                      href="/bokharest-ios-project.zip"
-                      download="bokharest-ios-project.zip"
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer"
+                    <button
+                      type="button"
+                      onClick={handleDownloadIosProject}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer active:scale-95"
                     >
                       <Download className="w-4 h-4" />
                       تحميل مشروع Xcode كامل (.ZIP)
-                    </a>
-                    <a
-                      href="/app-store-icon.png"
-                      download="app-store-icon.png"
-                      className="px-3 py-2 bg-white/10 hover:bg-white/20 text-neutral-200 font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadAppStoreIcon}
+                      className="px-3 py-2 bg-white/10 hover:bg-white/20 text-neutral-200 font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
                     >
                       <Download className="w-3.5 h-3.5" />
                       أيقونة App Store (1024×1024)
-                    </a>
+                    </button>
                   </div>
                 </div>
 
