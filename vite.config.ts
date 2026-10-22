@@ -85,6 +85,7 @@ export default defineConfig(() => {
       dedupe: ['react', 'react-dom'],
     },
     optimizeDeps: {
+      entries: ['index.html'],
       include: [
         'react',
         'react-dom',
@@ -98,6 +99,14 @@ export default defineConfig(() => {
         'firebase/storage',
         'qrcode',
       ],
+      exclude: ['@capacitor/core', '@capacitor/cli', '@capacitor/ios'],
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+        },
+      },
     },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

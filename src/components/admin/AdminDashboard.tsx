@@ -41,8 +41,7 @@ import {
   Percent,
   Receipt,
   Download,
-  Upload,
-  Smartphone
+  Upload
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -523,85 +522,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     };
     reader.readAsText(file);
     e.target.value = '';
-  };
-
-  // Download Google Play Upload Certificate PEM directly
-  const handleDownloadPem = () => {
-    const pemContent = `-----BEGIN CERTIFICATE-----
-MIIDmTCCAOGgAwIBAgIUcA1dXzZ001TJBrXrB1wiwve34REwDQYJKoZIhvcNAQEL
-BQAwWzESMBAGA1UEAwwJQm9raGFyZXN0MQwwCgYDVQQLDANBcHAFZAVBgNVBAoM
-DkJva2hhcmVzdEJsYWNrMREwDwYDVQQHDAhQb3J0U2FpZDELMAkGA1UEBhMCRUcw
-IBCNmJYwOTIxMTU1OTExWhgPMjA1NDAyMDYxNTU5MTFaMFsxEjAQBgNVBAMMCUJV
-a2hhcmVzdDEMMAoGA1UECwwDQXBwMRcwFQYDVQQKDA5Cb2toYXJlc3RCbGFjazER
-MA8GA1UEBwwIUG9ydFNhaWQXCtAJBgNVBAYTAkVHMIIBIjANBgkqhkiG9w0BAQEF
-AAOCAQ8AMIIBCgKCAQEAxkEVXW3n42atReh66/k5w5F2nGlJqWylM/zg4QQANakY
-siYilTwhVGaE67b+kxANYPgV0pILYpePPtZ8SwYIwrCDV3fwuGDK334LPEferqWi
-qp1H6Z8RMe9tfVU9gYukPH0X4pS1qO3ppa8VgaSB3p0oFNor9KACOX6OmDuUtdfe
-8HWpnU5Pzmwo956a0SpidjuW+kJu4LfGQwPx34/iwg16D7wHki5giI9a0Y3gOAUD
-+YWB7T6DO69D+V7gRgLzEj1XgCibTtdhwDiEco0lD3HJCSJff9mXX55R5Rczh1aw
-NrOVxo06QSXZVENWsmbs3000mvnkFqQrq0ZYlL+wrQIDAQABo1MwUTAdBgNVHQ4E
-FgQUcm8scI391Vjf0ECM2RmDheu2/rkwHwYDVR0jBBgwFoAUcm8scI391Vjf0ECM
-2RmDheu2/rkwDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQSFAAOCAQEAcpKa
-ucwKgNwU3LFO6FTcsdC6JHzNdB0gjX4n/zx7PS2yFrpKOO/Edmdmh7xrBbKfBS/+
-vvAEomLnfeXM0BySAl4EOqaVoZcQs7YU4DtRkG91XAD3R3/Jpkaqb5JHj1g2jAy7
-zvQ76jfT2th3e8VQRFcGbmbW98RsKfGtw9EtmobHtr3wZMHAHdrkmRD6DgDrysLP
-wiaiNRP97U9UvpNz7U0nKs3ra28HAjvKHhHAOnsHKetRhNm3q6umXKhYv6PcdrN7
-92W5qyu+1xtYG9kvlIppUjNpk7aHTcxVuMyDYirGm9O9rm5aS4JLngIjpPuBNvxr
-93vTYY4c9ZndclTOag==
------END CERTIFICATE-----
-`;
-    const blob = new Blob([pemContent], { type: 'application/x-x509-ca-cert;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'upload_certificate.pem';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showNotification('⬇️ تم بدء تنزيل ملف upload_certificate.pem مباشرة!');
-  };
-
-  // Download iOS Project Zip securely
-  const handleDownloadIosProject = async () => {
-    try {
-      showNotification('⏳ جارٍ تجهيز وبدء تحميل مشروع Xcode (.ZIP)...');
-      const response = await fetch('/bokharest-ios-project.zip');
-      if (!response.ok) throw new Error('فشل جلب الملف');
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'bokharest-ios-project.zip';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-      showNotification('✅ بدأ تنزيل ملف مشروع آبل (.ZIP) بنجاح!');
-    } catch {
-      window.location.href = '/bokharest-ios-project.zip';
-    }
-  };
-
-  // Download App Store Icon securely
-  const handleDownloadAppStoreIcon = async () => {
-    try {
-      showNotification('⏳ جارٍ تحميل أيقونة متجر App Store...');
-      const response = await fetch('/app-store-icon.png');
-      if (!response.ok) throw new Error('فشل جلب الأيقونة');
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'app-store-icon.png';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-      showNotification('✅ بدأ تنزيل أيقونة App Store بنجاح!');
-    } catch {
-      window.location.href = '/app-store-icon.png';
-    }
   };
 
   // Update reservation status
@@ -3166,98 +3086,6 @@ wiaiNRP97U9UvpNz7U0nKs3ra28HAjvKHhHAOnsHKetRhNm3q6umXKhYv6PcdrN7
                   <CheckCircle2 className="w-4 h-4" />
                   حفظ التعديلات الآن
                 </button>
-              </div>
-
-              {/* GOOGLE PLAY APP SIGNING CERTIFICATE DOWNLOAD CARD */}
-              <div className="bg-gradient-to-br from-amber-500/10 via-black to-[#111111] p-5 rounded-2xl border border-amber-500/30 space-y-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-amber-400">
-                      <KeyRound className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        شهادة مفتاح توقيع التطبيق لـ Google Play Console
-                        <span className="text-[10px] bg-amber-400/20 text-amber-400 border border-amber-400/40 px-2 py-0.5 rounded-full font-mono">
-                          upload_certificate.pem
-                        </span>
-                      </h3>
-                      <p className="text-xs text-neutral-400">
-                        الملف المطلوب لرفعه في Google Play Console لحل تعارض مفاتيح التوقيع (App Signing Key)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleDownloadPem}
-                      className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-amber-500/20"
-                    >
-                      <Download className="w-4 h-4" />
-                      تحميل ملف upload_certificate.pem
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-black/50 p-3 rounded-xl border border-white/10 text-xs text-neutral-300 space-y-1">
-                  <p className="font-semibold text-amber-300">طريقة استخدامه في Google Play Console:</p>
-                  <p className="text-[11px] text-neutral-400">
-                    ادخل على Google Play Console ⬅ إعدادات الإصدار (Release ➡ Setup ➡ App Signing) ⬅ اختر "Request key upgrade" أو "Upload a new upload key certificate" ثم اختر هذا الملف المُحمّل.
-                  </p>
-                </div>
-              </div>
-
-              {/* APPLE APP STORE (IOS) PACKAGE DOWNLOAD CARD FOR DEVELOPER */}
-              <div className="bg-gradient-to-br from-blue-500/10 via-black to-[#111111] p-5 rounded-2xl border border-blue-500/30 space-y-3">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
-                      <Smartphone className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        مشروع تطبيق آبل (Apple iOS / Xcode) الجاهز للرفع على App Store
-                        <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/40 px-2 py-0.5 rounded-full font-mono">
-                          com.bokharest.apple
-                        </span>
-                      </h3>
-                      <p className="text-xs text-neutral-400">
-                        الملف الكامل والنهائي المطلوب تسليمه للمطور لرفعه بضغطة زر واحدة على حساب مطور آبل (App Store Connect)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={handleDownloadIosProject}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-bold text-xs rounded-xl transition-all flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer active:scale-95"
-                    >
-                      <Download className="w-4 h-4" />
-                      تحميل مشروع Xcode كامل (.ZIP)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDownloadAppStoreIcon}
-                      className="px-3 py-2 bg-white/10 hover:bg-white/20 text-neutral-200 font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      أيقونة App Store (1024×1024)
-                    </button>
-                  </div>
-                </div>
-
-                <div className="bg-black/60 p-3.5 rounded-xl border border-blue-500/20 text-xs text-neutral-300 space-y-1.5">
-                  <p className="font-semibold text-blue-300 flex items-center gap-1.5">
-                    <span>💡</span>
-                    <span>ماذا تفعل بهذا الملف؟</span>
-                  </p>
-                  <p className="text-[11px] text-neutral-300 leading-relaxed">
-                    هذا الملف يحتوي على مشروع <strong>Xcode</strong> كامل ومبرمج ومربوط بـ <strong>Firebase</strong> بملف <code>GoogleService-Info.plist</code> وتحت معرّف الحزمة <code>com.bokharest.apple</code>.
-                    فقط أعطِ ملف <strong>.ZIP</strong> هذا للمطور، وسيقوم بفتحه مباشرة في برنامج Xcode على جهاز Mac والضغط على <strong>Distribute App</strong> ليتم رفعه مباشرة لحسابك على App Store Connect!
-                  </p>
-                </div>
               </div>
 
               <form
