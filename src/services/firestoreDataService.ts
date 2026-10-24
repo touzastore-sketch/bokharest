@@ -62,13 +62,33 @@ export function cleanDataForFirestore<T extends Record<string, any>>(obj: T): Re
  */
 export async function seedFirestoreIfEmpty(): Promise<{ seeded: boolean; categoriesCount: number; menuItemsCount: number }> {
   try {
+    // 🔒 حماية تامة مطلقة: فحص قفل قاعدة البيانات السحابي لمنع أي إعادة تهيئة أو استرجاع بيانات نهائياً
+    const dbStatusRef = doc(firestoreDb, 'system_metadata', 'database_status');
+    const dbStatusSnap = await getDoc(dbStatusRef).catch(() => null);
+    if (dbStatusSnap?.exists() && dbStatusSnap.data()?.seeded === true) {
+      // قاعدة البيانات مهيأة مسبقاً ومحمية — ممنوع منعاً باتاً الكتابة فوق تعديلات العميل أو لوحة التحكم
+      return { seeded: false, categoriesCount: 0, menuItemsCount: 0 };
+    }
+
     const catSnapshot = await getDocs(collection(firestoreDb, COLLECTIONS.CATEGORIES));
     const itemsSnapshot = await getDocs(collection(firestoreDb, COLLECTIONS.MENU_ITEMS));
+
+    // إذا كانت قاعدة البيانات تحتوي بالفعل على أقسام أو أصناف، نضع قفل الحماية فوراً ونخرج دون أي تعديل
+    if (!catSnapshot.empty || !itemsSnapshot.empty) {
+      await setDoc(dbStatusRef, {
+        seeded: true,
+        locked: true,
+        prevent_auto_reset: true,
+        is_live_production: true,
+        updatedAt: serverTimestamp(),
+      }, { merge: true }).catch(() => {});
+      return { seeded: false, categoriesCount: catSnapshot.size, menuItemsCount: itemsSnapshot.size };
+    }
 
     let seededCategories = 0;
     let seededItems = 0;
 
-    // تهيئة التصنيفات إذا كانت فارغة
+    // تهيئة التصنيفات فقط في حال كانت قاعدة البيانات جديدة وفارغة كلياً لأول مرة في التاريخ
     if (catSnapshot.empty) {
       console.log(`[FirestoreData] جارٍ رفع وتأسيس ${INITIAL_CATEGORIES.length} تصنيف في Cloud Firestore...`);
       const batch = writeBatch(firestoreDb);
@@ -159,6 +179,15 @@ export async function seedFirestoreIfEmpty(): Promise<{ seeded: boolean; categor
       // وضع علامة أن المعرض تمت تهيئته سحابياً حتى لا تعود الصور المحذوفة مطلقاً
       await setDoc(galleryMetaRef, { initialized: true }, { merge: true }).catch(() => {});
     }
+
+    // إغلاق وقفل قاعدة البيانات سحابياً لمنع أي تكرار
+    await setDoc(dbStatusRef, {
+      seeded: true,
+      locked: true,
+      prevent_auto_reset: true,
+      is_live_production: true,
+      updatedAt: serverTimestamp(),
+    }, { merge: true }).catch(() => {});
 
     return {
       seeded: seededCategories > 0 || seededItems > 0,

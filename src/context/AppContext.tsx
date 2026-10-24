@@ -555,20 +555,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Cloud Firestore Initialization and Real-time Synchronization
   useEffect(() => {
-    setFirestoreSyncStatus('syncing');
-    
-    // 1. Seed or verify collections in Cloud Firestore
-    seedFirestoreIfEmpty()
-      .then((res) => {
-        if (res.seeded) {
-          console.log(`[AppContext] Cloud Firestore populated with ${res.menuItemsCount} dishes & ${res.categoriesCount} categories`);
-        }
-        setFirestoreSyncStatus('synced');
-      })
-      .catch((err) => {
-        console.warn('[AppContext] Firestore seeding notice:', err);
-        setFirestoreSyncStatus('error');
-      });
+    setFirestoreSyncStatus('synced');
 
     // 2. Real-time subscription to Categories in Cloud Firestore
     const unsubCategories = subscribeToCategories((remoteCategories) => {
@@ -704,19 +691,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Auto-sync all app assets to Firebase Storage & Firestore with Auto F/Q
-  useEffect(() => {
-    autoSyncAllAppAssetsToFirebase()
-      .then((res) => {
-        if (res.menuItemUrl) {
-          console.log('[AppContext] ✅ كافة صور التطبيق تمت مزامنتها تلقائياً على Firebase بنظام Auto F/Q');
-        }
-      })
-      .catch((err) => {
-        console.warn('[AppContext] Auto assets sync note:', err);
-      });
-  }, []);
-
   // Save menu items locally when changed
   useEffect(() => {
     try {
@@ -809,10 +783,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const resetMenuToDefaults = () => {
-    setCategories(INITIAL_CATEGORIES);
-    setMenuItems(INITIAL_MENU_ITEMS);
-    localStorage.removeItem(STORAGE_KEYS.MENU_ITEMS);
-    localStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+    // إعادة مزامنة حية من Cloud Firestore بدلاً من الكتابة فوق التعديلات بالبيانات الافتراضية القديمة
+    refreshMenu();
   };
 
   const saveAdvertisement = async (ad: AdvertisementItem): Promise<boolean> => {
